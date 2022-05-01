@@ -1,0 +1,3 @@
+[submodule "IFC4.3.x-development"]
+	path = IFC4.3.x-development
+	url = https://github.com/Krande/IFC4.3.x-development

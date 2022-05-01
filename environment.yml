@@ -1,0 +1,10 @@
+name: ifcdb
+channels:
+  - krande/label/dev
+  - conda-forge
+dependencies:
+  - ifcopenshell
+  - pyparsing
+  - pip
+  - pip:
+      - edgedb
