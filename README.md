@@ -17,3 +17,4 @@ Here are some related projects I came across when I was searching online for sim
 
 * https://github.com/buildingSMART/IFC4.3.x-development
 * https://github.com/gsimon75/IFC_parser
+* https://rdflib.readthedocs.io/en/stable/intro_to_parsing.html [for reading TTL IFC from the IfcOWL project]
