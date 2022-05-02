@@ -1,23 +1,12 @@
 from __future__ import annotations
+
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union, TYPE_CHECKING, List, Tuple
 
 if TYPE_CHECKING:
     from ifc_schema.entities import Entity
     from ifc_schema.exp_reader import ExpReader
-
-
-@dataclass
-class Attribute:
-    name: str
-    type: Union[object, Entity]
-    inherited: bool
-    optional: bool
-
-
-class InvalidAttTypeDefinitionError(Exception):
-    pass
 
 
 class ExpressBaseTypes:
@@ -29,20 +18,51 @@ class ExpressBaseTypes:
     STRING = "STRING"
     LOGICAL = "LOGICAL"
 
+    entity_map = dict(IfcBoolean='bool')
 
-def get_att_type(att_str: str, exp_reader: ExpReader) -> object:
 
-    re_type_object = re.search("OF\s([a-zA-Z0-9_]{1,40})\Z", att_str)
-    type_res = exp_reader.type_dict.get(re_type_object.group(1))
+@dataclass
+class Attribute:
+    name: str
+    att_str: str
+    inherited: bool
+    optional: bool
+    exp_reader: ExpReader = field(repr=False)
 
-    if re_type_object is None:
-        raise InvalidAttTypeDefinitionError(f"Unable to interpret type {att_str}")
+    def __post_init__(self):
+        self.att_str = self.att_str.replace("OPTIONAL ", "")
 
-    # Check for list content
-    att_res = get_list_att(att_str, exp_reader)
-    if att_res is not None:
-        return type_res, att_res
-    raise ValueError("Unable to convert")
+    @property
+    def type(self):
+        # Check for list content
+        att_res = get_list_att(self.att_str, self.exp_reader)
+        if att_res is not None:
+            return att_res
+        if self.type_ref is not None:
+            entity_type = ExpressBaseTypes.entity_map.get(self.type_ref.name, None)
+            if entity_type is not None:
+                return entity_type
+        if self.entity_ref is not None:
+            return self.entity_ref
+        raise ValueError(f"Unable to infer type from {self.att_str}")
+
+    @property
+    def entity_ref(self):
+        if " " in self.att_str:
+            return None
+        return self.exp_reader.entity_dict.get(self.att_str, None)
+
+    @property
+    def type_ref(self):
+        if " " in self.att_str:
+            re_type_object = re.search(r"OF\s([a-zA-Z0-9_]{1,40})\Z", self.att_str)
+            return self.exp_reader.type_dict.get(re_type_object.group(1), None)
+
+        return self.exp_reader.type_dict.get(self.att_str, None)
+
+
+class InvalidAttTypeDefinitionError(Exception):
+    pass
 
 
 def get_list_att(att_str: str, exp_reader: ExpReader):

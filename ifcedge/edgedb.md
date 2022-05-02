@@ -1,2 +1,2 @@
 # IFC in EdgeDB
-An experiment with the ultimate 
+An experiment with storing IFC elements in EdgeDB

@@ -1,7 +1,8 @@
 from __future__ import annotations
+import operator
 import re
 from dataclasses import dataclass, field
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from ifc_schema.exp_reader import ExpReader
@@ -16,6 +17,28 @@ class Entity:
     content: str = field(repr=False)
     exp_reader: ExpReader = field(repr=False)
 
+    def to_dataclass_str(self):
+        ancestor_str = ''
+        if self.parent_type is not None:
+            ancestor_str = f'({self.parent_type})'
+        atts_str = ''
+        for key, val in sorted(self.instance_attributes, key=operator.attrgetter('optional')):
+            if val.inherited:
+                continue
+            vtyp = val.type
+            if isinstance(vtyp, Entity):
+                att_ref = vtyp.name
+            else:
+                att_ref = vtyp
+
+            opt_str = '=None' if val.optional is True else ''
+            atts_str += f'    {key}: {att_ref}'+opt_str+'\n'
+        return f"""
+@dataclass
+class {self.name}{ancestor_str}:
+{atts_str}
+"""
+
     @property
     def parent_type(self):
         result = re.search(r"SUBTYPE OF \((.*?)\);", self.content)
@@ -23,6 +46,7 @@ class Entity:
 
     @property
     def instance_attributes(self) -> Dict[str, Attribute]:
+        from ifc_schema.att_types import Attribute
         ancestors = self.ancestry
         ancestors.reverse()
         atts = dict()
@@ -31,7 +55,8 @@ class Entity:
                 continue
             for key, value in cl.entity_attributes:
                 inherited = cl != self
-                atts[key] = self.exp_reader.resolve_attribute(key, value, inherited)
+                optional = value.upper().startswith("OPTIONAL")
+                atts[key] = Attribute(key, value, optional=optional, inherited=inherited, exp_reader=self.exp_reader)
         return atts
 
     @property
