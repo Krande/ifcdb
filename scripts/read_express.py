@@ -27,14 +27,15 @@ def export_all_related_to_dataclasses(exp_reader: ExpReader, class_name):
         test_file_str += ent.to_dataclass_str()
 
     os.makedirs("temp", exist_ok=True)
-    with open("temp/ifctest.py", "w") as f:
+    with open(f"temp/test{class_name}.py", "w") as f:
         f.write(test_file_str)
 
 
 def main(express_file):
     exp_reader = ExpReader(express_file=express_file)
 
-    export_all_related_to_dataclasses(exp_reader, "IfcTriangulatedFaceSet")
+    # export_all_related_to_dataclasses(exp_reader, "IfcTriangulatedFaceSet")
+    export_all_related_to_dataclasses(exp_reader, "IfcExtrudedAreaSolid")
 
 
 if __name__ == "__main__":

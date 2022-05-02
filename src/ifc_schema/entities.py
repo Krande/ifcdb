@@ -98,7 +98,7 @@ class {self.name}{ancestor_str}:
             d = r.groupdict()
             key, value = d["key"], d["value"].strip()
             optional = value.upper().startswith("OPTIONAL")
-            atts[key] = Attribute(key, value, optional=optional, parent=self, exp_reader=self.exp_reader)
+            atts[key] = Attribute(key, value, optional=optional, parent=self, _exp_reader=self.exp_reader)
         return atts
 
     @property
