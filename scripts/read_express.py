@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from ifc_schema.exp_reader import ExpReader
 
 
