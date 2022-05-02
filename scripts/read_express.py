@@ -1,30 +1,40 @@
 import os
 
+from typing import List
 from ifc_schema.exp_reader import ExpReader, Entity
+
+
+def sort_by_inheritance(list_of_entities: List[Entity]):
+    # filter out all elements without parents
+    tbr = []
+    sorted_list = []
+    for i, x in enumerate(list_of_entities):
+        if x.parent_type is None:
+            sorted_list.append(x)
+            tbr.append(x)
+
+    for x in tbr:
+        list_of_entities.pop(list_of_entities.index(x))
+
+
+def export_all_related_to_dataclasses(exp_reader: ExpReader, class_name):
+    triface = exp_reader.entity_dict[class_name]
+    test_file_str = "from __future__ import annotations\nfrom dataclasses import dataclass\nimport typing\n"
+
+    all_ents = triface.get_related_entities_and_types()
+    all_ents.reverse()
+    for ent in all_ents:
+        test_file_str += ent.to_dataclass_str()
+
+    os.makedirs("temp", exist_ok=True)
+    with open("temp/ifctest.py", "w") as f:
+        f.write(test_file_str)
 
 
 def main(express_file):
     exp_reader = ExpReader(express_file=express_file)
 
-    triface = exp_reader.entity_dict["IfcTriangulatedFaceSet"]
-    test_file_str = 'from __future__ import annotations\nfrom dataclasses import dataclass\nimport typing\n\n'
-    ancestry = triface.ancestry
-    ancestry.reverse()
-    for ancestor in triface.ancestry:
-        test_file_str += ancestor.to_dataclass_str()
-        for key, att in ancestor.instance_attributes.items():
-            if att.inherited is True:
-                continue
-            if isinstance(att.type, Entity):
-                test_file_str += att.type.to_dataclass_str()
-                for atancestor in att.type.ancestry:
-                    test_file_str += atancestor.to_dataclass_str()
-    os.makedirs('temp', exist_ok=True)
-    with open('temp/ifctest.py', 'w') as f:
-        f.write(test_file_str)
-
-    for key, value in triface.instance_attributes.items():
-        print(f"{key}: {value} [{value.type}] (inherited: {value.inherited})")
+    export_all_related_to_dataclasses(exp_reader, "IfcTriangulatedFaceSet")
 
 
 if __name__ == "__main__":

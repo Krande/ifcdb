@@ -2,13 +2,19 @@ from __future__ import annotations
 import operator
 import re
 from dataclasses import dataclass, field
-from typing import Dict, TYPE_CHECKING, List
+from typing import Dict, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ifc_schema.exp_reader import ExpReader
     from ifc_schema.att_types import Attribute
 
 re_flags = re.DOTALL | re.MULTILINE | re.IGNORECASE
+
+
+def append_to(el, elements: list):
+    if el in elements:
+        return
+    elements.append(el)
 
 
 @dataclass
@@ -18,26 +24,48 @@ class Entity:
     exp_reader: ExpReader = field(repr=False)
 
     def to_dataclass_str(self):
-        ancestor_str = ''
+        ancestor_str = ""
         if self.parent_type is not None:
-            ancestor_str = f'({self.parent_type})'
-        atts_str = ''
-        for key, val in sorted(self.instance_attributes, key=operator.attrgetter('optional')):
-            if val.inherited:
+            ancestor_str = f"({self.parent_type})"
+        atts_str = ""
+        for val in sorted(self.instance_attributes.values(), key=operator.attrgetter("optional")):
+            if val.parent != self:
                 continue
+
             vtyp = val.type
             if isinstance(vtyp, Entity):
                 att_ref = vtyp.name
             else:
                 att_ref = vtyp
 
-            opt_str = '=None' if val.optional is True else ''
-            atts_str += f'    {key}: {att_ref}'+opt_str+'\n'
+            opt_str = " = None" if val.optional is True else ""
+            atts_str += f"    {val.name}: {att_ref}" + opt_str + "\n"
+        if atts_str == '':
+            atts_str = '    pass'
         return f"""
+
 @dataclass
 class {self.name}{ancestor_str}:
 {atts_str}
 """
+
+    def get_related_entities_and_types(self):
+        """Loop over ancestry and used types to list up all defined types and entities"""
+        ancestry = self.ancestry
+        ancestry.reverse()
+
+        related_entities = []
+        for ancestor in self.ancestry:
+            append_to(ancestor, related_entities)
+            if ancestor.entity_attributes is None:
+                continue
+            for key, att in ancestor.entity_attributes.items():
+                if isinstance(att.type, Entity) is False:
+                    continue
+                append_to(att.type, related_entities)
+                for at_ancestor in att.type.ancestry:
+                    append_to(at_ancestor, related_entities)
+        return related_entities
 
     @property
     def parent_type(self):
@@ -46,31 +74,31 @@ class {self.name}{ancestor_str}:
 
     @property
     def instance_attributes(self) -> Dict[str, Attribute]:
-        from ifc_schema.att_types import Attribute
         ancestors = self.ancestry
         ancestors.reverse()
         atts = dict()
         for cl in ancestors:
             if cl.entity_attributes is None:
                 continue
-            for key, value in cl.entity_attributes:
-                inherited = cl != self
-                optional = value.upper().startswith("OPTIONAL")
-                atts[key] = Attribute(key, value, optional=optional, inherited=inherited, exp_reader=self.exp_reader)
+            for key, value in cl.entity_attributes.items():
+                atts[key] = value
         return atts
 
     @property
-    def entity_attributes(self):
+    def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
+        from ifc_schema.att_types import Attribute
+
         re_subtype = re.search(r"SUBTYPE OF \((?:.*?)\);(.*?)^ [aA-zZ]", self.content, re_flags)
         re_att = re.compile(r"^	(?P<key>[aA-zZ]{0,20}) :(?P<value>.*?);", re_flags)
         if re_subtype is None:
             return None
         data = re_subtype.group(1)
-        atts = []
+        atts = dict()
         for r in re_att.finditer(data):
             d = r.groupdict()
-            key, value = d["key"], d["value"]
-            atts.append((key.strip(), value.strip()))
+            key, value = d["key"], d["value"].strip()
+            optional = value.upper().startswith("OPTIONAL")
+            atts[key] = Attribute(key, value, optional=optional, parent=self, exp_reader=self.exp_reader)
         return atts
 
     @property

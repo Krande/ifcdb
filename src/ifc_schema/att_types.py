@@ -25,12 +25,12 @@ class ExpressBaseTypes:
 class Attribute:
     name: str
     att_str: str
-    inherited: bool
+    parent: Entity
     optional: bool
     exp_reader: ExpReader = field(repr=False)
 
     def __post_init__(self):
-        self.att_str = self.att_str.replace("OPTIONAL ", "")
+        self.att_str = self.att_str.replace("OPTIONAL ", "").strip()
 
     @property
     def type(self):
@@ -56,6 +56,8 @@ class Attribute:
     def type_ref(self):
         if " " in self.att_str:
             re_type_object = re.search(r"OF\s([a-zA-Z0-9_]{1,40})\Z", self.att_str)
+            if re_type_object is None:
+                return None
             return self.exp_reader.type_dict.get(re_type_object.group(1), None)
 
         return self.exp_reader.type_dict.get(self.att_str, None)

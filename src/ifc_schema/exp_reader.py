@@ -34,6 +34,6 @@ class ExpReader:
 def convert_type(r: re.Match, exp_reader) -> Entity:
     """Return a minimum class containing identifier and content"""
     d = r.groupdict()
-    name = d["name"]
-    content = d["content"]
+    name = d["name"].strip()
+    content = d["content"].strip()
     return Entity(name=name, content=content, exp_reader=exp_reader)
