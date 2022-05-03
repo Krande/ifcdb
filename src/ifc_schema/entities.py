@@ -74,6 +74,7 @@ class {self.name}{ancestor_str}:
 
     @property
     def instance_attributes(self) -> Dict[str, Attribute]:
+        """Entity attributes including inherited attributes"""
         ancestors = self.ancestry
         ancestors.reverse()
         atts = dict()

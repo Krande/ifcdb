@@ -33,8 +33,9 @@ def export_all_related_to_dataclasses(exp_reader: ExpReader, class_name):
 
 def main(express_file):
     exp_reader = ExpReader(express_file=express_file)
-
-    # export_all_related_to_dataclasses(exp_reader, "IfcTriangulatedFaceSet")
+    res = exp_reader.entity_dict['IfcTriangulatedFaceSet']
+    res2 = exp_reader.entity_dict['IfcGeometricRepresentationItem']
+    export_all_related_to_dataclasses(exp_reader, "IfcTriangulatedFaceSet")
     export_all_related_to_dataclasses(exp_reader, "IfcExtrudedAreaSolid")
 
 
