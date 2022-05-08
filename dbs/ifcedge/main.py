@@ -1,32 +1,56 @@
 import json
 import logging
 from typing import List, Tuple
+import ifcopenshell
 import edgedb
 
 
-def create_ifc_tria(client: edgedb.Client, name: str, guid: str, coords: List[Tuple[float, float, float]]):
-    # Insert a new IfcTriangulatedFaceSet object
+def insert_query(client: edgedb.Client, query_str, **kwargs):
     try:
-        client.query(
-            """
-            INSERT IfcTriangulatedFaceSet {
+        client.query(query_str, **kwargs)
+    except edgedb.errors.ConstraintViolationError as e:
+        logging.warning(e)
+
+
+def create_ifc_tria(client: edgedb.Client, ifc_tria: ifcopenshell.entity_instance):
+    # Insert a new IfcTriangulatedFaceSet object
+
+    ifc_coords = ifc_tria.Coordinates
+    insert_query(
+        client,
+        """INSERT IfcCartesianPointList3D {
+                GlobalId := <str>$GlobalId,
+                CoordList := <str>$CoordList
+            }""",
+        GlobalId=ifc_coords.GlobalId,
+        CoordList=ifc_coords.CoordList,
+    )
+    insert_query(
+        client,
+        """INSERT IfcTriangulatedFaceSet {
                 GlobalId := <str>$GlobalId,
                 Name := <str>$Name,
-                Coords := <str>$Coords
-            }
-        """,
-            GlobalId=guid,
-            Name=name,
-            Coords=coords
-        )
-    except edgedb.errors.ConstraintViolationError as e:
-        logging.info(e)
+                Coords := (
+                    select IfcCartesianPointList3D
+                    filter .GlobalId = <str>$refGUID
+                  ),
+            }""",
+        GlobalId=ifc_tria.GlobalId,
+        Name=ifc_tria.Name,
+        refGUID=ifc_coords.GlobalId,
+    )
+
+
+def get_faceted_products():
+    ifc = ifcopenshell.open("../../files/slab-tessellated-unique-vertices.ifc")
+    return list(ifc.by_type("IfcTriangulatedFaceSet"))
 
 
 def main():
     client = edgedb.create_client("edgedb://edgedb@localhost:5656", tls_security="insecure")
     # Create a User object type
-    create_ifc_tria(client, "Bob", "BobGUID")
+    for ifc_tria in get_faceted_products():
+        create_ifc_tria(client, ifc_tria)
     # Select IfcTriangulatedFaceSet objects.
     user_set = client.query_json(
         "SELECT IfcTriangulatedFaceSet {GlobalId, Name, Coordinates} FILTER .GlobalId = <str>$guid", guid="BobGUID"

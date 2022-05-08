@@ -7,7 +7,11 @@ module default {
     }
 
     abstract type IfcTessellatedFaceSet extending IfcRoot {
-      property Coordinates -> array<tuple<x: float64, y: float64, z: float64>>;
+      link Coordinates -> IfcCartesianPointList3D;
+    }
+
+    type IfcCartesianPointList3D extending IfcRoot {
+        property CoordList -> array<tuple<x: float64, y: float64, z: float64>>;
     }
 
     type IfcTriangulatedFaceSet extending IfcTessellatedFaceSet {
