@@ -18,26 +18,16 @@ def create_ifc_tria(client: edgedb.Client, ifc_tria: ifcopenshell.entity_instanc
     ifc_coords = ifc_tria.Coordinates
     insert_query(
         client,
-        """INSERT IfcCartesianPointList3D {
-                GlobalId := <str>$GlobalId,
-                CoordList := <str>$CoordList
-            }""",
-        GlobalId=ifc_coords.GlobalId,
-        CoordList=ifc_coords.CoordList,
-    )
-    insert_query(
-        client,
         """INSERT IfcTriangulatedFaceSet {
                 GlobalId := <str>$GlobalId,
                 Name := <str>$Name,
-                Coords := (
-                    select IfcCartesianPointList3D
-                    filter .GlobalId = <str>$refGUID
-                  ),
+                Coords := INSERT IfcCartesianPointList3D {
+                    CoordList := <str>$CoordList
+                },
             }""",
-        GlobalId=ifc_tria.GlobalId,
+        GlobalId=ifc_tria.GlobalID,
         Name=ifc_tria.Name,
-        refGUID=ifc_coords.GlobalId,
+        CoordList=ifc_coords.CoordList,
     )
 
 
