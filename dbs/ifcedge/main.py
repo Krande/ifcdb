@@ -19,15 +19,19 @@ def create_ifc_tria(client: edgedb.Client, ifc_tria: ifcopenshell.entity_instanc
     insert_query(
         client,
         """INSERT IfcTriangulatedFaceSet {
-                GlobalId := <str>$GlobalId,
-                Name := <str>$Name,
-                Coords := INSERT IfcCartesianPointList3D {
-                    CoordList := <str>$CoordList
-                },
+                Coords := (
+                    INSERT IfcCartesianPointList3D {
+                        CoordList := array<tuple<x: float64, y: float64, z: float64>>$CoordList
+                    }
+                ),
+                Closed := <bool>$Closed,
+                CoordIndex := array<tuple<x: float64, y: float64, z: float64>>$CoordIndex,
+                Normals := array<tuple<x: float64, y: float64, z: float64>>$Normals,
             }""",
-        GlobalId=ifc_tria.GlobalID,
-        Name=ifc_tria.Name,
         CoordList=ifc_coords.CoordList,
+        Closed=ifc_tria.Closed,
+        CoordIndex=ifc_tria.CoordIndex,
+        Normals=ifc_tria.Normals,
     )
 
 
@@ -41,6 +45,7 @@ def main():
     # Create a User object type
     for ifc_tria in get_faceted_products():
         create_ifc_tria(client, ifc_tria)
+
     # Select IfcTriangulatedFaceSet objects.
     user_set = client.query_json(
         "SELECT IfcTriangulatedFaceSet {GlobalId, Name, Coordinates} FILTER .GlobalId = <str>$guid", guid="BobGUID"

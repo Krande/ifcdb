@@ -13,10 +13,10 @@ module default {
     }
 
     abstract type IfcRepresentation {
-        required property ContextOfItems -> IfcRepresentationContext;
+        required link ContextOfItems -> IfcRepresentationContext;
         property RepresentationIdentifier -> str;
         property RepresentationType -> str;
-        required property Items -> array<IfcRepresentationItem>;
+        required multi link Items -> IfcRepresentationItem;
     }
 
     type IfcCartesianPointList3D {
@@ -40,7 +40,7 @@ module default {
     }
 
     type IfcTriangulatedFaceSet extending IfcTessellatedFaceSet {
-        property CoordIndex -> array<tuple<x: float64, y: float64, z: float64>>;
+        property CoordIndex -> array<tuple<x: int64, y: int64, z: int64>>;
         property Normals -> array<tuple<x: float64, y: float64, z: float64>>;
         property Closed -> bool;
         property PnIndex -> array<int64>;
