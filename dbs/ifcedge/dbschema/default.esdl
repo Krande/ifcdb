@@ -19,6 +19,10 @@ module default {
         required property Items -> array<IfcRepresentationItem>;
     }
 
+    type IfcCartesianPointList3D {
+        property CoordList -> array<tuple<x: float64, y: float64, z: float64>>;
+    }
+
     abstract type IfcRepresentationItem {
 
     }
@@ -35,14 +39,11 @@ module default {
       link Coordinates -> IfcCartesianPointList3D;
     }
 
-    type IfcCartesianPointList3D {
-        property CoordList -> array<tuple<x: float64, y: float64, z: float64>>;
-    }
-
     type IfcTriangulatedFaceSet extending IfcTessellatedFaceSet {
         property CoordIndex -> array<tuple<x: float64, y: float64, z: float64>>;
         property Normals -> array<tuple<x: float64, y: float64, z: float64>>;
         property Closed -> bool;
         property PnIndex -> array<int64>;
     }
+
 }
