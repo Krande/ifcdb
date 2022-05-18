@@ -14,6 +14,29 @@ re_flags = re.DOTALL | re.MULTILINE | re.IGNORECASE
 def append_to(el, elements: list):
     if el in elements:
         return
+    parent_type = el.parent_type
+    if parent_type is None:
+        elements.insert(0, el)
+        return
+
+    el_name_index = [x.name for x in elements]
+    parent_index = None
+    if parent_type in el_name_index:
+        parent_index = el_name_index.index(parent_type)
+
+    if el.supertype_of is not None:
+        set1 = set(el_name_index)
+        set2 = set(el.supertype_of)
+        res = list(set2.intersection(set1))
+        index = min([el_name_index.index(x) for x in res])
+        if parent_index is not None and index < parent_index:
+            re_input_el = elements.pop(parent_index)
+            elements.insert(index, el)
+            elements.insert(index, re_input_el)
+        else:
+            elements.insert(index, el)
+        return
+
     elements.append(el)
 
 
@@ -23,12 +46,18 @@ class Entity:
     content: str = field(repr=False)
     exp_reader: ExpReader = field(repr=False)
 
-    def to_dataclass_str(self):
+    @property
+    def ancestor_str(self):
         ancestor_str = ""
         if self.parent_type is not None:
             ancestor_str = f"({self.parent_type})"
+        return ancestor_str
+
+    @property
+    def attributes_str(self):
         atts_str = ""
-        for val in sorted(self.instance_attributes.values(), key=operator.attrgetter("optional")):
+        attributes = sorted(self.instance_attributes.values(), key=operator.attrgetter("optional"))
+        for val in attributes:
             if val.parent != self:
                 continue
 
@@ -40,21 +69,35 @@ class Entity:
 
             opt_str = " = None" if val.optional is True else ""
             atts_str += f"    {val.name}: {att_ref}" + opt_str + "\n"
-        if atts_str == '':
-            atts_str = '    pass'
+        if atts_str == "":
+            atts_str = "    pass"
+        return atts_str
+
+    def to_dataclass_str(self):
+        att_str = self.attributes_str
+        dataclass_props = ''
+        if "= None" in att_str:
+            dataclass_props = '(kw_only=True)'
         return f"""
 
-@dataclass
-class {self.name}{ancestor_str}:
-{atts_str}
+@dataclass{dataclass_props}
+class {self.name}{self.ancestor_str}:
+{att_str}
 """
 
-    def get_related_entities_and_types(self):
-        """Loop over ancestry and used types to list up all defined types and entities"""
-        ancestry = self.ancestry
-        ancestry.reverse()
+    def to_pydantic_str(self):
+        ancestor_str = self.ancestor_str
+        if ancestor_str == '':
+            ancestor_str = '(pydantic.BaseModel)'
+        return f"""
 
-        related_entities = []
+class {self.name}{ancestor_str}:
+{self.attributes_str}
+"""
+
+    def get_related_entities_and_types(self, related_entities=None):
+        """Loop over ancestry and used types to list up all defined types and entities"""
+        related_entities = [] if related_entities is None else related_entities
         for ancestor in self.ancestry:
             append_to(ancestor, related_entities)
             if ancestor.entity_attributes is None:
@@ -63,7 +106,7 @@ class {self.name}{ancestor_str}:
                 if isinstance(att.type, Entity) is False:
                     continue
                 append_to(att.type, related_entities)
-                for at_ancestor in att.type.ancestry:
+                for at_ancestor in att.type.get_related_entities_and_types(related_entities):
                     append_to(at_ancestor, related_entities)
         return related_entities
 
@@ -88,11 +131,13 @@ class {self.name}{ancestor_str}:
     @property
     def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
         from ifc_schema.att_types import Attribute
-
+        re_subtype_alt = re.compile(r"SUBTYPE OF \((?:.*?)\);(.*?)\Z", re_flags)
         re_subtype = re.search(r"SUBTYPE OF \((?:.*?)\);(.*?)^ [aA-zZ]", self.content, re_flags)
         re_att = re.compile(r"^	(?P<key>[aA-zZ]{0,20}) :(?P<value>.*?);", re_flags)
         if re_subtype is None:
-            return None
+            re_subtype = re_subtype_alt.search(self.content)
+            if re_subtype is None:
+                return None
         data = re_subtype.group(1)
         atts = dict()
         for r in re_att.finditer(data):
@@ -136,3 +181,10 @@ class {self.name}{ancestor_str}:
                 continue
             inverse += ancestor.entity_inverse
         return inverse
+
+    @property
+    def supertype_of(self):
+        res = re.search(r"ABSTRACT SUPERTYPE OF \(ONEOF\n\s*\((.*?)\)", self.content, re.MULTILINE | re.DOTALL)
+        if res is None:
+            return None
+        return [x.strip() for x in res.group(1).split(",")]

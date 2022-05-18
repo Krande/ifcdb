@@ -18,7 +18,7 @@ class ExpressBaseTypes:
     STRING = "STRING"
     LOGICAL = "LOGICAL"
 
-    entity_map = dict(IfcBoolean='bool')
+    entity_map = dict(IfcBoolean="bool", IfcPositiveLengthMeasure="float")
 
 
 @dataclass
@@ -44,6 +44,7 @@ class Attribute:
                 return entity_type
         if self.entity_ref is not None:
             return self.entity_ref
+
         raise ValueError(f"Unable to infer type from {self.att_str}")
 
     @property

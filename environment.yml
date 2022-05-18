@@ -5,6 +5,7 @@ channels:
 dependencies:
   - ifcopenshell
   - pyparsing
+  - pydantic
   - pip
   - pip:
       - edgedb
