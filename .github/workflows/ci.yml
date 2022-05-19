@@ -8,7 +8,6 @@ on:
 
 jobs:
   test:
-    needs: lint
     name: ${{ matrix.platform.name }}-${{ matrix.pyver.name }}
     runs-on: ${{ matrix.platform.distver }}
     defaults:
