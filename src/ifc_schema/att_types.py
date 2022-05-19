@@ -18,7 +18,8 @@ class ExpressBaseTypes:
     STRING = "STRING"
     LOGICAL = "LOGICAL"
 
-    entity_map = dict(IfcBoolean="bool", IfcPositiveLengthMeasure="float")
+    entity_map = dict(IfcBoolean="bool", IfcPositiveLengthMeasure="float", IfcStateEnum="str")
+    entity_type_map = {"INTEGER": "int", "STRING(255)": "str", "STRING": "str", 'STRING(22) FIXED': "str"}
 
 
 @dataclass
@@ -39,7 +40,12 @@ class Attribute:
         if att_res is not None:
             return att_res
         if self.type_ref is not None:
+            if self.type_ref.content.startswith('ENUMERATION'):
+                return "str"
+            entity_type_content = ExpressBaseTypes.entity_type_map.get(self.type_ref.content, None)
             entity_type = ExpressBaseTypes.entity_map.get(self.type_ref.name, None)
+            if entity_type_content is not None:
+                return entity_type_content
             if entity_type is not None:
                 return entity_type
         if self.entity_ref is not None:
@@ -51,6 +57,7 @@ class Attribute:
     def entity_ref(self):
         if " " in self.att_str:
             return None
+
         return self._exp_reader.entity_dict.get(self.att_str, None)
 
     @property

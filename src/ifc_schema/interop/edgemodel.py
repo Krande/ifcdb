@@ -23,14 +23,12 @@ class EntityModel:
 
     def to_esdl_str(self):
         att_str = self.attributes_str
-        dataclass_props = ""
-        if "= None" in att_str:
-            dataclass_props = "(kw_only=True)"
-        return f"""
+        prop_prefix = "abstract " if self.entity.supertype_of is not None and len(self.entity.supertype_of) > 0 else ""
+        parent_str = f"extending {self.entity.parent_type}" if self.entity.parent_type is not None else ""
 
-@dataclass{dataclass_props}
-class {self.entity.name}{self.ancestor_str}:
-{att_str}
+        return f"""
+    {prop_prefix}type {self.entity.name} {parent_str} {{
+{att_str}    }}
 """
 
     @property
@@ -45,19 +43,19 @@ class {self.entity.name}{self.ancestor_str}:
         atts_str = ""
         attributes = sorted(self.entity.instance_attributes.values(), key=operator.attrgetter("optional"))
         for val in attributes:
-            if val.parent != self:
+            if val.parent != self.entity:
                 continue
-
             vtyp = val.type
             if isinstance(vtyp, Entity):
                 att_ref = vtyp.name
             else:
                 att_ref = vtyp
 
-            opt_str = " = None" if val.optional is True else ""
-            atts_str += f"    {val.name}: {att_ref}" + opt_str + "\n"
-        if atts_str == "":
-            atts_str = "    pass"
+            if val.optional is False:
+                atts_str += 8 * " " + f"required property {val.name} -> {att_ref};\n"
+            else:
+                atts_str += 8 * " " + f"property {val.name} -> {att_ref};\n"
+
         return atts_str
 
 
@@ -68,14 +66,13 @@ class EdgeModel:
 
     def export_all_related_to_esdl(self, class_name):
         triface = self.exp_reader.entity_dict[class_name]
-        test_file_str = "default {\n"
+        test_file_str = "module default {\n"
 
         all_ents = triface.get_related_entities_and_types()
         for ent in all_ents:
             entmodel = EntityModel(ent)
-            test_file_str += entmodel.to_esdl_str()
+            test_file_str += 4 * " " + entmodel.to_esdl_str()
 
-        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.output_dir / "dbschema", exist_ok=True)
         with open(self.output_dir / f"dbschema/default.esdl", "w") as f:
-            f.write(test_file_str +"\n}")
-
+            f.write(test_file_str + "\n}")

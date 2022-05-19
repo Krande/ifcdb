@@ -62,3 +62,19 @@ def test_ifc_triangulatedfaceset(ifc_4x1_exp_file):
     keys = set(res.instance_attributes.keys())
     should_be = {"Coordinates", "PnIndex", "Normals", "Closed", "CoordIndex"}
     assert len(should_be.intersection(keys)) == len(keys)
+
+
+def test_ifc_owner_history(ifc_4x1_exp_file):
+    exp_reader = ExpReader(express_file=ifc_4x1_exp_file)
+    res = exp_reader.entity_dict["IfcOwnerHistory"]
+    keys = set(res.instance_attributes.keys())
+    should_be = {
+        "State",
+        "ChangeAction",
+        "LastModifiedDate",
+        "LastModifyingUser",
+        "CreationDate",
+        "OwningUser",
+        "OwningApplication",
+    }
+    assert len(should_be.intersection(keys)) == len(keys)

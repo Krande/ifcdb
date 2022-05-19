@@ -54,11 +54,14 @@ class Entity:
             if ancestor.entity_attributes is None:
                 continue
             for key, att in ancestor.entity_attributes.items():
-                if isinstance(att.type, Entity) is False:
+                if att.type_ref is not None:
+                    append_to(att.type_ref, related_entities)
+                elif isinstance(att.type, Entity) is False:
                     continue
-                append_to(att.type, related_entities)
-                for at_ancestor in att.type.get_related_entities_and_types(related_entities):
-                    append_to(at_ancestor, related_entities)
+                else:
+                    append_to(att.type, related_entities)
+                    for at_ancestor in att.type.get_related_entities_and_types(related_entities):
+                        append_to(at_ancestor, related_entities)
         return related_entities
 
     @property
@@ -82,23 +85,17 @@ class Entity:
     @property
     def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
         from ifc_schema.att_types import Attribute
+        re_att = re.compile(r"^\s*(?P<key>[aA-zZ]{0,20}) :(?P<value>.*?);", re_flags)
 
-        re_supertype = re.compile(r"SUPERTYPE OF \((?:.*?)\);(.*?)^ [aA-zZ]", re_flags)
-        re_subtype_alt = re.compile(r"SUBTYPE OF \((?:.*?)\);(.*?)\Z", re_flags)
-        res_attributes_re = re.search(r"SUBTYPE OF \((?:.*?)\);(.*?)^ [aA-zZ]", self.content, re_flags)
-        re_att = re.compile(r"^	(?P<key>[aA-zZ]{0,20}) :(?P<value>.*?);", re_flags)
-
-        if res_attributes_re is None:
-            res_attributes_re = re_subtype_alt.search(self.content)
-            if res_attributes_re is None:
-                res_attributes_re = re_supertype.search(self.content)
-                if res_attributes_re is None:
-                    return None
-
-        data = res_attributes_re.group(1)
         atts = dict()
-        for r in re_att.finditer(data):
-            d = r.groupdict()
+        for line in self.content.splitlines():
+            llow = line.lower()
+            if 'where' in llow or 'inverse' in llow or "derive" in llow:
+                break
+            result = re_att.search(line)
+            if result is None:
+                continue
+            d = result.groupdict()
             key, value = d["key"], d["value"].strip()
             optional = value.upper().startswith("OPTIONAL")
             atts[key] = Attribute(key, value, optional=optional, parent=self, _exp_reader=self.exp_reader)

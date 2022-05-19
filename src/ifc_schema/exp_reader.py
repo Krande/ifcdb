@@ -14,7 +14,7 @@ class ExpReader:
     type_dict: Dict[str, Entity] = field(default_factory=dict)
 
     def __post_init__(self):
-        reg_entities = re.compile(r"ENTITY\s*(?P<name>.*?)\n(?P<content>.*?)END_ENTITY;", re_flags)
+        reg_entities = re.compile(r"ENTITY\s*(?P<name>.*?)$(?P<content>.*?)END_ENTITY;", re_flags)
         reg_types = re.compile(r"TYPE\s*(?P<name>.*?)\s*=\s*(?P<content>.*?);(.*?)END_TYPE;", re_flags)
         with open(self.express_file, "r") as f:
             data = f.read()
@@ -34,6 +34,6 @@ class ExpReader:
 def convert_type(r: re.Match, exp_reader) -> Entity:
     """Return a minimum class containing identifier and content"""
     d = r.groupdict()
-    name = d["name"].strip()
+    name = d["name"].strip().replace(';', '')
     content = d["content"].strip()
     return Entity(name=name, content=content, exp_reader=exp_reader)
