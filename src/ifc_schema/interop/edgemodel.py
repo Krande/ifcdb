@@ -1,8 +1,10 @@
-import os
 import operator
+import os
+import pathlib
 from dataclasses import dataclass
-from ifc_schema.exp_reader import ExpReader
+
 from ifc_schema.entities import Entity
+from ifc_schema.exp_reader import ExpReader
 
 
 def build_test_str():
@@ -62,16 +64,18 @@ class {self.entity.name}{self.ancestor_str}:
 @dataclass
 class EdgeModel:
     exp_reader: ExpReader
+    output_dir: pathlib.Path = pathlib.Path("temp/edge_model")
 
-    def export_all_related_to_esdl(self, class_name, main_str: str = None):
+    def export_all_related_to_esdl(self, class_name):
         triface = self.exp_reader.entity_dict[class_name]
-        test_file_str = "from __future__ import annotations\nfrom dataclasses import dataclass\nimport typing\n"
+        test_file_str = "default {\n"
 
         all_ents = triface.get_related_entities_and_types()
         for ent in all_ents:
             entmodel = EntityModel(ent)
             test_file_str += entmodel.to_esdl_str()
 
-        os.makedirs("temp/pymodel", exist_ok=True)
-        with open(f"temp/pymodel/test{class_name}.py", "w") as f:
-            f.write(test_file_str + main_str if main_str is not None else "")
+        os.makedirs(self.output_dir, exist_ok=True)
+        with open(self.output_dir / f"dbschema/default.esdl", "w") as f:
+            f.write(test_file_str +"\n}")
+

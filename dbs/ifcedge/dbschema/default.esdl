@@ -46,4 +46,8 @@ module default {
         property PnIndex -> array<int64>;
     }
 
+    type IfcBuildingElementProxy {
+        property GlobalId -> str;
+        property Name -> str;
+    }
 }
