@@ -5,8 +5,7 @@ on:
     paths:
       - src/**
       - .github/workflows/ci.yml
-    branches:
-      - main
+
 jobs:
   test:
     needs: lint
