@@ -46,55 +46,6 @@ class Entity:
     content: str = field(repr=False)
     exp_reader: ExpReader = field(repr=False)
 
-    @property
-    def ancestor_str(self):
-        ancestor_str = ""
-        if self.parent_type is not None:
-            ancestor_str = f"({self.parent_type})"
-        return ancestor_str
-
-    @property
-    def attributes_str(self):
-        atts_str = ""
-        attributes = sorted(self.instance_attributes.values(), key=operator.attrgetter("optional"))
-        for val in attributes:
-            if val.parent != self:
-                continue
-
-            vtyp = val.type
-            if isinstance(vtyp, Entity):
-                att_ref = vtyp.name
-            else:
-                att_ref = vtyp
-
-            opt_str = " = None" if val.optional is True else ""
-            atts_str += f"    {val.name}: {att_ref}" + opt_str + "\n"
-        if atts_str == "":
-            atts_str = "    pass"
-        return atts_str
-
-    def to_dataclass_str(self):
-        att_str = self.attributes_str
-        dataclass_props = ''
-        if "= None" in att_str:
-            dataclass_props = '(kw_only=True)'
-        return f"""
-
-@dataclass{dataclass_props}
-class {self.name}{self.ancestor_str}:
-{att_str}
-"""
-
-    def to_pydantic_str(self):
-        ancestor_str = self.ancestor_str
-        if ancestor_str == '':
-            ancestor_str = '(pydantic.BaseModel)'
-        return f"""
-
-class {self.name}{ancestor_str}:
-{self.attributes_str}
-"""
-
     def get_related_entities_and_types(self, related_entities=None):
         """Loop over ancestry and used types to list up all defined types and entities"""
         related_entities = [] if related_entities is None else related_entities

@@ -26,6 +26,8 @@ jobs:
         ]
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: conda-incubator/setup-miniconda@v2  # https://github.com/conda-incubator/setup-miniconda
         with:
           activate-environment: ${{ env.CONDAENV }}
@@ -36,5 +38,4 @@ jobs:
       - name: Build and Test package
         run: |
           python -m pip install --no-deps --ignore-installed .
-          cd tests && pytest .
-
+          pytest tests
