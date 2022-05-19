@@ -25,7 +25,7 @@ class ExpressBaseTypes:
 class Attribute:
     name: str
     att_str: str
-    parent: Entity
+    parent: Entity = field(repr=False)
     optional: bool
     _exp_reader: ExpReader = field(repr=False)
 

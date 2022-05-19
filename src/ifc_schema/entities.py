@@ -131,14 +131,20 @@ class {self.name}{ancestor_str}:
     @property
     def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
         from ifc_schema.att_types import Attribute
+
+        re_supertype = re.compile(r"SUPERTYPE OF \((?:.*?)\);(.*?)^ [aA-zZ]", re_flags)
         re_subtype_alt = re.compile(r"SUBTYPE OF \((?:.*?)\);(.*?)\Z", re_flags)
-        re_subtype = re.search(r"SUBTYPE OF \((?:.*?)\);(.*?)^ [aA-zZ]", self.content, re_flags)
+        res_attributes_re = re.search(r"SUBTYPE OF \((?:.*?)\);(.*?)^ [aA-zZ]", self.content, re_flags)
         re_att = re.compile(r"^	(?P<key>[aA-zZ]{0,20}) :(?P<value>.*?);", re_flags)
-        if re_subtype is None:
-            re_subtype = re_subtype_alt.search(self.content)
-            if re_subtype is None:
-                return None
-        data = re_subtype.group(1)
+
+        if res_attributes_re is None:
+            res_attributes_re = re_subtype_alt.search(self.content)
+            if res_attributes_re is None:
+                res_attributes_re = re_supertype.search(self.content)
+                if res_attributes_re is None:
+                    return None
+
+        data = res_attributes_re.group(1)
         atts = dict()
         for r in re_att.finditer(data):
             d = r.groupdict()

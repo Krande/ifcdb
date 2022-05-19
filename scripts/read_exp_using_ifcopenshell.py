@@ -6,6 +6,7 @@ def main(express_file):
     schema = mapping.schema
     entities = list(schema.entities.values())
     res = schema.entities["IfcTriangulatedFaceSet"]
+    res2 = schema.entities["IfcBuildingElementProxy"]
     print(entities[0])
 
 

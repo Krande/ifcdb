@@ -17,7 +17,7 @@ def sort_by_inheritance(list_of_entities: List[Entity]):
         list_of_entities.pop(list_of_entities.index(x))
 
 
-def test_str():
+def build_test_str():
     return """if __name__ == "__main__":
         tria = IfcTriangulatedFaceSet(
             Coordinates=IfcCartesianPointList3D([(0, 0, 0), (1, 0, 0), (1, 1, 0)]),
@@ -42,13 +42,12 @@ def export_all_related_to_dataclasses(exp_reader: ExpReader, class_name, main_st
 
 def main(express_file):
     exp_reader = ExpReader(express_file=express_file)
-    res = exp_reader.entity_dict["IfcTriangulatedFaceSet"]
-    res2 = exp_reader.entity_dict["IfcGeometricRepresentationItem"]
-    res3 = exp_reader.entity_dict["IfcCartesianPointList3D"]
-    for key, value in res3.instance_attributes.items():
-        print(key, value)
-    export_all_related_to_dataclasses(exp_reader, "IfcTriangulatedFaceSet", main_str=test_str())
+    res = exp_reader.entity_dict["IfcBuildingElementProxy"]
+    exp_reader.entity_dict["IfcExtrudedAreaSolid"]
+
+    export_all_related_to_dataclasses(exp_reader, "IfcTriangulatedFaceSet", main_str=build_test_str())
     export_all_related_to_dataclasses(exp_reader, "IfcExtrudedAreaSolid")
+    export_all_related_to_dataclasses(exp_reader, "IfcBuildingElementProxy")
 
 
 if __name__ == "__main__":
