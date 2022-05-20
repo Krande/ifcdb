@@ -2,7 +2,7 @@ module default {
 
     abstract type IfcRoot {
       required property GlobalId -> str {
-        constraint exclusive; # all GUIDS must be unique
+        constraint exclusive;
       }
       property Name -> str;
     }
@@ -46,8 +46,6 @@ module default {
         property PnIndex -> array<int64>;
     }
 
-    type IfcBuildingElementProxy {
-        property GlobalId -> str;
-        property Name -> str;
+    type IfcBuildingElementProxy extending IfcRoot {
     }
 }

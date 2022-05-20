@@ -1,8 +1,8 @@
 from __future__ import annotations
-import operator
+
 import re
 from dataclasses import dataclass, field
-from typing import Dict, TYPE_CHECKING, Union
+from typing import Dict, TYPE_CHECKING, Union, ClassVar
 
 if TYPE_CHECKING:
     from ifc_schema.exp_reader import ExpReader
@@ -28,14 +28,15 @@ def append_to(el, elements: list):
         set1 = set(el_name_index)
         set2 = set(el.supertype_of)
         res = list(set2.intersection(set1))
-        index = min([el_name_index.index(x) for x in res])
-        if parent_index is not None and index < parent_index:
-            re_input_el = elements.pop(parent_index)
-            elements.insert(index, el)
-            elements.insert(index, re_input_el)
-        else:
-            elements.insert(index, el)
-        return
+        if len(res) > 0:
+            index = min([el_name_index.index(x) for x in res])
+            if parent_index is not None and index < parent_index:
+                re_input_el = elements.pop(parent_index)
+                elements.insert(index, el)
+                elements.insert(index, re_input_el)
+            else:
+                elements.insert(index, el)
+            return
 
     elements.append(el)
 
@@ -46,8 +47,12 @@ class Entity:
     content: str = field(repr=False)
     exp_reader: ExpReader = field(repr=False)
 
+    BASE_TYPES: ClassVar[list] = ['IfcInteger', 'REAL']
+
     def get_related_entities_and_types(self, related_entities=None):
         """Loop over ancestry and used types to list up all defined types and entities"""
+        from ifc_schema.att_types import Array
+
         related_entities = [] if related_entities is None else related_entities
         for ancestor in self.ancestry:
             append_to(ancestor, related_entities)
@@ -56,6 +61,10 @@ class Entity:
             for key, att in ancestor.entity_attributes.items():
                 if att.type_ref is not None:
                     append_to(att.type_ref, related_entities)
+                elif isinstance(att.type, Array):
+                    append_to(att.type.of_type, related_entities)
+                    for at_ancestor in att.type.of_type.get_related_entities_and_types(related_entities):
+                        append_to(at_ancestor, related_entities)
                 elif isinstance(att.type, Entity) is False:
                     continue
                 else:
@@ -63,6 +72,10 @@ class Entity:
                     for at_ancestor in att.type.get_related_entities_and_types(related_entities):
                         append_to(at_ancestor, related_entities)
         return related_entities
+
+    @property
+    def is_base_type(self):
+        return self.content in self.BASE_TYPES
 
     @property
     def parent_type(self):
@@ -85,12 +98,13 @@ class Entity:
     @property
     def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
         from ifc_schema.att_types import Attribute
+
         re_att = re.compile(r"^\s*(?P<key>[aA-zZ]{0,20}) :(?P<value>.*?);", re_flags)
 
         atts = dict()
         for line in self.content.splitlines():
             llow = line.lower()
-            if 'where' in llow or 'inverse' in llow or "derive" in llow:
+            if "where" in llow or "inverse" in llow or "derive" in llow:
                 break
             result = re_att.search(line)
             if result is None:

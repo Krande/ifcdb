@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
     from ifc_schema.entities import Entity
@@ -19,7 +19,7 @@ class ExpressBaseTypes:
     LOGICAL = "LOGICAL"
 
     entity_map = dict(IfcBoolean="bool", IfcPositiveLengthMeasure="float", IfcStateEnum="str")
-    entity_type_map = {"INTEGER": "int", "STRING(255)": "str", "STRING": "str", 'STRING(22) FIXED': "str"}
+    entity_type_map = {"INTEGER": "int", "STRING(255)": "str", "STRING": "str", "STRING(22) FIXED": "str", "REAL": "float"}
 
 
 @dataclass
@@ -35,12 +35,11 @@ class Attribute:
 
     @property
     def type(self):
-        # Check for list content
-        att_res = get_list_att(self.att_str, self._exp_reader)
-        if att_res is not None:
-            return att_res
+        if self.att_str.startswith("LIST") or self.att_str.startswith("SET"):
+            return Array(self.att_str, self._exp_reader)
+
         if self.type_ref is not None:
-            if self.type_ref.content.startswith('ENUMERATION'):
+            if self.type_ref.content.startswith("ENUMERATION"):
                 return "str"
             entity_type_content = ExpressBaseTypes.entity_type_map.get(self.type_ref.content, None)
             entity_type = ExpressBaseTypes.entity_map.get(self.type_ref.name, None)
@@ -48,6 +47,7 @@ class Attribute:
                 return entity_type_content
             if entity_type is not None:
                 return entity_type
+
         if self.entity_ref is not None:
             return self.entity_ref
 
@@ -75,20 +75,31 @@ class InvalidAttTypeDefinitionError(Exception):
     pass
 
 
-def get_list_att(att_str: str, exp_reader: ExpReader):
-    re_list_of_list = re.search(r"LIST \[1:\?\] OF LIST \[(.*?):(.*?)\]", att_str)
-    re_list = re.search(r"LIST \[(.*?):(.*?)\] OF", att_str)
+@dataclass
+class Array:
+    att_str: str
 
-    if re_list_of_list is not None:
-        a = re_list_of_list.group(1)
-        b = int(float(re_list_of_list.group(2)))
-        if b == 3:
-            return List[Tuple[float, float, float]]
-        else:
-            raise NotImplemented()
+    _exp_reader: ExpReader = field(repr=False)
+    _shape_re: ClassVar[re.Pattern] = re.compile(r"\[(?P<a>.*?):(?P<b>.*?)\]")
 
-    if re_list is not None:
-        a = re_list.group(1)
-        b = re_list.group(2)
+    @property
+    def shape(self):
+        shape = []
+        for shp in self._shape_re.finditer(self.att_str):
+            d = shp.groupdict()
+            a, b = d["a"], d["b"]
+            shape.append((a, b))
+        return shape
 
-        return List
+    @property
+    def of_type(self):
+        type_res = list(self.att_str.split("OF"))
+        res_str = type_res[-1].strip()
+        res = self._exp_reader.entity_dict.get(res_str, None)
+        if res is not None:
+            return res
+        res = self._exp_reader.type_dict.get(res_str, None)
+        if res is not None:
+            return res
+
+        raise ValueError("Unable to recognize type")

@@ -5,14 +5,18 @@ from ifc_schema.interop.pymodel import PyModel, build_test_str
 def main(express_file):
     exp_reader = ExpReader(express_file=express_file)
 
-    # Purely for debugging
-    res = exp_reader.entity_dict["IfcBuildingElementProxy"]
-    res_extruded = exp_reader.entity_dict["IfcExtrudedAreaSolid"]
-
     py_model = PyModel(exp_reader)
-    py_model.export_all_related_to_dataclasses("IfcTriangulatedFaceSet", main_str=build_test_str())
-    py_model.export_all_related_to_dataclasses("IfcExtrudedAreaSolid")
-    py_model.export_all_related_to_dataclasses("IfcBuildingElementProxy")
+    py_model.export_all_related_to_dataclasses(
+        [
+            "IfcBuildingElementProxy",
+            "IfcTriangulatedFaceSet",
+            "IfcExtrudedAreaSolid",
+            "IfcRelContainedInSpatialStructure",
+            "IfcBuilding",
+            "IfcProject"
+        ],
+        main_str=build_test_str(),
+    )
 
 
 if __name__ == "__main__":
