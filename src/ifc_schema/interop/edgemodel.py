@@ -21,8 +21,7 @@ class EntityModel:
     def to_esdl_str(self) -> str:
         if self.entity.is_enum:
             return self.to_esdl_enum_str()
-        if self.entity.is_base_type:
-            print("d")
+
         att_str = self.attributes_str
         prop_prefix = "abstract " if self.entity.supertype_of is not None and len(self.entity.supertype_of) > 0 else ""
         parent_str = f"extending {self.entity.parent_type}" if self.entity.parent_type is not None else ""
@@ -42,46 +41,40 @@ class EntityModel:
     @property
     def attributes_str(self):
         atts_str = ""
+        indent_str = 8 * " "
         attributes = sorted(self.entity.instance_attributes.values(), key=operator.attrgetter("optional"))
+
         for val in attributes:
             if val.parent != self.entity:
                 continue
 
             vtyp = val.type
+            att_prefix = "required " if val.optional is False else ""
 
             if isinstance(vtyp, Array):
                 att_ref = array_to_esdl(vtyp)
-            elif val.type_ref is not None:
-                if val.type_ref.is_base_type:
-                    att_ref = EdgeModel.base_type_map.get(val.type_ref.content)
+                vtype_oftype = vtyp.of_type
+                if isinstance(vtype_oftype, Entity) and vtype_oftype.is_base_type is False:
+                    atts_str += indent_str + f"{att_prefix}multi link {val.name} -> {att_ref};\n"
                 else:
-                    att_ref = val.type_ref.name
-            elif isinstance(vtyp, Entity):
-                att_ref = vtyp.name
+                    atts_str += indent_str + f"{att_prefix}property {val.name} -> {att_ref};\n"
             else:
-                att_ref = vtyp
-
-            att_prefix = "required " if val.optional is False else ""
-            atts_str += 8 * " " + f"{att_prefix}property {val.name} -> {att_ref};\n"
-
-        if 'int;' in atts_str:
-            print('sd')
+                if isinstance(vtyp, Entity) is False:
+                    atts_str += indent_str + f"{att_prefix}property {val.name} -> {vtyp};\n"
+                else:
+                    if vtyp.is_base_type:
+                        att_ref = EdgeModel.base_type_map.get(vtyp.content)
+                        atts_str += indent_str + f"{att_prefix}property {val.name} -> {att_ref};\n"
+                    elif vtyp.is_enum:
+                        atts_str += indent_str + f"{att_prefix}property {val.name} -> {vtyp.name};\n"
+                    else:
+                        atts_str += indent_str + f"{att_prefix}link {val.name} -> {vtyp.name};\n"
 
         return atts_str
 
 
 def array_to_esdl(array: Array) -> str:
     entity = array.of_type
-    if isinstance(entity, Entity):
-        if entity.is_base_type:
-            entity_str = EdgeModel.base_type_map.get(entity.content, None)
-        else:
-            entity_str = entity.name
-    else:
-        entity_str = ""
-
-    array_str = ""
-
     multilevel = False
     shape_len = len(array.shape)
 
@@ -91,14 +84,30 @@ def array_to_esdl(array: Array) -> str:
     else:
         end_fix = ">"
 
+    if isinstance(entity, Entity):
+        if entity.is_base_type:
+            entity_str = EdgeModel.base_type_map.get(entity.content, None)
+        else:
+            return entity.name
+
+    else:
+        entity_str = ""
+
+    array_str = ""
+
     for i, shape in enumerate(array.shape):
         b = shape[1]
-        if "?" not in b:
-            col_refs = ["x", "y", "z"]
-            entity_str = ", ".join([f"{col_refs[i]}: {entity_str}" for i in range(int(float(b)))])
+        bnum = int(float(b)) if "?" not in b else None
+        if bnum is not None:
+            # col_refs = ["x", "y", "z"]
+            # entity_str = ", ".join([f"{col_refs[i]}: {entity_str}" for i in range(int(float(b)))])
+            entity_str = ", ".join([entity_str for i in range(bnum)])
 
         if multilevel is False:
-            array_str += f"array<"
+            if bnum is None:
+                array_str += f"array<"
+            else:
+                array_str += f"tuple<"
         else:
             if i == 0:
                 array_str += f"array<"

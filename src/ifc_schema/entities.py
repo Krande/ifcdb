@@ -68,17 +68,27 @@ class Entity:
             if ancestor.entity_attributes is None:
                 continue
             for key, att in ancestor.entity_attributes.items():
-                if att.type_ref is not None:
-                    append_to(att.type_ref, related_entities)
-                elif isinstance(att.type, Array):
-                    append_to(att.type.of_type, related_entities)
-                    for at_ancestor in att.type.of_type.get_related_entities_and_types(related_entities):
+                att_type = att.type
+                att_type_ref = att.type_ref
+                if att_type in related_entities and ancestor in related_entities:
+                    att_type_index = related_entities.index(att_type)
+                    ancestor_index = related_entities.index(ancestor)
+                    if att_type_index > ancestor_index:
+                        related_entities[att_type_index], related_entities[ancestor_index] = (
+                            related_entities[ancestor_index],
+                            related_entities[att_type_index],
+                        )
+                if att_type_ref is not None:
+                    append_to(att_type_ref, related_entities)
+                elif isinstance(att_type, Array):
+                    append_to(att_type.of_type, related_entities)
+                    for at_ancestor in att_type.of_type.get_related_entities_and_types(related_entities):
                         append_to(at_ancestor, related_entities)
-                elif isinstance(att.type, Entity) is False:
+                elif isinstance(att_type, Entity) is False:
                     continue
                 else:
-                    append_to(att.type, related_entities)
-                    for at_ancestor in att.type.get_related_entities_and_types(related_entities):
+                    append_to(att_type, related_entities)
+                    for at_ancestor in att_type.get_related_entities_and_types(related_entities):
                         append_to(at_ancestor, related_entities)
         return related_entities
 

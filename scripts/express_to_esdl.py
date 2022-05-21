@@ -6,7 +6,18 @@ def main(express_file):
     exp_reader = ExpReader(express_file=express_file)
 
     edge_model = EdgeModel(exp_reader)
-    edge_model.export_all_related_to_esdl(["IfcBuildingElementProxy", "IfcTriangulatedFaceSet"])
+    edge_model.export_all_related_to_esdl(
+        [
+            "IfcBuildingElementProxy",
+            "IfcTriangulatedFaceSet",
+            "IfcProductDefinitionShape",
+            "IfcShapeRepresentation",
+            "IfcGeometricRepresentationContext",
+            "IfcRelContainedInSpatialStructure",
+            "IfcBuilding",
+            "IfcProject",
+        ]
+    )
 
 
 if __name__ == "__main__":

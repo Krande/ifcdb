@@ -39,14 +39,7 @@ class Attribute:
             return Array(self.att_str, self._exp_reader)
 
         if self.type_ref is not None:
-            if self.type_ref.content.startswith("ENUMERATION"):
-                return "str"
-            entity_type_content = ExpressBaseTypes.entity_type_map.get(self.type_ref.content, None)
-            entity_type = ExpressBaseTypes.entity_map.get(self.type_ref.name, None)
-            if entity_type_content is not None:
-                return entity_type_content
-            if entity_type is not None:
-                return entity_type
+            return self.type_ref
 
         if self.entity_ref is not None:
             return self.entity_ref

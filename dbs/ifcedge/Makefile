@@ -4,7 +4,7 @@ up:
 	docker-compose up
 
 migrate-init:
-	edgedb $(conopt) migration create
+	edgedb $(conopt) migration create --non-interactive --allow-unsafe
 
 migrate:
 	edgedb $(conopt) migrate
