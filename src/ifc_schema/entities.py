@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Dict, TYPE_CHECKING, Union, ClassVar
+from typing import Dict, TYPE_CHECKING, Union, ClassVar, List
 
 if TYPE_CHECKING:
     from ifc_schema.exp_reader import ExpReader
@@ -47,9 +47,18 @@ class Entity:
     content: str = field(repr=False)
     exp_reader: ExpReader = field(repr=False)
 
-    BASE_TYPES: ClassVar[list] = ['IfcInteger', 'REAL']
+    BASE_TYPES: ClassVar[List[str]] = [
+        "REAL",
+        "INTEGER",
+        "STRING(22) FIXED",
+        "STRING",
+        "STRING(255)",
+        "IfcInteger",
+        "BOOLEAN",
+        "BINARY",
+    ]
 
-    def get_related_entities_and_types(self, related_entities=None):
+    def get_related_entities_and_types(self, related_entities=None) -> List[Entity]:
         """Loop over ancestry and used types to list up all defined types and entities"""
         from ifc_schema.att_types import Array
 
@@ -72,6 +81,17 @@ class Entity:
                     for at_ancestor in att.type.get_related_entities_and_types(related_entities):
                         append_to(at_ancestor, related_entities)
         return related_entities
+
+    @property
+    def is_enum(self):
+        return self.content.startswith("ENUMERATION")
+
+    @property
+    def enum_values(self):
+        if self.is_enum is False:
+            return None
+
+        return [x.strip() for x in re.search(r"ENUMERATION OF\s*\((.*?)\)", self.content, re_flags).group(1).split(",")]
 
     @property
     def is_base_type(self):

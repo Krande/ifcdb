@@ -1,11 +1,13 @@
 import logging
-import os
 import operator
+import os
 from dataclasses import dataclass
-from typing import ClassVar, Union, List
-from ifc_schema.exp_reader import ExpReader
+from typing import Union, List
+import pathlib
+
 from ifc_schema.att_types import Array
 from ifc_schema.entities import Entity
+from .base import BaseModel
 
 
 def build_test_str():
@@ -39,7 +41,7 @@ def build_test_str():
         )
     )
 
-    bldg = IfcBuilding('yetanotherguid', owner_history)
+    bldg = IfcBuilding(GlobalId='yetanotherguid', OwnerHistory=owner_history)
     
     rel_space = IfcRelContainedInSpatialStructure(
         GlobalId='thisisanotherguid', OwnerHistory=owner_history,
@@ -65,11 +67,21 @@ class {self.entity.name}{ancestor_str}:
 {self.attributes_str}
 """
 
-    def to_dataclass_str(self):
+    def to_enum_class_str(self) -> str:
+        enum_str = '\n'.join(f'    {x} = auto()' for x in self.entity.enum_values)
+        return f"""
+class {self.entity.name}(Enum):
+{enum_str}
+"""
+
+    def to_dataclass_str(self) -> str:
         att_str = self.attributes_str
+        if self.entity.is_enum:
+            return self.to_enum_class_str()
         dataclass_props = ""
         if "= None" in att_str and self.entity.supertype_of is not None:
             dataclass_props = "(kw_only=True)"
+
         return f"""
 
 @dataclass{dataclass_props}
@@ -127,12 +139,12 @@ def array_to_str(array: Array) -> str:
         multilevel = True
         end_fix = shape_len * "]"
     else:
-        end_fix = ']'
+        end_fix = "]"
 
     for i, shape in enumerate(array.shape):
         b = shape[1]
-        if '?' not in b:
-            entity_str = ','.join([f'{entity_str}' for x in range(int(float(b)))])
+        if "?" not in b:
+            entity_str = ",".join([f"{entity_str}" for x in range(int(float(b)))])
 
         if multilevel is False:
             array_str += f"List["
@@ -146,28 +158,24 @@ def array_to_str(array: Array) -> str:
 
 
 @dataclass
-class PyModel:
-    exp_reader: ExpReader
+class PyModel(BaseModel):
+    output_dir: pathlib.Path = pathlib.Path("temp/pymodel")
 
-    base_type_map: ClassVar[dict] = dict(IfcInteger="int", REAL='float')
-
-    def export_all_related_to_dataclasses(self, class_name: Union[str, List[str]], main_str: str = None):
-        header_str = "from __future__ import annotations\nfrom dataclasses import dataclass\n"
+    def export_all_related_to_dataclasses(self, entity_names: Union[str, List[str]], main_str: str = None):
+        header_str = "from __future__ import annotations\n"
+        header_str += "from dataclasses import dataclass\n"
+        header_str += "from enum import Enum, auto\n"
         header_str += "from typing import List, Tuple\n"
 
-        if isinstance(class_name, str):
-            class_name = [class_name]
+        if isinstance(entity_names, str):
+            entity_names = [entity_names]
 
         data_model_str = ""
-        related_entities = []
-        for cnam in class_name:
-            triface = self.exp_reader.entity_dict[cnam]
-            all_ents = triface.get_related_entities_and_types(related_entities)
-            for ent in all_ents:
-                entmodel = EntityModel(ent)
-                data_model_str += entmodel.to_dataclass_str()
+        for ent in self.get_entities(entity_names):
+            entity_model = EntityModel(ent)
+            data_model_str += entity_model.to_dataclass_str()
 
-        os.makedirs("temp/pymodel", exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
         app_str = main_str if main_str is not None else ""
-        with open(f"temp/pymodel/ifc_py_model.py", "w") as f:
+        with open(self.output_dir / f"ifc_py_model.py", "w") as f:
             f.write(header_str + data_model_str + app_str)
