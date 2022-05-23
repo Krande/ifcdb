@@ -5,6 +5,9 @@ from ifc_schema.interop.edgemodel import EdgeModel
 def main(express_file):
     exp_reader = ExpReader(express_file=express_file)
 
+    res = exp_reader.entity_dict["IfcTrimmedCurve"]
+    res.entity_attributes
+
     edge_model = EdgeModel(exp_reader)
     edge_model.export_all_related_to_esdl(
         [

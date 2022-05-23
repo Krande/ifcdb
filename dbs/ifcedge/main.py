@@ -36,6 +36,7 @@ def create_ifc_building_element_proxy(client: edgedb.Client, ifc_bld_proxy: ifco
                 items_str += tria_face_element(item)
             else:
                 logging.warning(f'Unsupported type "{item_type}"')
+
     repr_context = f"INSERT IfcGeometricRepresentationContext {{}}"
     representation = f"INSERT IfcShapeRepresentation {{ ContextOfItems := ({repr_context}), Items := ({items_str}) }}"
     prod_repr = f"INSERT IfcProductDefinitionShape {{ Representations:=({representation}) }}"
@@ -63,9 +64,10 @@ def get_element_proxy_products():
 def main():
     import pprint
     client = edgedb.create_client("edgedb://edgedb@localhost:5656", tls_security="insecure")
+
     # Create a User object type
-    # for ifc_el_proxy in get_element_proxy_products():
-    #     create_ifc_building_element_proxy(client, ifc_el_proxy)
+    for ifc_el_proxy in get_element_proxy_products():
+        create_ifc_building_element_proxy(client, ifc_el_proxy)
 
     # Select IfcTriangulatedFaceSet objects.
     user_set = client.query_json(
