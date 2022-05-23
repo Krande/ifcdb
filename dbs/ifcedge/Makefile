@@ -9,6 +9,9 @@ migrate-init:
 migrate:
 	edgedb $(conopt) migrate
 
+cli-install:
+	PowerShell.exe -command "iwr https://ps1.edgedb.com -useb | iex"
+
 cli-update:
 	edgedb cli upgrade
 
