@@ -129,12 +129,12 @@ class Entity:
     def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
         from ifc_schema.att_types import Attribute
 
-        re_att = re.compile(r"^\s*(?P<key>[aA-zZ]{0,20}) :(?P<value>.*?);", re_flags)
+        re_att = re.compile(r"^\s*(?P<key>[a-zA-Z0-9]{0,20}) :(?P<value>.*?);", re_flags)
 
         atts = dict()
         for line in self.content.splitlines():
             llow = line.lower()
-            if "where" in llow or "inverse" in llow or "derive" in llow:
+            if "where" in llow or "inverse" in llow or "derive" in llow or "unique" in llow:
                 break
             result = re_att.search(line)
             if result is None:

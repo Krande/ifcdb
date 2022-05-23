@@ -19,6 +19,7 @@ def main(express_file):
             "IfcRelContainedInSpatialStructure",
             "IfcBuilding",
             "IfcProject",
+            "IfcTrimmedCurve",
         ]
     )
 
