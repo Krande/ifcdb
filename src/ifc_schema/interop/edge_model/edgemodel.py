@@ -7,7 +7,7 @@ from typing import Union, List, ClassVar
 
 from ifc_schema.att_types import Array
 from ifc_schema.entities import Entity
-from .base import BaseModel
+from ifc_schema.interop.base import BaseModel
 
 
 @dataclass
@@ -105,14 +105,14 @@ def array_to_esdl(array: Array) -> str:
 
         if multilevel is False:
             if bnum is None:
-                array_str += f"array<"
+                array_str += "array<"
             else:
-                array_str += f"tuple<"
+                array_str += "tuple<"
         else:
             if i == 0:
-                array_str += f"array<"
+                array_str += "array<"
             else:
-                array_str += f"tuple<"
+                array_str += "tuple<"
 
     return array_str + f"{entity_str}{end_fix}"
 
