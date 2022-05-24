@@ -1,5 +1,9 @@
 conopt=--tls-security=insecure -P 5656
 
+
+cli-install:
+	PowerShell.exe -command "iwr https://ps1.edgedb.com -useb | iex"
+
 up:
 	docker-compose up
 
@@ -8,9 +12,6 @@ migrate-init:
 
 migrate:
 	edgedb $(conopt) migrate
-
-cli-install:
-	PowerShell.exe -command "iwr https://ps1.edgedb.com -useb | iex"
 
 cli-update:
 	edgedb cli upgrade

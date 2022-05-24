@@ -111,10 +111,8 @@ class ArrayEdgeModel:
 
         if shape_len > 1:
             multilevel = True
-            end_fix = shape_len * ">"
-        else:
-            end_fix = ">"
 
+        end_fix = shape_len * ">"
         aggregate_parameter = levels[-1].type_of_element()
         parameter = get_base_type_name(aggregate_parameter)
 
@@ -153,7 +151,7 @@ class ArrayEdgeModel:
                 else:
                     array_str = "array<" if bnum2 == 1 else "tuple<"
                     if bnum1 != 1:
-                        logging.warning(f"BNUM 1 = {bnum1} is not accounted for")
+                        logging.warning(f"BNUM 1 = {bnum1} ({self.entity}) is not accounted for")
                     entity_str = ", ".join([cast_type_str for i in range(bnum2)])
         else:
             array_str = "array<"

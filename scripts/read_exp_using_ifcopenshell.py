@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
+import pathlib
 
 from ifc_schema.interop.edge_model.edge_model_base import EdgeModel
-
+from ifc_schema.interop.edge_model.utils import copy_server_files
 import ifcopenshell
 
 wrap = ifcopenshell.ifcopenshell_wrapper
@@ -25,17 +26,20 @@ def main(schema_name):
             "IfcRelContainedInSpatialStructure",
             "IfcBuilding",
             "IfcProject",
-            "IfcTrimmedCurve",
+            # "IfcTrimmedCurve",
         ]
     )
+    output_dir = pathlib.Path("temp/edge_model")
+    os.makedirs(output_dir / "dbschema", exist_ok=True)
 
-    os.makedirs('temp/edge_model/dbschema', exist_ok=True)
-    with open("temp/edge_model/dbschema/default.esdl", "w") as f:
+    with open(output_dir / "dbschema/default.esdl", "w") as f:
         f.write("module default {\n\n")
         for entity_name in ordered_entity_names:
             edge_str = em.entity_to_edge_str(entity_name)
             f.write(edge_str)
         f.write("}")
+
+    copy_server_files(output_dir)
 
 
 if __name__ == "__main__":
