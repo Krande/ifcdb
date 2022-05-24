@@ -37,7 +37,16 @@ def create_ifc_building_element_proxy(client: edgedb.Client, ifc_bld_proxy: ifco
             else:
                 logging.warning(f'Unsupported type "{item_type}"')
 
-    repr_context = f"INSERT IfcGeometricRepresentationContext {{}}"
+    axis = f"INSERT IfcDirection {{ DirectionRatios:= (0,0,1) }}"
+    refdir = f"INSERT IfcDirection {{ DirectionRatios:=(1,0,0) }}"
+    loc = f"INSERT IfcCartesianPoint {{ Coordinates:=(0,0,0) }}"
+    axis3d = f"""INSERT IfcAxis2Placement3D {{ Location := ({loc}), Axis:= ({axis}), RefDirection:= ({refdir}) }}
+    
+    """
+    repr_context = f"""INSERT IfcGeometricRepresentationContext {{
+    CoordinateSpaceDimension := 3,
+    WorldCoordinateSystem := ({axis3d}),
+}}"""
     representation = f"INSERT IfcShapeRepresentation {{ ContextOfItems := ({repr_context}), Items := ({items_str}) }}"
     prod_repr = f"INSERT IfcProductDefinitionShape {{ Representations:=({representation}) }}"
 
