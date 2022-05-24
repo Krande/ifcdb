@@ -26,7 +26,7 @@ def main(schema_name):
             "IfcRelContainedInSpatialStructure",
             "IfcBuilding",
             "IfcProject",
-            # "IfcTrimmedCurve",
+            "IfcTrimmedCurve",
         ]
     )
     output_dir = pathlib.Path("temp/edge_model")

@@ -40,7 +40,7 @@ def get_aggregation_type(agg_entity: wrap.aggregation_type):
 
 
 def get_base_type_name(
-    content_type: wrap.named_type,
+    content_type: Union[wrap.named_type, wrap.type_declaration],
 ) -> Union[wrap.entity, str, wrap.enumeration_type, wrap.select_type]:
     cur_decl = content_type
     while hasattr(cur_decl, "declared_type") is True:
@@ -90,6 +90,20 @@ def get_attribute_entities(entity: wrap.entity):
 
 
 @dataclass
+class TypeEdgeModel:
+    entity: wrap.type_declaration
+    schema: wrap.schema_definition
+
+    def to_str(self):
+        value = get_base_type_name(self.entity)
+        return f"""
+    type {self.entity.name()} {{
+        required property value -> {value};
+    }}
+"""
+
+
+@dataclass
 class ArrayEdgeModel:
     entity: wrap.attribute
     schema: wrap.schema_definition
@@ -103,6 +117,7 @@ class ArrayEdgeModel:
 
         prev_entry = self.agg_type
         levels = []
+
         while isinstance(prev_entry, wrap.aggregation_type):
             levels.append(prev_entry)
             prev_entry = prev_entry.type_of_element()
@@ -138,9 +153,12 @@ class ArrayEdgeModel:
                 end_fix = ""
                 params = []
                 for param in parameter.select_list():
+                    param: wrap.type_declaration
                     res = get_base_type_name(param)
                     if isinstance(res, str):
-                        params.append(res)
+                        # TODO: Evaluate how Unions should handle select Type of mixed objects
+                        params.append(param.name())
+                        # params.append(res)
                     else:
                         params.append(res.name())
                 entity_str = " | ".join(params)
@@ -198,6 +216,8 @@ class EntityEdgeModel:
         for val in atts:
             att_prefix = "required " if val.optional() is False else ""
             typeof = val.type_of_attribute()
+            if val.name() == "Trim1":
+                print("sd")
             if isinstance(typeof, wrap.aggregation_type):
                 entity_to_write = ArrayEdgeModel(val, self.schema)
             else:
@@ -311,15 +331,15 @@ class EdgeModel:
     def entity_to_edge_str(self, entity: str) -> str:
         res = self.entities[entity]
         schema = self.schema
-        value = get_base_type_name(res)
+
         if isinstance(res, wrap.entity):
             entity = EntityEdgeModel(res, schema)
         elif isinstance(res, wrap.enumeration_type):
             entity = EnumEdgeModel(res, schema)
         elif isinstance(res, wrap.select_type):
             return ""
-        elif isinstance(value, str):
-            return ""
+        elif isinstance(res, wrap.type_declaration):
+            entity = TypeEdgeModel(res, schema)
         else:
             raise NotImplementedError(f'Unsupported Type "{res}"')
 

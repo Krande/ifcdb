@@ -53,19 +53,21 @@ def create_ifc_building_element_proxy(client: edgedb.Client, ifc_bld_proxy: ifco
         client,
         f"""
 INSERT IfcBuildingElementProxy {{
-GlobalId := <str>$guid,
-Name := <str>$name,
-Description := <str>$descr,
-Representation:= (
-    INSERT IfcProductDefinitionShape {{ 
-        Representations:=(
-            INSERT IfcShapeRepresentation {{ 
-                ContextOfItems := ({repr_context}), 
-                Items := ({items_str}) 
-            }}
-        ) 
-    }}
-),
+    GlobalId := <str>$guid,
+    Name := <str>$name,
+    Description := <str>$descr,
+    Representation:= (
+        INSERT IfcProductDefinitionShape {{ 
+            Representations:=(
+                INSERT IfcShapeRepresentation {{ 
+                    ContextOfItems := ({repr_context}), 
+                    Items := {{
+                        {items_str}
+                    }} 
+                }}
+            ) 
+        }}
+    ),
 }}
 """,
         guid=ifc_bld_proxy.GlobalId,
