@@ -1,0 +1,20 @@
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: CI with EdgeDB action
+    services:
+      edgedb:
+        image: edgedb/edgedb:1-rc2
+        env:
+          EDGEDB_SERVER_SECURITY: insecure_dev_mode
+        ports:
+          - 5656:5656
+    steps:
+      - uses: actions/checkout@v2
+      - uses: edgedb/setup-edgedb@v1
+        with:
+          server-dsn: edgedb://localhost:5656
+          instance-name: ci_edgedb_instance  # optional
+      - run: edgedb query "SELECT 'Hello from GitHub Actions'"

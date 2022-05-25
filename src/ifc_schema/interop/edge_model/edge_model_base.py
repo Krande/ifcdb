@@ -194,8 +194,8 @@ class EntityEdgeModel:
     schema: wrap.schema_definition
 
     simple_types: ClassVar[dict[wrap.simple_type, str]] = {
-        "real": "float32",
-        "integer": "int32",
+        "real": "float64",
+        "integer": "int64",
         "boolean": "bool",
         "string": "str",
     }
@@ -216,8 +216,8 @@ class EntityEdgeModel:
         for val in atts:
             att_prefix = "required " if val.optional() is False else ""
             typeof = val.type_of_attribute()
-            if val.name() == "Trim1":
-                print("sd")
+            # if val.name() == "Trim1":
+            #     print("sd")
             if isinstance(typeof, wrap.aggregation_type):
                 entity_to_write = ArrayEdgeModel(val, self.schema)
             else:
