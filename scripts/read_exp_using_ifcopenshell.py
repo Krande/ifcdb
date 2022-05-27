@@ -13,9 +13,6 @@ wrap = ifcopenshell.ifcopenshell_wrapper
 def main(schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
 
-    res = em.entity_to_edge_str("IfcTrimmedCurve")
-    # res = em.entity_to_edge_str("IfcCartesianPoint")
-
     ordered_entity_names = em.get_related_entities(
         [
             "IfcBuildingElementProxy",
@@ -29,6 +26,7 @@ def main(schema_name):
             "IfcTrimmedCurve",
         ]
     )
+
     output_dir = pathlib.Path("temp/edge_model")
     os.makedirs(output_dir / "dbschema", exist_ok=True)
 

@@ -120,7 +120,7 @@ def main(ifc_file, upload_type: UploadTypes):
 
 
 if __name__ == "__main__":
-    ifc = rf"{os.environ.get('TESTFILES')}\LargeStru1.ifc"
-    # ifc = "../../files/tessellated-item.ifc"
+    # ifc = rf"{os.environ.get('TESTFILES')}\LargeStru1.ifc"
+    ifc = "../../files/tessellated-item.ifc"
     # main(ifc, UploadTypes.THREADING)
     query(ifc)

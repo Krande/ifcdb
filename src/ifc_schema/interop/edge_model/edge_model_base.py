@@ -95,7 +95,10 @@ class TypeEdgeModel:
     schema: wrap.schema_definition
 
     def to_str(self):
-        value = get_base_type_name(self.entity)
+        try:
+            value = get_base_type_name(self.entity)
+        except NotImplementedError as e:
+            raise NotImplementedError(f'{e}\n\n{self.entity}')
         return f"""
     type {self.entity.name()} {{
         required property value -> {value};
@@ -216,8 +219,7 @@ class EntityEdgeModel:
         for val in atts:
             att_prefix = "required " if val.optional() is False else ""
             typeof = val.type_of_attribute()
-            # if val.name() == "Trim1":
-            #     print("sd")
+
             if isinstance(typeof, wrap.aggregation_type):
                 entity_to_write = ArrayEdgeModel(val, self.schema)
             else:
@@ -328,8 +330,8 @@ class EdgeModel:
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
 
-    def entity_to_edge_str(self, entity: str) -> str:
-        res = self.entities[entity]
+    def get_entity_by_name(self, name: str) -> Union[str, EntityEdgeModel, EnumEdgeModel, TypeEdgeModel]:
+        res = self.entities[name]
         schema = self.schema
 
         if isinstance(res, wrap.entity):
@@ -343,4 +345,12 @@ class EdgeModel:
         else:
             raise NotImplementedError(f'Unsupported Type "{res}"')
 
-        return entity.to_str()
+        return entity
+
+    def entity_to_edge_str(self, entity: str) -> str:
+        res = self.get_entity_by_name(entity)
+
+        if isinstance(res, str):
+            return res
+
+        return res.to_str()
