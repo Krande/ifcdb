@@ -52,11 +52,19 @@ def get_base_type_name(
         return cur_decl
     if isinstance(cur_decl, wrap.enumeration_type):
         return cur_decl
+    if isinstance(cur_decl, wrap.aggregation_type):
+        res = cur_decl.type_of_element()
+        cur_decl = res.declared_type()
+        while hasattr(cur_decl, "declared_type") is True:
+            cur_decl = cur_decl.declared_type()
 
     if isinstance(cur_decl, str):
+        if cur_decl == "binary":
+            return ""
+
         cast_type = EntityEdgeModel.simple_types.get(cur_decl)
         if cast_type is None:
-            raise ValueError("Cast Type cannot be None")
+            raise ValueError(f'Cast Simple Type not found for "{cur_decl}" related to {content_type}')
         return cast_type
 
     raise NotImplementedError(f"Base type is unknown type {cur_decl}")
@@ -98,7 +106,7 @@ class TypeEdgeModel:
         try:
             value = get_base_type_name(self.entity)
         except NotImplementedError as e:
-            raise NotImplementedError(f'{e}\n\n{self.entity}')
+            raise NotImplementedError(f"{e}\n\n{self.entity}")
         return f"""
     type {self.entity.name()} {{
         required property value -> {value};
@@ -197,6 +205,8 @@ class EntityEdgeModel:
     schema: wrap.schema_definition
 
     simple_types: ClassVar[dict[wrap.simple_type, str]] = {
+        "logical": "bool",
+        "number": "int64",
         "real": "float64",
         "integer": "int64",
         "boolean": "bool",
@@ -273,7 +283,7 @@ class EdgeModel:
     def __post_init__(self):
         self.entities = {x.name(): x for x in self.schema.declarations()}
 
-    def _find_dependencies(self, entity_name, dep_tree: dict = None):
+    def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree
         res = self.entities[entity_name]
 
@@ -295,7 +305,9 @@ class EdgeModel:
                 dep_tree[name].append(select_item_name)
                 if select_item_name not in dep_tree.keys():
                     dep_tree[select_item_name] = []
-                self._find_dependencies(select_item_name, dep_tree)
+
+                if search_recursively is True:
+                    self._find_dependencies(select_item_name, dep_tree)
             return dep_tree
 
         base_value = get_base_type_name(res)
@@ -309,15 +321,25 @@ class EdgeModel:
             ancestor_name = x.name()
             if ancestor_name not in dep_tree[name]:
                 dep_tree[name].append(ancestor_name)
-            self._find_dependencies(ancestor_name, dep_tree)
+            if search_recursively is True:
+                self._find_dependencies(ancestor_name, dep_tree)
 
         for x in get_attribute_entities(res):
             att_name = x.name()
             if att_name not in dep_tree[name]:
                 dep_tree[name].append(att_name)
-            self._find_dependencies(att_name, dep_tree)
+            if search_recursively is True:
+                self._find_dependencies(att_name, dep_tree)
 
         return dep_tree
+
+    def get_all_entities(self):
+        entity_dep_map = dict()
+        for entity_name in self.entities.keys():
+            self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
+
+        res = list(toposort_flatten(entity_dep_map, sort=True))
+        return res
 
     def get_related_entities(self, entity_names: Union[str, List[str]], entity_dep_map: dict = None) -> list[str]:
         if isinstance(entity_names, str):

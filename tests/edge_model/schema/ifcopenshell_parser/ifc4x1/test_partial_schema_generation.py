@@ -11,6 +11,13 @@ def test_ifc_arc_index(em_ifc4x1):
     print(entity_str)
 
 
+def test_ifc_property_definition(em_ifc4x1):
+    entity = em_ifc4x1.get_entity_by_name("IfcPropertySetDefinition")
+    res =entity.entity.all_attributes()
+    entity_str = entity.to_str()
+    print(entity_str)
+
+
 def test_ifc_buildingelementproxy(em_ifc4x1):
     res = em_ifc4x1.get_related_entities("IfcBuildingElementProxy")
     related_entities = set(res)
