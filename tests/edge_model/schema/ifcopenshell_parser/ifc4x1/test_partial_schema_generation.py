@@ -13,7 +13,7 @@ def test_ifc_arc_index(em_ifc4x1):
 
 def test_ifc_property_definition(em_ifc4x1):
     entity = em_ifc4x1.get_entity_by_name("IfcPropertySetDefinition")
-    res =entity.entity.all_attributes()
+    res =entity.entity.all_inverse_attributes()
     entity_str = entity.to_str()
     print(entity_str)
 
