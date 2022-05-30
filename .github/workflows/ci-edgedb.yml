@@ -22,6 +22,7 @@ jobs:
           channel-priority: strict
           environment-file: environment.yml
           auto-update-conda: true
+
       - uses: edgedb/setup-edgedb@v1
         with:
           server-dsn: edgedb://localhost:5656

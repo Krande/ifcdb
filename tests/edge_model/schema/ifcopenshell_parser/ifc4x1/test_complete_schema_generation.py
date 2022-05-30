@@ -1,4 +1,25 @@
+def test_exported_types(expreader_ifc4x1, em_ifc4x1):
+    express_types = set(expreader_ifc4x1.type_dict.keys())
+    ifcopen_types = set(em_ifc4x1.get_all_types().keys())
+
+    assert len(ifcopen_types) == 400
+
+    diff = express_types.difference(ifcopen_types)
+    assert len(diff) == 0
+
+
+def test_exported_entities(expreader_ifc4x1, em_ifc4x1):
+    express_entities = set(expreader_ifc4x1.entity_dict.keys())
+    ifcopen_entities = set(em_ifc4x1.entities.keys())
+
+    assert len(ifcopen_entities) == 801
+
+    diff = express_entities.difference(ifcopen_entities)
+    assert len(diff) == 0
+
+
 def test_ifc_all(em_ifc4x1):
+    all_ents = set(em_ifc4x1.all_entities.keys())
     all_entities = em_ifc4x1.get_all_entities()
-    entity_str = all_entities[0].to_str()
+    entity_str = em_ifc4x1.get_entity_by_name(all_entities[0]).to_str()
     print(entity_str)

@@ -4,9 +4,9 @@ from ifcopenshell.express import express_parser
 def main(express_file):
     mapping = express_parser.parse(express_file)
     schema = mapping.schema
-    entities = list(schema.entities.values())
-    res = schema.entities["IfcTriangulatedFaceSet"]
-    res2 = schema.entities["IfcBuildingElementProxy"]
+    entities = list(schema.all_entities.values())
+    res = schema.all_entities["IfcTriangulatedFaceSet"]
+    res2 = schema.all_entities["IfcBuildingElementProxy"]
     print(entities[0])
 
 

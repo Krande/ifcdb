@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import ClassVar, Union, List
+from typing import ClassVar, Union, List, Dict
 
 import ifcopenshell
 from toposort import toposort_flatten
@@ -95,6 +95,16 @@ def get_attribute_entities(entity: wrap.entity):
             att_entities.append(result)
 
     return att_entities
+
+
+@dataclass
+class EnumEdgeModel:
+    entity: wrap.enumeration_type
+    schema: wrap.schema_definition
+
+    def to_str(self) -> str:
+        enum_str = ", ".join(self.entity.enumeration_items())
+        return f"\n    scalar type {self.entity.name()} extending enum<{enum_str}>;\n\n"
 
 
 @dataclass
@@ -267,25 +277,27 @@ class EntityEdgeModel:
 
 
 @dataclass
-class EnumEdgeModel:
-    entity: wrap.enumeration_type
-    schema: wrap.schema_definition
-
-    def to_str(self) -> str:
-        enum_str = ", ".join(self.entity.enumeration_items())
-        return f"\n    scalar type {self.entity.name()} extending enum<{enum_str}>;\n\n"
-
-
-@dataclass
 class EdgeModel:
     schema: wrap.schema_definition
+    enum_types: Dict[str, EnumEdgeModel] = None
+    base_types: Dict[str, TypeEdgeModel] = None
 
     def __post_init__(self):
-        self.entities = {x.name(): x for x in self.schema.declarations()}
+        decl = self.schema.declarations()
+        self.all_entities = {x.name(): x for x in decl}
+        self.select_types = {x.name(): x for x in decl if isinstance(x, wrap.select_type)}
+        self.enum_types = {
+            x.name(): EnumEdgeModel(x, self.schema) for x in decl if isinstance(x, wrap.enumeration_type)
+        }
+        self.base_types = {
+            x.name(): TypeEdgeModel(x, self.schema) for x in decl if isinstance(x, wrap.type_declaration)
+        }
+        type_names = list(self.base_types.keys()) + list(self.select_types.keys()) + list(self.enum_types.keys())
+        self.entities = {x.name(): x for x in decl if x.name() not in type_names}
 
     def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree
-        res = self.entities[entity_name]
+        res = self.all_entities[entity_name]
 
         name = res.name()
         if name not in dep_tree.keys():
@@ -306,7 +318,7 @@ class EdgeModel:
                 if select_item_name not in dep_tree.keys():
                     dep_tree[select_item_name] = []
 
-                if search_recursively is True:
+                if search_recursively is True and select_item_name not in dep_tree.keys():
                     self._find_dependencies(select_item_name, dep_tree)
             return dep_tree
 
@@ -321,22 +333,29 @@ class EdgeModel:
             ancestor_name = x.name()
             if ancestor_name not in dep_tree[name]:
                 dep_tree[name].append(ancestor_name)
-            if search_recursively is True:
+            if search_recursively is True and ancestor_name not in dep_tree.keys():
                 self._find_dependencies(ancestor_name, dep_tree)
 
         for x in get_attribute_entities(res):
             att_name = x.name()
             if att_name not in dep_tree[name]:
                 dep_tree[name].append(att_name)
-            if search_recursively is True:
+            if search_recursively is True and att_name not in dep_tree.keys():
                 self._find_dependencies(att_name, dep_tree)
 
         return dep_tree
 
+    def get_all_types(self):
+        return {
+            x.name(): x
+            for x in self.schema.declarations()
+            if isinstance(x, (wrap.type_declaration, wrap.select_type, wrap.enumeration_type))
+        }
+
     def get_all_entities(self):
         entity_dep_map = dict()
         for entity_name in self.entities.keys():
-            self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
+            self._find_dependencies(entity_name, entity_dep_map, search_recursively=True)
 
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
@@ -353,7 +372,7 @@ class EdgeModel:
         return res
 
     def get_entity_by_name(self, name: str) -> Union[str, EntityEdgeModel, EnumEdgeModel, TypeEdgeModel]:
-        res = self.entities[name]
+        res = self.all_entities[name]
         schema = self.schema
 
         if isinstance(res, wrap.entity):
