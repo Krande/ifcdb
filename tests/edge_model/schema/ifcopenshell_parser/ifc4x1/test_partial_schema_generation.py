@@ -1,14 +1,16 @@
-def test_ifc_root(em_ifc4x1):
+from ifc_schema.interop.edge_model.edge_model_base import SelectEdgeModel, EntityEdgeModel, EnumEdgeModel, TypeEdgeModel
 
+
+def test_ifc_root(em_ifc4x1):
     entity = em_ifc4x1.get_entity_by_name("IfcRoot")
     entity_str = entity.to_str()
     print(entity_str)
 
 
 def test_ifc_line_index(em_ifc4x1):
-    entity = em_ifc4x1.get_entity_by_name("IfcLineIndex")
-    entity_str = entity.to_str()
-    print(entity_str)
+    entity: EntityEdgeModel = em_ifc4x1.get_entity_by_name("IfcAxis2Placement2D")
+    ancestors = entity.get_ancestors()
+    print(ancestors)
 
 
 def test_ifc_arc_index(em_ifc4x1):
@@ -22,10 +24,12 @@ def test_related_ifc_fill_area_style(em_ifc4x1):
     att_str = entity.attributes_str
     print(att_str)
 
+
 def test_related_ifc_value(em_ifc4x1):
-    entity = em_ifc4x1.get_entity_by_name("IfcValue")
-    att_str = entity.attributes_str
+    entity: SelectEdgeModel = em_ifc4x1.get_entity_by_name("IfcValue")
+    att_str = entity.to_str()
     print(att_str)
+
 
 def test_ifc_rel_connects_path_elements(em_ifc4x1):
     entity = em_ifc4x1.get_entity_by_name("IfcRelConnectsPathElements")

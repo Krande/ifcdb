@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar, Union, List, Dict
 
 import ifcopenshell
@@ -224,9 +224,25 @@ class ArrayEdgeModel:
 
 # Entities and types
 @dataclass
-class EnumEdgeModel:
+class EntityBaseEdgeModel:
+    edge_model: EdgeModel = field(repr=False)
+    entity: Union[wrap.entity, wrap.select_type, wrap.enumeration_type, wrap.type_declaration]
+
+    @property
+    def name(self):
+        return self.entity.name()
+
+    @property
+    def schema(self):
+        return self.edge_model.schema
+
+    def to_str(self) -> str:
+        raise NotImplementedError()
+
+
+@dataclass
+class EnumEdgeModel(EntityBaseEdgeModel):
     entity: wrap.enumeration_type
-    schema: wrap.schema_definition
 
     def to_str(self) -> str:
         def name_check(name):
@@ -240,9 +256,8 @@ class EnumEdgeModel:
 
 
 @dataclass
-class TypeEdgeModel:
+class TypeEdgeModel(EntityBaseEdgeModel):
     entity: wrap.type_declaration
-    schema: wrap.schema_definition
 
     def is_aggregate(self):
         cur_decl = self.entity
@@ -277,9 +292,8 @@ class TypeEdgeModel:
 
 
 @dataclass
-class EntityEdgeModel:
+class EntityEdgeModel(EntityBaseEdgeModel):
     entity: wrap.entity
-    schema: wrap.schema_definition
 
     simple_types: ClassVar[dict[wrap.simple_type, str]] = {
         "binary": "bytes",
@@ -290,6 +304,15 @@ class EntityEdgeModel:
         "boolean": "bool",
         "string": "str",
     }
+
+    def get_ancestors(self):
+        parents = []
+        parent = self.entity.supertype()
+        while parent is not None:
+            parent_entity = self.edge_model.get_entity_by_name(parent.name())
+            parents.append(parent_entity)
+            parent = parent.supertype()
+        return parents
 
     @property
     def ancestor_str(self):
@@ -351,32 +374,41 @@ class EntityEdgeModel:
 
 
 @dataclass
+class SelectEdgeModel(EntityBaseEdgeModel):
+    entity: wrap.select_type
+
+    def to_str(self) -> str:
+        return ""
+
+
+@dataclass
 class EdgeModel:
     schema: wrap.schema_definition
     enum_types: Dict[str, EnumEdgeModel] = None
     base_types: Dict[str, TypeEdgeModel] = None
+    entities: Dict[str, EntityEdgeModel] = None
+    select_types: Dict[str, SelectEdgeModel] = None
+
     reserved_keys: ClassVar[dict] = dict(
         start="`Start`", union="`UNION`", group="`GROUP`", move="`MOVE`", check="`CHECK`", window="`WINDOW`"
     )
 
     def __post_init__(self):
         decl = self.schema.declarations()
-        self.all_entities = {x.name(): x for x in decl}
-        self.select_types = {x.name(): x for x in decl if isinstance(x, wrap.select_type)}
-        self.enum_types = {
-            x.name(): EnumEdgeModel(x, self.schema) for x in decl if isinstance(x, wrap.enumeration_type)
-        }
-        self.base_types = {
-            x.name(): TypeEdgeModel(x, self.schema) for x in decl if isinstance(x, wrap.type_declaration)
-        }
+        self.select_types = {x.name(): SelectEdgeModel(self, x) for x in decl if isinstance(x, wrap.select_type)}
+        self.enum_types = {x.name(): EnumEdgeModel(self, x) for x in decl if isinstance(x, wrap.enumeration_type)}
+        self.base_types = {x.name(): TypeEdgeModel(self, x) for x in decl if isinstance(x, wrap.type_declaration)}
         type_names = list(self.base_types.keys()) + list(self.select_types.keys()) + list(self.enum_types.keys())
-        self.entities = {x.name(): x for x in decl if x.name() not in type_names}
+        self.entities = {x.name(): EntityEdgeModel(self, x) for x in decl if x.name() not in type_names}
 
     def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree
-        res = self.all_entities[entity_name]
+
+        entity_model = self.get_entity_by_name(entity_name)
+        res = entity_model.entity
 
         name = res.name()
+
         if name not in dep_tree.keys():
             dep_tree[name] = []
 
@@ -406,8 +438,8 @@ class EdgeModel:
         if isinstance(res, wrap.entity) is False:
             raise NotImplementedError(f"Unsupported entity {res}")
 
-        for x in get_ancestors(res):
-            ancestor_name = x.name()
+        for x in entity_model.get_ancestors():
+            ancestor_name = x.name
             if ancestor_name not in dep_tree[name]:
                 dep_tree[name].append(ancestor_name)
             if search_recursively is True and ancestor_name not in dep_tree.keys():
@@ -481,27 +513,14 @@ class EdgeModel:
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
 
-    def get_entity_by_name(self, name: str) -> Union[str, EntityEdgeModel, EnumEdgeModel, TypeEdgeModel]:
-        res = self.all_entities[name]
-        schema = self.schema
+    def get_entity_by_name(self, name: str) -> Union[EntityEdgeModel, EnumEdgeModel, TypeEdgeModel, SelectEdgeModel]:
+        for entity_types in [self.select_types, self.base_types, self.entities, self.enum_types]:
+            res = entity_types.get(name)
+            if res is not None:
+                return res
 
-        if isinstance(res, wrap.entity):
-            entity = EntityEdgeModel(res, schema)
-        elif isinstance(res, wrap.enumeration_type):
-            entity = EnumEdgeModel(res, schema)
-        elif isinstance(res, wrap.select_type):
-            return ""
-        elif isinstance(res, wrap.type_declaration):
-            entity = TypeEdgeModel(res, schema)
-        else:
-            raise NotImplementedError(f'Unsupported Type "{res}"')
-
-        return entity
+        raise NotImplementedError(f'Unsupported Type "{res}"')
 
     def entity_to_edge_str(self, entity: str) -> str:
         res = self.get_entity_by_name(entity)
-
-        if isinstance(res, str):
-            return res
-
         return res.to_str()
