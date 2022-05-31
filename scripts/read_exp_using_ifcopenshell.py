@@ -28,7 +28,7 @@ def main(schema_name):
     )
 
     # Try to export all objects
-    # ordered_entity_names = em.get_all_entities()
+    ordered_entity_names = em.get_all_entities()
     output_dir = pathlib.Path("temp/edge_model")
     os.makedirs(output_dir / "dbschema", exist_ok=True)
 
