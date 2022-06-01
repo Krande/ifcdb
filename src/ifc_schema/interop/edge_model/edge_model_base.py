@@ -158,7 +158,7 @@ class PropertyEdgeModel:
 
         return ArrayEdgeModel(self.att, self.edge_model.schema)
 
-    def entity_ref(self) -> Union[None, EntityEdgeModel]:
+    def entity_ref(self) -> Union[None, EntityEdgeModel, SelectEdgeModel]:
         typeof = self.att.type_of_attribute()
         if isinstance(typeof, wrap.aggregation_type):
             typeof = get_aggregation_type(typeof)

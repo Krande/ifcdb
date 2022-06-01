@@ -12,6 +12,8 @@ def test_ifc_irreg_timeseries_value(em_ifc4x1):
     ancestors = entity.get_ancestors()
     atts = {x.name: x for x in entity.get_attributes()}
     lv: PropertyEdgeModel = atts["ListValues"]
+    res: SelectEdgeModel = lv.entity_ref()
+    res.get_select_entities()
     array_ref = lv.array_ref()
     print(ancestors)
 
