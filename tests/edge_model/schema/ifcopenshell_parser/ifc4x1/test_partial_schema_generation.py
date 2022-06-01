@@ -1,4 +1,4 @@
-from ifc_schema.interop.edge_model.edge_model_base import SelectEdgeModel, EntityEdgeModel, EnumEdgeModel, TypeEdgeModel, AttributeEdgeModel
+from ifc_schema.interop.edge_model.edge_model_base import SelectEdgeModel, EntityEdgeModel, EnumEdgeModel, TypeEdgeModel, PropertyEdgeModel
 
 
 def test_ifc_root(em_ifc4x1):
@@ -11,7 +11,7 @@ def test_ifc_irreg_timeseries_value(em_ifc4x1):
     entity: EntityEdgeModel = em_ifc4x1.get_entity_by_name("IfcIrregularTimeSeriesValue")
     ancestors = entity.get_ancestors()
     atts = {x.name: x for x in entity.get_attributes()}
-    lv: AttributeEdgeModel = atts["ListValues"]
+    lv: PropertyEdgeModel = atts["ListValues"]
     array_ref = lv.array_ref()
     print(ancestors)
 

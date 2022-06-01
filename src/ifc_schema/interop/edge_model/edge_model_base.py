@@ -144,11 +144,15 @@ def get_array_str(entity: wrap.type_declaration):
 
 # Attribute References
 @dataclass
-class AttributeEdgeModel:
+class PropertyEdgeModel:
     edge_model: EdgeModel = field(repr=False)
-    att: wrap.attribute
+    att: wrap.attribute = field(repr=False)
 
-    def array_ref(self) -> None | ArrayEdgeModel:
+    @property
+    def name(self):
+        return self.att.name()
+
+    def array_ref(self) -> None | str | ArrayEdgeModel:
         if isinstance(self.att.type_of_attribute(), wrap.aggregation_type) is False:
             return None
 
@@ -162,13 +166,12 @@ class AttributeEdgeModel:
                 return None
         result = get_base_type_name(typeof)
         if isinstance(result, str):
-            return None
+            return result
 
         return self.edge_model.get_entity_by_name(result.name())
 
-    @property
-    def name(self):
-        return self.att.name()
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.name}:)'
 
 
 @dataclass
@@ -282,8 +285,8 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         "string": "str",
     }
 
-    def get_attributes(self) -> list[AttributeEdgeModel]:
-        return [AttributeEdgeModel(self.edge_model, att) for att in self.entity.attributes()]
+    def get_attributes(self) -> list[PropertyEdgeModel]:
+        return [PropertyEdgeModel(self.edge_model, att) for att in self.entity.attributes()]
 
     def get_ancestors(self):
         parents = []
