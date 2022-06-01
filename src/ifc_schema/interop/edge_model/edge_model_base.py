@@ -144,7 +144,7 @@ def get_array_str(entity: wrap.type_declaration):
 
 # Attribute References
 @dataclass
-class PropertyEdgeModel:
+class AttributeEdgeModel:
     edge_model: EdgeModel = field(repr=False)
     att: wrap.attribute = field(repr=False)
 
@@ -158,7 +158,7 @@ class PropertyEdgeModel:
 
         return ArrayEdgeModel(self.att, self.edge_model.schema)
 
-    def entity_ref(self) -> Union[None, EntityEdgeModel, SelectEdgeModel]:
+    def entity_ref(self) -> Union[None, str, EntityEdgeModel, SelectEdgeModel]:
         typeof = self.att.type_of_attribute()
         if isinstance(typeof, wrap.aggregation_type):
             typeof = get_aggregation_type(typeof)
@@ -285,8 +285,8 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         "string": "str",
     }
 
-    def get_attributes(self) -> list[PropertyEdgeModel]:
-        return [PropertyEdgeModel(self.edge_model, att) for att in self.entity.attributes()]
+    def get_attributes(self) -> list[AttributeEdgeModel]:
+        return [AttributeEdgeModel(self.edge_model, att) for att in self.entity.attributes()]
 
     def get_ancestors(self):
         parents = []
@@ -335,9 +335,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             elif isinstance(entity_to_write, str):
                 atts_str += indent_str + f"{att_prefix}property {name} -> {entity_to_write};\n"
             elif isinstance(entity_to_write, wrap.select_type):
-                selectable_type_entities = unwrap_selected_items(entity_to_write)
-                selectable_types = " | ".join([x.name() for x in selectable_type_entities])
-                atts_str += indent_str + f"{att_prefix}link {name} -> {selectable_types};\n"
+                atts_str += indent_str + f"{att_prefix}link {name} -> {entity_to_write.name()};\n"
             elif isinstance(entity_to_write, wrap.enumeration_type):
                 atts_str += indent_str + f"{att_prefix}property {name} -> {entity_to_write.name()};\n"
             else:
@@ -415,7 +413,12 @@ class SelectEdgeModel(EntityBaseEdgeModel):
         return [self.edge_model.get_entity_by_name(x.name()) for x in self.entity.select_list()]
 
     def to_str(self) -> str:
-        return ""
+        ent_names = ' | '.join(x.name for x in self.get_select_entities())
+        return f"""
+    type {self.entity.name()} {{
+        required property value -> {ent_names};
+    }}
+"""
 
 
 @dataclass
@@ -482,7 +485,7 @@ class EdgeModel:
 
         for x in entity_model.get_attributes():
             entity_ref = x.entity_ref()
-            if entity_ref is None:
+            if entity_ref is None or isinstance(entity_ref, str):
                 continue
 
             entity_name = entity_ref.name

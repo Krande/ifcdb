@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import logging
-import os
 import pathlib
-from enum import Enum
-import asyncio
-from multiprocessing.pool import ThreadPool
-import pprint
 import time
+from enum import Enum
+from multiprocessing.pool import ThreadPool
 
 import edgedb
 import ifcopenshell
 
 from ifc_schema.interop.edge_model.inserts import insert_ifc_building_element_proxies
-from ifc_schema.interop.edge_model.query import get_geometry_by_guid, get_all_proxy_elements
+from ifc_schema.interop.edge_model.query import get_all_proxy_elements
 
 
 def get_element_proxy_products(ifc_file: pathlib.Path | str) -> list[ifcopenshell.entity_instance]:
@@ -59,7 +56,7 @@ def query(ifc_file=None):
     # for el in res2:
     #     print(el)
     print(len(res2))
-    guid_map = {x["GlobalId"]:x for x in res2}
+    guid_map = {x["GlobalId"]: x for x in res2}
     # Compare IFC elements with contents of IFC file
     if ifc_file is not None:
         ifc_elements = {x.GlobalId: x for x in get_element_proxy_products(ifc_file)}
@@ -67,7 +64,7 @@ def query(ifc_file=None):
         ifc_set = set(ifc_elements.keys())
         res = key_set.intersection(ifc_set)
         if len(res) != len(res2):
-            logging.warning(f'Number of EdgeDB objects found in IFC {len(res)} != {len(res2)} EdgeDB objects ')
+            logging.warning(f"Number of EdgeDB objects found in IFC {len(res)} != {len(res2)} EdgeDB objects ")
 
         for guid, value in guid_map.items():
             ifc_elem = ifc_elements.get(guid)
@@ -75,7 +72,7 @@ def query(ifc_file=None):
                 logging.warning(f'EdgeDB object "{value}" is not in IFC file')
                 continue
             ifc_repr_len = len(ifc_elem.Representation.Representations)
-            edge_elem_len = len(value['Representation']['Representations'])
+            edge_elem_len = len(value["Representation"]["Representations"])
             if ifc_repr_len != edge_elem_len:
                 logging.warning(f'Length of representation of "{guid}" is wrong')
 
