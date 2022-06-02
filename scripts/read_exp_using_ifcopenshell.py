@@ -10,10 +10,8 @@ import ifcopenshell
 wrap = ifcopenshell.ifcopenshell_wrapper
 
 
-def main(schema_name):
-    em = EdgeModel(schema=wrap.schema_by_name(schema_name))
-
-    ordered_entity_names = em.get_related_entities(
+def case1(em: EdgeModel):
+    return em.get_related_entities(
         [
             "IfcBuildingElementProxy",
             "IfcTriangulatedFaceSet",
@@ -27,7 +25,12 @@ def main(schema_name):
         ]
     )
 
-    # Try to export all objects
+
+def main(schema_name):
+    em = EdgeModel(schema=wrap.schema_by_name(schema_name))
+    # ordered_entity_names = case1(em)
+    # ordered_entity_names = em.get_related_entities(["IfcPresentationStyleSelect"])
+    ordered_entity_names = em.get_related_entities(["IfcSpaceBoundarySelect"])
     # ordered_entity_names = em.get_all_entities()
     output_dir = pathlib.Path("temp/edge_model")
     os.makedirs(output_dir / "dbschema", exist_ok=True)

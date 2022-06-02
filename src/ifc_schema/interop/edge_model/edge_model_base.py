@@ -121,11 +121,7 @@ def get_aggregation_levels(agg_type):
     return levels
 
 
-def get_array_str(entity: wrap.type_declaration):
-    levels = get_aggregation_levels(entity.declared_type())
-    if len(levels) != 1:
-        logging.warning("Get Array string has only been tested on a single level")
-
+def get_array_str(levels):
     bnum1 = levels[-1].bound1()
     bnum2 = levels[-1].bound2()
     aggregate_parameter = levels[-1].type_of_element()
@@ -152,11 +148,25 @@ class AttributeEdgeModel:
     def name(self):
         return self.att.name()
 
+    @property
+    def optional(self):
+        return self.att.optional()
+
+    def get_type_ref(self) -> str | EntityEdgeModel | SelectEdgeModel | ArrayEdgeModel:
+        array_ref = self.array_ref()
+        entity_ref = self.entity_ref()
+        return_ref = array_ref if array_ref is not None else entity_ref
+
+        if return_ref is None:
+            raise ValueError("type ref cannot be None")
+
+        return return_ref
+
     def array_ref(self) -> None | str | ArrayEdgeModel:
         if isinstance(self.att.type_of_attribute(), wrap.aggregation_type) is False:
             return None
 
-        return ArrayEdgeModel(self.att, self.edge_model.schema)
+        return ArrayEdgeModel(self.att, self.edge_model)
 
     def entity_ref(self) -> Union[None, str, EntityEdgeModel, SelectEdgeModel]:
         typeof = self.att.type_of_attribute()
@@ -170,87 +180,60 @@ class AttributeEdgeModel:
 
         return self.edge_model.get_entity_by_name(result.name())
 
+    def to_str(self):
+        value_ref = self.entity_ref() if self.entity_ref() is not None else self.array_ref()
+
+        prefix_str = "" if self.optional is False else "required "
+
+        if isinstance(value_ref, str):
+            prefix_str += "property"
+            value_name = value_ref
+        elif isinstance(value_ref, (EntityEdgeModel, SelectEdgeModel)):
+            prefix_str += "link"
+            value_name = value_ref.name
+        elif isinstance(value_ref, ArrayEdgeModel):
+            param = value_ref.parameter_type
+            entity = self.att.name()
+            prefix_str += "property" if isinstance(param, str) else "multi link"
+            value_name = value_ref.to_str()
+        elif isinstance(value_ref, EnumEdgeModel):
+            prefix_str += "link"
+            value_name = value_ref.name
+        else:
+            raise NotImplementedError(f'Unknown attribute type "{value_ref}"')
+        name = self.edge_model.reserved_keys.get(self.name.lower(), self.name)
+        return f"{prefix_str} {name} -> {value_name};"
+
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.name}:)'
+        return f"{self.__class__.__name__}({self.name}:)"
 
 
 @dataclass
 class ArrayEdgeModel:
     entity: wrap.attribute
-    schema: wrap.schema_definition
+    edge_model: EdgeModel
+
+    @property
+    def schema(self):
+        return self.edge_model.schema
 
     @property
     def agg_type(self) -> wrap.aggregation_type:
         return self.entity.type_of_attribute()
 
-    def to_str(self) -> str:
-        multilevel = False
+    @property
+    def parameter_type(self):
         levels = get_aggregation_levels(self.agg_type)
-        shape_len = len(levels)
-
-        if shape_len > 1:
-            multilevel = True
-
-        end_fix = shape_len * ">"
         aggregate_parameter = levels[-1].type_of_element()
         parameter = get_base_type_name(aggregate_parameter)
-
         if isinstance(parameter, str):
-            cast_type_str = parameter
-        else:
-            cast_type_str = parameter.name()
+            return parameter
 
-        bnum1 = levels[-1].bound1()
-        bnum2 = levels[-1].bound2()
+        return self.edge_model.get_entity_by_name(parameter.name())
 
-        prefix = f"property {self.entity.name()}"
-        entity_str = ""
-        if multilevel is False:
-            if isinstance(parameter, wrap.entity):
-                prefix = f"multi link {self.entity.name()}"
-                array_str = ""
-                end_fix = ""
-                entity_str = cast_type_str
-            elif isinstance(parameter, wrap.select_type):
-                prefix = f"multi link {self.entity.name()}"
-                array_str = ""
-                end_fix = ""
-                params = []
-                selectable_type_entities = unwrap_selected_items(parameter)
-                for param in selectable_type_entities:
-                    param: wrap.type_declaration
-                    res = get_base_type_name(param)
-                    if isinstance(res, str):
-                        # TODO: Evaluate how Unions should handle select Type of mixed objects
-                        params.append(param.name())
-                        # params.append(res)
-                    else:
-                        params.append(res.name())
-                entity_str = " | ".join(params)
-            else:
-                if bnum2 == -1:
-                    array_str = "array<"
-                    entity_str = ", ".join([cast_type_str for i in range(max(bnum1, 1))])
-                else:
-                    array_str = "array<" if bnum2 == 1 else "tuple<"
-                    if bnum1 != 1:
-                        logging.warning(f"BNUM 1 = {bnum1} ({self.entity}) is not accounted for")
-                    entity_str = ", ".join([cast_type_str for i in range(bnum2)])
-        else:
-            array_str = "array<"
-            for i, level in enumerate(levels):
-                if i == 0:
-                    continue
-                if isinstance(parameter, wrap.named_type):
-                    entity_str = cast_type_str
-                    array_str += "tuple<"
-                else:
-                    bnum = level.bound1()
-                    entity_str = ", ".join([cast_type_str for i in range(bnum)])
-                    array_str += "tuple<"
-
-        output_str = f"{prefix} -> " + array_str + f"{entity_str}{end_fix};\n"
-        return output_str
+    def to_str(self) -> str:
+        levels = get_aggregation_levels(self.agg_type)
+        return get_array_str(levels)
 
 
 # Entities and types
@@ -284,9 +267,31 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         "boolean": "bool",
         "string": "str",
     }
+    _attributes: list[AttributeEdgeModel] = field(default=None)
 
     def get_attributes(self) -> list[AttributeEdgeModel]:
-        return [AttributeEdgeModel(self.edge_model, att) for att in self.entity.attributes()]
+        circular_refs = [
+            ("IfcFillAreaStyleTiles", "Tiles"),
+            ("IfcClassificationReference", "ReferencedSource"),
+            ("IfcBooleanResult", "FirstOperand"),
+            ("IfcBooleanResult", "SecondOperand"),
+        ]
+        if self._attributes is None:
+            atts = []
+            for att in self.entity.attributes():
+                att_name = att.name()
+                should_skip = False
+                for circ_class, circ_att in circular_refs:
+                    if self.name == circ_class and att_name == circ_att:
+                        should_skip = True
+                        break
+                if should_skip:
+                    continue
+
+                atts.append(AttributeEdgeModel(self.edge_model, att))
+            self._attributes = atts
+        return self._attributes
+        # return [AttributeEdgeModel(self.edge_model, att) for att in self.entity.attributes()]
 
     def get_ancestors(self):
         parents = []
@@ -308,38 +313,8 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     def attributes_str(self):
         atts_str = ""
         indent_str = 8 * " "
-        atts: tuple[wrap.attribute] = self.entity.attributes()
-
-        for val in atts:
-            att_prefix = "required " if val.optional() is False else ""
-            typeof = val.type_of_attribute()
-
-            if isinstance(typeof, wrap.aggregation_type):
-                entity_to_write = ArrayEdgeModel(val, self.schema)
-            else:
-                result = get_base_type_name(typeof)
-                if isinstance(result, wrap.entity):
-                    entity_to_write = typeof.declared_type()
-                else:
-                    entity_to_write = result
-            name = val.name()
-
-            res = EdgeModel.reserved_keys.get(name.lower())
-            if res is not None:
-                name = res
-
-            if isinstance(entity_to_write, wrap.entity):
-                atts_str += indent_str + f"{att_prefix}link {name} -> {entity_to_write.name()};\n"
-            elif isinstance(entity_to_write, ArrayEdgeModel):
-                atts_str += indent_str + f"{att_prefix}{entity_to_write.to_str()}"
-            elif isinstance(entity_to_write, str):
-                atts_str += indent_str + f"{att_prefix}property {name} -> {entity_to_write};\n"
-            elif isinstance(entity_to_write, wrap.select_type):
-                atts_str += indent_str + f"{att_prefix}link {name} -> {entity_to_write.name()};\n"
-            elif isinstance(entity_to_write, wrap.enumeration_type):
-                atts_str += indent_str + f"{att_prefix}property {name} -> {entity_to_write.name()};\n"
-            else:
-                raise NotImplementedError(f'Unsupported instance "{entity_to_write}"')
+        for val in self.get_attributes():
+            atts_str += indent_str + val.to_str() + "\n"
 
         return atts_str
 
@@ -362,11 +337,18 @@ class EnumEdgeModel(EntityBaseEdgeModel):
         def name_check(name):
             res = EdgeModel.reserved_keys.get(name.lower())
             if res is not None:
-                name = res
-            return name
+                return res
+            return f"`{name}`"
 
         enum_str = ", ".join(name_check(x) for x in self.entity.enumeration_items())
-        return f"\n    scalar type {self.entity.name()} extending enum<{enum_str}>;\n\n"
+        name = self.entity.name()
+        return f"""
+    scalar type {name}Base extending enum<{enum_str}>;
+    
+    type {name} {{
+        required property {name} -> {name}Base;
+    }}
+"""
 
 
 @dataclass
@@ -394,13 +376,17 @@ class TypeEdgeModel(EntityBaseEdgeModel):
             if entity is not None:
                 prop_str = "multi link"
             else:
-                value = get_array_str(self.entity)
+                levels = get_aggregation_levels(self.entity.declared_type())
+                if len(levels) != 1:
+                    logging.warning("Get Array string has only been tested on a single level")
+
+                value = get_array_str(levels)
                 prop_str = "property"
         else:
             prop_str = "property"
         return f"""
-    type {self.entity.name()} {{
-        required {prop_str} value -> {value};
+    type {self.name} {{
+        required {prop_str} `{self.name}` -> {value};
     }}
 """
 
@@ -409,14 +395,14 @@ class TypeEdgeModel(EntityBaseEdgeModel):
 class SelectEdgeModel(EntityBaseEdgeModel):
     entity: wrap.select_type
 
-    def get_select_entities(self):
+    def get_select_entities(self) -> list[EntityEdgeModel]:
         return [self.edge_model.get_entity_by_name(x.name()) for x in self.entity.select_list()]
 
     def to_str(self) -> str:
-        ent_names = ' | '.join(x.name for x in self.get_select_entities())
+        ent_names = " | ".join(x.name for x in self.get_select_entities())
         return f"""
     type {self.entity.name()} {{
-        required property value -> {ent_names};
+        link {self.entity.name()} -> {ent_names};
     }}
 """
 
@@ -452,48 +438,35 @@ class EdgeModel:
         if name not in dep_tree.keys():
             dep_tree[name] = []
 
-        if isinstance(res, wrap.aggregation_type):
-            res = get_aggregation_type(res)
-            if isinstance(res, str):
-                return dep_tree
+        if isinstance(entity_model, EntityEdgeModel):
+            for x in entity_model.get_ancestors():
+                ancestor_name = x.name
+                if ancestor_name not in dep_tree[name]:
+                    dep_tree[name].append(ancestor_name)
+                    if search_recursively is True:
+                        self._find_dependencies(ancestor_name, dep_tree)
 
-        if isinstance(entity_model, EnumEdgeModel):
-            return dep_tree
+            for att in entity_model.get_attributes():
+                entity = att.get_type_ref()
+                if isinstance(entity, ArrayEdgeModel):
+                    entity = entity.parameter_type
+
+                if isinstance(entity, str):
+                    continue
+
+                entity_name = entity.name
+                if entity_name not in dep_tree[name]:
+                    dep_tree[name].append(entity_name)
+                    if search_recursively is True:
+                        self._find_dependencies(entity_name, dep_tree)
+
         elif isinstance(entity_model, SelectEdgeModel):
-            for select_item in entity_model.get_select_entities():
-                dep_tree[name].append(select_item.name)
-                if select_item.name not in dep_tree.keys():
-                    dep_tree[select_item.name] = []
-
-                if search_recursively is True:
-                    self._find_dependencies(select_item.name, dep_tree)
-            return dep_tree
-
-        base_value = get_base_type_name(res)
-        if isinstance(base_value, str):
-            return dep_tree
-
-        if isinstance(res, wrap.entity) is False:
-            raise NotImplementedError(f"Unsupported entity {res}")
-
-        for x in entity_model.get_ancestors():
-            ancestor_name = x.name
-            if ancestor_name not in dep_tree[name]:
-                dep_tree[name].append(ancestor_name)
-            if search_recursively is True:
-                self._find_dependencies(ancestor_name, dep_tree)
-
-        for x in entity_model.get_attributes():
-            entity_ref = x.entity_ref()
-            if entity_ref is None or isinstance(entity_ref, str):
-                continue
-
-            entity_name = entity_ref.name
-            if entity_name not in dep_tree[name]:
-                dep_tree[name].append(entity_name)
-
-            if search_recursively is True:
-                self._find_dependencies(entity_name, dep_tree)
+            for entity in entity_model.get_select_entities():
+                entity_name = entity.name
+                if entity_name not in dep_tree[name]:
+                    dep_tree[name].append(entity_name)
+                    if search_recursively is True:
+                        self._find_dependencies(entity_name, dep_tree)
 
         return dep_tree
 
@@ -504,16 +477,9 @@ class EdgeModel:
             if isinstance(x, (wrap.type_declaration, wrap.select_type, wrap.enumeration_type))
         }
 
-    def get_all_entities(self):
-        entity_dep_map = dict()
-        for type_name in self.base_types.keys():
-            entity_dep_map[type_name] = []
-        for type_name in self.enum_types.keys():
-            entity_dep_map[type_name] = []
-        for entity_name in self.entities.keys():
-            self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
-
+    def _fix_circular_deps(self, entity_dep_map):
         # The following dependencies are by default circular dependencies. Will remove deps for Select Types
+
         for stype in [
             "IfcBooleanOperand",
             "IfcClassificationSelect",
@@ -522,8 +488,12 @@ class EdgeModel:
             "IfcFillStyleSelect",
             "IfcPresentationStyleSelect",
             "IfcStyleAssignmentSelect",
+            "IfcFillAreaStyleTiles",
         ]:
-            entity_dep_map[stype] = []
+            res = entity_dep_map.get(stype)
+            if res is None:
+                continue
+            # entity_dep_map[stype] = []
         circular_deps = {
             "IfcBooleanClippingResult": {"IfcBooleanResult"},
             "IfcBooleanOperand": {"IfcBooleanResult"},
@@ -544,6 +514,18 @@ class EdgeModel:
             "IfcStyledItem": {"IfcStyleAssignmentSelect"},
         }
 
+    def get_all_entities(self):
+        entity_dep_map = dict()
+        for type_name in self.base_types.keys():
+            entity_dep_map[type_name] = []
+        for type_name in self.enum_types.keys():
+            entity_dep_map[type_name] = []
+        for entity_name in self.select_types.keys():
+            self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
+        for entity_name in self.entities.keys():
+            self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
+
+        self._fix_circular_deps(entity_dep_map)
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
 
