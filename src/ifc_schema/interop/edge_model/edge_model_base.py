@@ -193,8 +193,10 @@ class AttributeEdgeModel:
             value_name = value_ref.name
         elif isinstance(value_ref, ArrayEdgeModel):
             param = value_ref.parameter_type
-            entity = self.att.name()
-            prefix_str += "property" if isinstance(param, str) else "multi link"
+            if value_ref.list_type == ArrayEdgeModel.LIST:
+                prefix_str += "property" if isinstance(param, str) else "multi link"
+            else:
+                prefix_str += "multi property" if isinstance(param, str) else "multi link"
             value_name = value_ref.to_str()
         elif isinstance(value_ref, EnumEdgeModel):
             prefix_str += "link"
@@ -213,6 +215,10 @@ class ArrayEdgeModel:
     entity: wrap.attribute
     edge_model: EdgeModel
 
+    LIST: ClassVar[str] = "list"
+    SET: ClassVar[str] = "set"
+    ARRAY: ClassVar[str] = "array"
+
     @property
     def schema(self):
         return self.edge_model.schema
@@ -221,9 +227,26 @@ class ArrayEdgeModel:
     def agg_type(self) -> wrap.aggregation_type:
         return self.entity.type_of_attribute()
 
+    def get_levels(self):
+        return get_aggregation_levels(self.agg_type)
+
+    @property
+    def list_type(self) -> str:
+        agg_map = {
+            self.agg_type.array_type.real: self.ARRAY,
+            self.agg_type.list_type.real: self.LIST,
+            self.agg_type.set_type.real: self.SET,
+        }
+        agg_type = self.agg_type.type_of_aggregation()
+        result = agg_map.get(agg_type, None)
+        if result is None:
+            raise NotImplementedError(f'Have yet to add support for aggregation type "{agg_type}"')
+
+        return result
+
     @property
     def parameter_type(self):
-        levels = get_aggregation_levels(self.agg_type)
+        levels = self.get_levels()
         aggregate_parameter = levels[-1].type_of_element()
         parameter = get_base_type_name(aggregate_parameter)
         if isinstance(parameter, str):
@@ -232,7 +255,9 @@ class ArrayEdgeModel:
         return self.edge_model.get_entity_by_name(parameter.name())
 
     def to_str(self) -> str:
-        levels = get_aggregation_levels(self.agg_type)
+        levels = self.get_levels()
+        if isinstance(self.parameter_type, str) and self.list_type in (self.SET, ):
+            return self.parameter_type
         return get_array_str(levels)
 
 

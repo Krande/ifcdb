@@ -13,10 +13,16 @@ def test_ifc_root(em_ifc4x1):
     print(entity_str)
 
 
-def test_ifc_trimming_select(em_ifc4x1):
-    entity: EntityEdgeModel = em_ifc4x1.get_entity_by_name("IfcIndexedPolygonalFace")
-    att_str = entity.attributes_str
-    print(att_str)
+def test_ifc_set_and_list(em_ifc4x1):
+    entity_list: EntityEdgeModel = em_ifc4x1.get_entity_by_name("IfcIndexedPolyCurve")
+    entity_set: EntityEdgeModel = em_ifc4x1.get_entity_by_name("IfcComplexProperty")
+    att_str_list = {a.name: a for a in entity_list.get_attributes()}
+    att_str_set = {a.name: a for a in entity_set.get_attributes()}
+    list_att: AttributeEdgeModel = att_str_list["Segments"]
+    set_att: AttributeEdgeModel = att_str_set["HasProperties"]
+    list_type = list_att.array_ref().list_type
+    set_type = set_att.array_ref().list_type
+    print("att_str")
 
 
 def test_ifc_irreg_timeseries_value(em_ifc4x1):
