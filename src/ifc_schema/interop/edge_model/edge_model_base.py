@@ -184,7 +184,7 @@ class AttributeEdgeModel:
         value_ref = self.entity_ref() if self.entity_ref() is not None else self.array_ref()
 
         prefix_str = "" if self.optional is False else "required "
-
+        name = self.edge_model.reserved_keys.get(self.name.lower(), self.name)
         if isinstance(value_ref, str):
             prefix_str += "property"
             value_name = value_ref
@@ -199,11 +199,12 @@ class AttributeEdgeModel:
                 prefix_str += "multi property" if isinstance(param, str) else "multi link"
             value_name = value_ref.to_str()
         elif isinstance(value_ref, EnumEdgeModel):
-            prefix_str += "link"
-            value_name = value_ref.name
+            prefix_str += "property"
+            items_str = ",".join(f"'{x}'" for x in value_ref.get_enum_items())
+            value_name = f"str {{\n            constraint one_of ({items_str});\n        }}"
         else:
             raise NotImplementedError(f'Unknown attribute type "{value_ref}"')
-        name = self.edge_model.reserved_keys.get(self.name.lower(), self.name)
+
         return f"{prefix_str} {name} -> {value_name};"
 
     def __repr__(self):
@@ -256,7 +257,7 @@ class ArrayEdgeModel:
 
     def to_str(self) -> str:
         levels = self.get_levels()
-        if isinstance(self.parameter_type, str) and self.list_type in (self.SET, ):
+        if isinstance(self.parameter_type, str) and self.list_type in (self.SET,):
             return self.parameter_type
         return get_array_str(levels)
 
@@ -358,22 +359,31 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 class EnumEdgeModel(EntityBaseEdgeModel):
     entity: wrap.enumeration_type
 
-    def to_str(self) -> str:
-        def name_check(name):
-            res = EdgeModel.reserved_keys.get(name.lower())
-            if res is not None:
-                return res
-            return f"`{name}`"
+    def get_enum_items(self):
+        return self.entity.enumeration_items()
 
-        enum_str = ", ".join(name_check(x) for x in self.entity.enumeration_items())
+    def to_str(self) -> str:
+        # def name_check(name):
+        #     res = EdgeModel.reserved_keys.get(name.lower())
+        #     if res is not None:
+        #         return res
+        #     return f"`{name}`"
+        #
+        # enum_str = ", ".join(name_check(x) for x in self.get_enum_items())
+        items_str = ",".join(f"'{x}'" for x in self.get_enum_items())
         name = self.entity.name()
+        if name != "IfcNullStyle":
+            return ""
+
         return f"""
-    scalar type {name}Base extending enum<{enum_str}>;
-    
     type {name} {{
-        required property {name} -> {name}Base;
+        required property {name} -> str {{
+            constraint one_of ({items_str});
+        }};
     }}
 """
+
+
 
 
 @dataclass

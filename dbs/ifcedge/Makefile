@@ -18,3 +18,20 @@ cli-update:
 
 types:
 	edgedb $(conopt) list types
+
+# Use WSL Edgedb
+
+wsl-instance:
+	edgedb instance create ifcdb --nightly
+
+wsl-instances:
+	edgedb instance list
+
+wsl-migrate-init:
+	edgedb -I ifcdb migration create --non-interactive --allow-unsafe
+
+wsl-migrate:
+	edgedb -I ifcdb migrate
+
+wsl-destroy:
+	edgedb instance destroy ifcdb

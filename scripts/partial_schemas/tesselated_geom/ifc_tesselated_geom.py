@@ -28,11 +28,8 @@ def case1(em: EdgeModel):
 
 def main(schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
-    # ordered_entity_names = case1(em)
-    # ordered_entity_names = em.get_related_entities(["IfcPresentationStyleSelect"])
-    ordered_entity_names = em.get_related_entities(["IfcSpaceBoundarySelect"])
-    # ordered_entity_names = em.get_all_entities()
-    output_dir = pathlib.Path("temp/edge_model")
+    ordered_entity_names = case1(em)
+    output_dir = pathlib.Path("temp")
     os.makedirs(output_dir / "dbschema", exist_ok=True)
 
     with open(output_dir / "dbschema/default.esdl", "w") as f:
@@ -44,6 +41,10 @@ def main(schema_name):
 
     copy_server_files(output_dir)
 
+def insert(schema_name):
+    em = EdgeModel(schema=wrap.schema_by_name(schema_name))
+
 
 if __name__ == "__main__":
     main("IFC4x1")
+
