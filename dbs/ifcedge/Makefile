@@ -8,7 +8,7 @@ up:
 	docker-compose up
 
 migrate-init:
-	edgedb $(conopt) migration create --non-interactive --allow-unsafe
+	edgedb $(conopt) migration create --non-interactive
 
 migrate:
 	edgedb $(conopt) migrate
@@ -28,7 +28,7 @@ wsl-instances:
 	edgedb instance list
 
 wsl-migrate-init:
-	edgedb -I ifcdb migration create --non-interactive --allow-unsafe
+	edgedb -I ifcdb migration create --non-interactive
 
 wsl-migrate:
 	edgedb -I ifcdb migrate

@@ -12,7 +12,7 @@ wrap = ifcopenshell.ifcopenshell_wrapper
 
 
 def main(schema_name):
-    em = EdgeModel(schema=wrap.schema_by_name(schema_name))
+    em = EdgeModel(schema=wrap.schema_by_name(schema_name), modify_circular_deps=False)
     ordered_entity_names = em.get_all_entities()
 
     output_dir = pathlib.Path("temp/edge_model")

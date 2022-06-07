@@ -22,6 +22,9 @@ def case1(em: EdgeModel):
             "IfcBuilding",
             "IfcProject",
             "IfcTrimmedCurve",
+            "IfcFillAreaStyleTiles",
+            "IfcClassificationReference",
+            "IfcBooleanResult"
         ]
     )
 
@@ -41,10 +44,10 @@ def main(schema_name):
 
     copy_server_files(output_dir)
 
+
 def insert(schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
 
 
 if __name__ == "__main__":
     main("IFC4x1")
-

@@ -306,13 +306,14 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             atts = []
             for att in self.entity.attributes():
                 att_name = att.name()
-                should_skip = False
-                for circ_class, circ_att in circular_refs:
-                    if self.name == circ_class and att_name == circ_att:
-                        should_skip = True
-                        break
-                if should_skip:
-                    continue
+                if self.edge_model.modify_circular_deps is True:
+                    should_skip = False
+                    for circ_class, circ_att in circular_refs:
+                        if self.name == circ_class and att_name == circ_att:
+                            should_skip = True
+                            break
+                    if should_skip:
+                        continue
 
                 atts.append(AttributeEdgeModel(self.edge_model, att))
             self._attributes = atts
@@ -450,6 +451,8 @@ class EdgeModel:
     entities: Dict[str, EntityEdgeModel] = None
     select_types: Dict[str, SelectEdgeModel] = None
 
+    modify_circular_deps: bool = False
+
     reserved_keys: ClassVar[dict] = dict(
         start="`Start`", union="`UNION`", group="`GROUP`", move="`MOVE`", check="`CHECK`", window="`WINDOW`"
     )
@@ -560,6 +563,9 @@ class EdgeModel:
         for entity_name in self.entities.keys():
             self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
 
+        if self.modify_circular_deps is False:
+            return list(entity_dep_map.keys())
+
         self._fix_circular_deps(entity_dep_map)
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
@@ -571,6 +577,9 @@ class EdgeModel:
         entity_dep_map = dict() if entity_dep_map is None else entity_dep_map
         for entity_name in entity_names:
             self._find_dependencies(entity_name, entity_dep_map)
+
+        if self.modify_circular_deps is False:
+            return list(entity_dep_map.keys())
 
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
