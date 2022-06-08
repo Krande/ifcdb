@@ -4,34 +4,22 @@ import os
 import pathlib
 
 from ifc_schema.interop.edge_model.edge_model_base import EdgeModel
+from ifc_schema.interop.edge_model.insert_model import IfcToEdge
 from ifc_schema.interop.edge_model.utils import copy_server_files
+from ifc_schema.utils import top_dir
 import ifcopenshell
 
 wrap = ifcopenshell.ifcopenshell_wrapper
 
 
-def case1(em: EdgeModel):
-    return em.get_related_entities(
-        [
-            "IfcBuildingElementProxy",
-            "IfcTriangulatedFaceSet",
-            "IfcProductDefinitionShape",
-            "IfcShapeRepresentation",
-            "IfcGeometricRepresentationSubContext",
-            "IfcRelContainedInSpatialStructure",
-            "IfcBuilding",
-            "IfcProject",
-            "IfcTrimmedCurve",
-            "IfcFillAreaStyleTiles",
-            "IfcClassificationReference",
-            "IfcBooleanResult"
-        ]
-    )
+def case1(ifc_file: pathlib.Path, em: EdgeModel):
+    with IfcToEdge(ifc_file) as ifc:
+        return em.get_related_entities(ifc.get_unique_class_entities_of_ifc_content())
 
 
-def main(schema_name):
+def main(ifc_file: pathlib.Path, schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
-    ordered_entity_names = case1(em)
+    ordered_entity_names = case1(ifc_file, em)
     output_dir = pathlib.Path("temp")
     os.makedirs(output_dir / "dbschema", exist_ok=True)
 
@@ -45,9 +33,18 @@ def main(schema_name):
     copy_server_files(output_dir)
 
 
-def insert(schema_name):
+def insert(ifc_file, schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
+    with IfcToEdge(ifc_file) as ifc:
+        insert_str = ''
+        for item in ifc.get_ifc_objects_by_sorted_insert_order():
+            insert_str += em.get_entity_insert_str(item)
+        for tx in ifc.client.transaction():
+            with tx:
+                tx.execute(insert_str)
 
 
 if __name__ == "__main__":
-    main("IFC4x1")
+    ifc_f = top_dir() / "files/tessellated-item.ifc"
+    main(ifc_f, "IFC4x1")
+    # insert(ifc_f, "IFC4x1")

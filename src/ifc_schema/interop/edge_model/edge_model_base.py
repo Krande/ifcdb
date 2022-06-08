@@ -276,8 +276,11 @@ class EntityBaseEdgeModel:
     def schema(self):
         return self.edge_model.schema
 
+    def to_insert_str(self, entity: ifcopenshell.entity_instance) -> str:
+        raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
+
     def to_str(self) -> str:
-        raise NotImplementedError()
+        raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
 
 
 @dataclass
@@ -295,16 +298,19 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     }
     _attributes: list[AttributeEdgeModel] = field(default=None)
 
-    def get_attributes(self) -> list[AttributeEdgeModel]:
+    def get_attributes(self, include_inherited_attributes=False) -> list[AttributeEdgeModel]:
         circular_refs = [
             ("IfcFillAreaStyleTiles", "Tiles"),
             ("IfcClassificationReference", "ReferencedSource"),
             ("IfcBooleanResult", "FirstOperand"),
             ("IfcBooleanResult", "SecondOperand"),
         ]
-        if self._attributes is None:
+        if self._attributes is None or include_inherited_attributes is True:
             atts = []
-            for att in self.entity.attributes():
+            att_list = (
+                self.entity.attributes() if include_inherited_attributes is False else self.entity.all_attributes()
+            )
+            for att in att_list:
                 att_name = att.name()
                 if self.edge_model.modify_circular_deps is True:
                     should_skip = False
@@ -344,6 +350,38 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             atts_str += indent_str + val.to_str() + "\n"
 
         return atts_str
+
+    def to_insert_str(self, entity: ifcopenshell.entity_instance):
+        insert_str = f"INSERT {self.name} {{\n"
+        for att in self.get_attributes(True):
+            res = getattr(entity, att.name)
+            name = att.name
+            if name is None:
+                raise ValueError()
+            if res is None:
+                logging.debug(f'Property att: "{name}" is None')
+                continue
+
+            if isinstance(res, str):
+                value_str = f"'{res}'"
+            elif isinstance(res, tuple):
+                if isinstance(res[0], ifcopenshell.entity_instance):
+                    value_str = "("
+                    for r in res:
+                        value_str += f"{self.edge_model.get_entity_insert_str(r)}"
+                    value_str += ")"
+                else:
+                    value_str = res
+            elif isinstance(res, (int, float)):
+                value_str = res
+            elif isinstance(res, ifcopenshell.entity_instance):
+                value_str = f"({self.edge_model.get_entity_insert_str(res)})"
+            else:
+                raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
+
+            insert_str += f"{name} := {value_str}\n"
+
+        return insert_str + "},\n"
 
     def to_str(self) -> str:
         att_str = self.attributes_str
@@ -385,8 +423,6 @@ class EnumEdgeModel(EntityBaseEdgeModel):
 """
 
 
-
-
 @dataclass
 class TypeEdgeModel(EntityBaseEdgeModel):
     entity: wrap.type_declaration
@@ -397,6 +433,10 @@ class TypeEdgeModel(EntityBaseEdgeModel):
             cur_decl = cur_decl.declared_type()
 
         return isinstance(cur_decl, wrap.aggregation_type)
+
+    def to_insert_str(self, entity: ifcopenshell.entity_instance) -> str:
+        # value = get_base_type_name(self.entity)
+        return f"{entity.wrappedValue}"
 
     def to_str(self):
         entity = None
@@ -595,3 +635,7 @@ class EdgeModel:
     def entity_to_edge_str(self, entity: str) -> str:
         res = self.get_entity_by_name(entity)
         return res.to_str()
+
+    def get_entity_insert_str(self, ifc_entity: ifcopenshell.entity_instance) -> str:
+        entity = self.get_entity_by_name(ifc_entity.is_a())
+        return entity.to_insert_str(ifc_entity)
