@@ -20,7 +20,7 @@ def case1(ifc_file: pathlib.Path, em: EdgeModel):
 def main(ifc_file: pathlib.Path, schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
     ordered_entity_names = case1(ifc_file, em)
-    output_dir = pathlib.Path("temp")
+    output_dir = pathlib.Path("db")
     os.makedirs(output_dir / "dbschema", exist_ok=True)
 
     with open(output_dir / "dbschema/default.esdl", "w") as f:
@@ -36,12 +36,13 @@ def main(ifc_file: pathlib.Path, schema_name):
 def insert(ifc_file, schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
     with IfcToEdge(ifc_file) as ifc:
-        insert_str = ''
-        for item in ifc.get_ifc_objects_by_sorted_insert_order():
-            insert_str += em.get_entity_insert_str(item)
+        ifc_items = ifc.get_ifc_objects_by_sorted_insert_order()
         for tx in ifc.client.transaction():
             with tx:
-                tx.execute(insert_str)
+                for item in ifc_items:
+                    insert_str = em.get_entity_insert_str(item)
+                    print(insert_str)
+                    tx.execute(insert_str)
 
 
 if __name__ == "__main__":

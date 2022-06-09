@@ -122,8 +122,6 @@ def get_aggregation_levels(agg_type):
 
 
 def get_array_str(levels):
-    bnum1 = levels[-1].bound1()
-    bnum2 = levels[-1].bound2()
     aggregate_parameter = levels[-1].type_of_element()
     parameter = get_base_type_name(aggregate_parameter)
 
@@ -132,10 +130,23 @@ def get_array_str(levels):
     else:
         cast_type_str = parameter.name()
 
-    array_str = "array<" if bnum2 == 1 else "tuple<"
-    max_num = max(max(bnum1, bnum2), 1)
-    entity_str = ", ".join([cast_type_str for i in range(max_num)])
-    return array_str + f"{entity_str}>"
+    astr = ""
+    ending = ""
+    for i, level in enumerate(levels):
+        lbnum1 = level.bound1()
+        lbnum2 = level.bound2()
+        if len(levels) > 1 and i == 0:
+            array_str = "array<"
+        else:
+            array_str = "array<" if lbnum2 == 1 else "tuple<"
+        max_num = max(max(lbnum1, lbnum2), 1)
+        entity_str = ", ".join([cast_type_str for i in range(max_num)])
+        if i == len(levels) - 1:
+            astr += array_str + f"{entity_str}"
+        else:
+            astr += array_str
+        ending += ">"
+    return astr + ending
 
 
 # Attribute References
@@ -143,6 +154,7 @@ def get_array_str(levels):
 class AttributeEdgeModel:
     edge_model: EdgeModel = field(repr=False)
     att: wrap.attribute = field(repr=False)
+    derived: bool
 
     @property
     def name(self):
@@ -150,7 +162,10 @@ class AttributeEdgeModel:
 
     @property
     def optional(self):
-        return self.att.optional()
+        optional = self.att.optional()
+        if optional is False and self.derived is True:
+            return True
+        return optional
 
     def get_type_ref(self) -> str | EntityEdgeModel | SelectEdgeModel | ArrayEdgeModel:
         array_ref = self.array_ref()
@@ -183,8 +198,9 @@ class AttributeEdgeModel:
     def to_str(self):
         value_ref = self.entity_ref() if self.entity_ref() is not None else self.array_ref()
 
-        prefix_str = "" if self.optional is False else "required "
+        prefix_str = "" if self.optional is True else "required "
         name = self.edge_model.reserved_keys.get(self.name.lower(), self.name)
+
         if isinstance(value_ref, str):
             prefix_str += "property"
             value_name = value_ref
@@ -298,35 +314,57 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     }
     _attributes: list[AttributeEdgeModel] = field(default=None)
 
-    def get_attributes(self, include_inherited_attributes=False) -> list[AttributeEdgeModel]:
+    def _skip_due_to_circular_deps(self, att_name):
         circular_refs = [
             ("IfcFillAreaStyleTiles", "Tiles"),
             ("IfcClassificationReference", "ReferencedSource"),
             ("IfcBooleanResult", "FirstOperand"),
             ("IfcBooleanResult", "SecondOperand"),
         ]
+        should_skip = False
+        for circ_class, circ_att in circular_refs:
+            if self.name == circ_class and att_name == circ_att:
+                should_skip = True
+                break
+
+        return should_skip
+
+    def get_derive_map(self) -> dict[str, bool] | None:
+        derived = self.entity.derived()
+        attributes = self.entity.all_attributes()
+        if len(derived) != len(attributes):
+            logging.debug("Explicit attributes is NOT redeclared as derived in a subtype")
+            return None
+        return {attref.name(): derived for derived, attref in zip(derived, attributes)}
+
+    def get_attributes(self, include_inherited_attributes=False) -> list[AttributeEdgeModel]:
         if self._attributes is None or include_inherited_attributes is True:
             atts = []
             att_list = (
                 self.entity.attributes() if include_inherited_attributes is False else self.entity.all_attributes()
             )
+
+            dmap = {x.name(): False for x in att_list}
+            for child_entity in self.get_children():
+                child_dmap = child_entity.get_derive_map()
+                if child_dmap is None:
+                    continue
+                for key, value in child_dmap.items():
+                    if value is False and key in dmap.keys():
+                        continue
+                    dmap[key] = value
+
             for att in att_list:
                 att_name = att.name()
                 if self.edge_model.modify_circular_deps is True:
-                    should_skip = False
-                    for circ_class, circ_att in circular_refs:
-                        if self.name == circ_class and att_name == circ_att:
-                            should_skip = True
-                            break
-                    if should_skip:
+                    if self._skip_due_to_circular_deps(att_name):
                         continue
-
-                atts.append(AttributeEdgeModel(self.edge_model, att))
+                derived_data = dmap.get(att_name, None)
+                atts.append(AttributeEdgeModel(self.edge_model, att, derived=derived_data))
             self._attributes = atts
         return self._attributes
-        # return [AttributeEdgeModel(self.edge_model, att) for att in self.entity.attributes()]
 
-    def get_ancestors(self):
+    def get_ancestors(self) -> list[EntityEdgeModel]:
         parents = []
         parent = self.entity.supertype()
         while parent is not None:
@@ -334,6 +372,21 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             parents.append(parent_entity)
             parent = parent.supertype()
         return parents
+
+    def get_children(self, current_child=None, children_all=None) -> list[EntityEdgeModel]:
+        children_all = [] if children_all is None else children_all
+        current_child = self if current_child is None else current_child
+
+        children = current_child.entity.subtypes()
+        if children is None:
+            return children_all
+
+        child_entities = [self.edge_model.get_entity_by_name(child.name()) for child in children]
+        children_all += child_entities
+        for child in child_entities:
+            self.get_children(child, children_all)
+
+        return children_all
 
     @property
     def ancestor_str(self):
@@ -353,7 +406,9 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
     def to_insert_str(self, entity: ifcopenshell.entity_instance):
         insert_str = f"INSERT {self.name} {{\n"
-        for att in self.get_attributes(True):
+        # empty_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is None]
+        all_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
+        for i, att in enumerate(all_atts):
             res = getattr(entity, att.name)
             name = att.name
             if name is None:
@@ -379,9 +434,14 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             else:
                 raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
 
-            insert_str += f"{name} := {value_str}\n"
+            if i == len(all_atts) - 1:
+                comma_str = ""
+            else:
+                comma_str = ","
 
-        return insert_str + "},\n"
+            insert_str += f"{name} := {value_str}{comma_str}\n"
+
+        return insert_str + "}\n"
 
     def to_str(self) -> str:
         att_str = self.attributes_str
