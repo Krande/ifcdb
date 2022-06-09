@@ -47,5 +47,5 @@ def insert(ifc_file, schema_name):
 
 if __name__ == "__main__":
     ifc_f = top_dir() / "files/tessellated-item.ifc"
-    main(ifc_f, "IFC4x1")
-    # insert(ifc_f, "IFC4x1")
+    # main(ifc_f, "IFC4x1")
+    insert(ifc_f, "IFC4x1")

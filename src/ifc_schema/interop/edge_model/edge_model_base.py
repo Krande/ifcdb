@@ -410,7 +410,10 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         all_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
         for i, att in enumerate(all_atts):
             res = getattr(entity, att.name)
+            att_ref = att.get_type_ref()
             name = att.name
+            if name == 'ValueComponent':
+                print('sd')
             if name is None:
                 raise ValueError()
             if res is None:
@@ -426,11 +429,23 @@ class EntityEdgeModel(EntityBaseEdgeModel):
                         value_str += f"{self.edge_model.get_entity_insert_str(r)}"
                     value_str += ")"
                 else:
-                    value_str = res
+                    if isinstance(res[0], tuple):
+                        value_str = list(res)
+                    else:
+                        value_str = res
             elif isinstance(res, (int, float)):
                 value_str = res
             elif isinstance(res, ifcopenshell.entity_instance):
-                value_str = f"({self.edge_model.get_entity_insert_str(res)})"
+                entity_str = f"({self.edge_model.get_entity_insert_str(res)})"
+                if isinstance(att_ref, SelectEdgeModel):
+                    aname = att_ref.name
+                    select_entities = att_ref.get_select_entities()
+                    res_name = res.__dict__["type"]
+                    subref = self.edge_model.get_entity_by_name(res_name)
+                    styp = att.att.type_of_attribute()
+                    value_str = f"(INSERT {aname} {{ {aname} := {entity_str} }})"
+                else:
+                    value_str = entity_str
             else:
                 raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
 
@@ -453,6 +468,28 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 {att_str}    }}
 """
 
+"""
+INSERT IfcMeasureWithUnit {
+    ValueComponent := (
+        INSERT IfcValue {
+            IfcValue := (
+                INSERT IfcMeasureValue { 
+                    IfcMeasureValue := (INSERT IfcPlaneAngleMeasure {IfcPlaneAngleMeasure := 0.017453293 })
+                }
+            )
+        }
+    ),
+    UnitComponent := (
+        INSERT IfcUnit {
+            IfcUnit := (
+                INSERT IfcSIUnit {
+                    UnitType := 'PLANEANGLEUNIT',
+                    Name := 'RADIAN'
+                }
+            )
+        }
+    )
+}"""
 
 @dataclass
 class EnumEdgeModel(EntityBaseEdgeModel):
@@ -496,7 +533,7 @@ class TypeEdgeModel(EntityBaseEdgeModel):
 
     def to_insert_str(self, entity: ifcopenshell.entity_instance) -> str:
         # value = get_base_type_name(self.entity)
-        return f"{entity.wrappedValue}"
+        return f"INSERT {self.name} {{{self.name} := {entity.wrappedValue} }}"
 
     def to_str(self):
         entity = None
@@ -679,7 +716,7 @@ class EdgeModel:
             self._find_dependencies(entity_name, entity_dep_map)
 
         if self.modify_circular_deps is False:
-            return list(entity_dep_map.keys())
+            return list(sorted(entity_dep_map.keys()))
 
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
