@@ -29,8 +29,8 @@ def test_roundtrip_ifc_tesselated(ifc_files_dir, em_ifc4x1, server_name):
     with IfcToEdge(ifc_files_dir / ifc_file_name, em=em_ifc4x1, instance_name=instance_name) as ie:
         # Set up schema
         ie.write_ifc_entities_to_esdl_file(db_schema_dir / "default.esdl")
-        subprocess.run(f"{server_prefix} migration create --non-interactive", cwd=db_schema_dir.parent)
-        subprocess.run(f"{server_prefix} migrate", cwd=db_schema_dir.parent)
+        subprocess.run(f"{server_prefix} migration create --non-interactive", cwd=db_schema_dir.parent, shell=True)
+        subprocess.run(f"{server_prefix} migrate", cwd=db_schema_dir.parent, shell=True)
 
         # Insert Objects
         ifc_items = ie.get_ifc_objects_by_sorted_insert_order()

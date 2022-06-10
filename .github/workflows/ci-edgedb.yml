@@ -30,4 +30,5 @@ jobs:
         run: pytest tests
         shell: bash -l {0}
 #        env:
+#          EDGEDB_EXE: "/opt/hostedtoolcache/edgedb-cli/1.1.2/x64/edgedb"
 #          EDGEDB_SERVER: "--tls-security=insecure -P 5656"
