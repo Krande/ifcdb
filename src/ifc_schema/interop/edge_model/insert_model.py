@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from multiprocessing.pool import ThreadPool
 from toposort import toposort_flatten
+from ifc_schema.interop.edge_model.edge_model_base import EdgeModel
 
 import edgedb
 import ifcopenshell
@@ -13,13 +14,26 @@ import ifcopenshell
 @dataclass
 class IfcToEdge:
     ifc_file: str | pathlib.Path
+    em: EdgeModel
     ifc_obj: ifcopenshell.file = None
     client: edgedb.Client = None
     wrap: ifcopenshell.ifcopenshell_wrapper = None
+    database: str = None
+    port: int | None = 5656
+    instance_name: str = None
 
     def __enter__(self):
         self.ifc_obj = ifcopenshell.open(self.ifc_file)
-        self.client = edgedb.create_client("edgedb://edgedb@localhost:5656", tls_security="insecure")
+        if self.instance_name is None:
+            conn_str = f"edgedb://edgedb@localhost:{self.port}"
+        else:
+            conn_str = self.instance_name
+
+        self.client = edgedb.create_client(
+            conn_str,
+            tls_security="insecure",
+            database=self.database,
+        )
 
         return self
 
@@ -35,8 +49,12 @@ class IfcToEdge:
                 dep_map[inst.id()].append(dep.id())
         return [self.ifc_obj.by_id(x) for x in toposort_flatten(dep_map, sort=True) if x != 0]
 
-    def get_unique_class_entities_of_ifc_content(self) -> list[str]:
-        return list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order()]))
+    def get_unique_class_entities_of_ifc_content(self, include_related=False) -> list[str]:
+        entities = list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order()]))
+        if include_related is False:
+            return entities
+
+        return self.em.get_related_entities(entities)
 
     def upload_ifc_w_threading(self):
         proxy_elements = list(self.ifc_obj.by_type("IFCBuildingElementProxy"))
@@ -61,6 +79,10 @@ class IfcToEdge:
         logging.info(f'Insert complete in "{diff:.1f}" seconds')
 
         return chunk
+
+    def write_ifc_entities_to_esdl_file(self, esdl_file_path: str | pathlib.Path, module_name: str = "default"):
+        unique_entities = self.get_unique_class_entities_of_ifc_content(True)
+        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
 
 
 @dataclass

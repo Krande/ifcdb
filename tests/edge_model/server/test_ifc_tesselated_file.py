@@ -1,25 +1,44 @@
-import edgedb
-import ifcopenshell
-from ifc_schema.interop.edge_model.inserts import insert_ifc_building_element_proxies
-from ifc_schema.interop.edge_model.query import get_all_proxy_elements
+import os
+import pathlib
+import shutil
+
+from ifc_schema.interop.edge_model.insert_model import IfcToEdge
+import subprocess
 
 
-def test_roundtrip_ifc_tesselated(ifc_files_dir):
-    client = edgedb.create_client("edgedb://edgedb@localhost:5656", tls_security="insecure")
+def test_roundtrip_ifc_tesselated(ifc_files_dir, em_ifc4x1, server_name):
+    db_name = "tess_db"
+    ifc_file_name = "tessellated-item.ifc"
 
-    ifc = ifcopenshell.open(ifc_files_dir / "tessellated-item.ifc")
+    db_schema_dir = pathlib.Path("temp") / db_name / "dbschema"
+    if db_schema_dir.exists():
+        shutil.rmtree(db_schema_dir)
+    os.makedirs(db_schema_dir, exist_ok=True)
 
-    # Insertions
-    # Insert Geometries
-    ifc_bld_proxy_elements = list(ifc.by_type("IfcBuildingElementProxy"))
-    insert_ifc_building_element_proxies(client, ifc_bld_proxy_elements)
+    server_prefix = f"edgedb -I {server_name}"
+    # subprocess.run(f"{server_prefix} database create {db_name}")
 
-    # TODO: Insert Spatial Hierarchy and link with geometry ID's using guids
-    # TODO: Insert Project Data
+    with open(db_schema_dir.parent / "edgedb.toml", 'w') as f:
+        f.write('[edgedb]\nserver-version = "1.4"')
 
-    # Queries
-    result = get_all_proxy_elements(client)
+    with IfcToEdge(ifc_files_dir / ifc_file_name, em=em_ifc4x1, instance_name=server_name) as ie:
+        # Set up schema
+        ie.write_ifc_entities_to_esdl_file(db_schema_dir / "default.esdl")
+        subprocess.run(f"{server_prefix} migration create --non-interactive", cwd=db_schema_dir.parent)
+        subprocess.run(f"{server_prefix} migrate", cwd=db_schema_dir.parent)
 
-    client.close()
+        # Insert Objects
+        ifc_items = ie.get_ifc_objects_by_sorted_insert_order()
+        for tx in ie.client.transaction():
+            with tx:
+                for item in ifc_items:
+                    insert_str = ie.em.get_entity_insert_str(item)
+                    print(40 * "-" + str(item) + "START")
+                    print(insert_str)
+                    tx.execute(insert_str)
+                    print(40 * "-" + str(item) + "END")
 
-    assert len(ifc_bld_proxy_elements) == len(result)
+        # Queries
+        # result = get_all_proxy_elements(client)
+        #
+        # assert len(ifc_bld_proxy_elements) == len(result)

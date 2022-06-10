@@ -1,8 +1,18 @@
-import pathlib
-
 import pytest
+import subprocess
+
+SERVER_NAME = "ifc_test_server"
 
 
 @pytest.fixture
-def ifc_files_dir(root_dir) -> pathlib.Path:
-    return root_dir / "files"
+def server_name():
+    return SERVER_NAME
+
+
+def pytest_sessionstart(session):
+    """
+    Called after the Session object has been created and
+    before performing collection and entering the run test loop.
+    """
+    subprocess.run(f"edgedb instance destroy {SERVER_NAME} --force")
+    subprocess.run(f"edgedb instance create {SERVER_NAME}")

@@ -108,7 +108,7 @@ module default {
         property ObjectType -> str;
         property LongName -> str;
         property Phase -> str;
-        link RepresentationContexts -> IfcRepresentationContext;
+        multi link RepresentationContexts -> IfcRepresentationContext;
         link UnitsInContext -> IfcUnitAssignment;
     }
 
@@ -142,7 +142,7 @@ module default {
     }
 
     type IfcDerivedUnit  {
-        required link Elements -> IfcDerivedUnitElement;
+        required multi link Elements -> IfcDerivedUnitElement;
         required property UnitType -> str {
             constraint one_of ('ACCELERATIONUNIT','ANGULARVELOCITYUNIT','AREADENSITYUNIT','COMPOUNDPLANEANGLEUNIT','CURVATUREUNIT','DYNAMICVISCOSITYUNIT','HEATFLUXDENSITYUNIT','HEATINGVALUEUNIT','INTEGERCOUNTRATEUNIT','IONCONCENTRATIONUNIT','ISOTHERMALMOISTURECAPACITYUNIT','KINEMATICVISCOSITYUNIT','LINEARFORCEUNIT','LINEARMOMENTUNIT','LINEARSTIFFNESSUNIT','LINEARVELOCITYUNIT','LUMINOUSINTENSITYDISTRIBUTIONUNIT','MASSDENSITYUNIT','MASSFLOWRATEUNIT','MASSPERLENGTHUNIT','MODULUSOFELASTICITYUNIT','MODULUSOFLINEARSUBGRADEREACTIONUNIT','MODULUSOFROTATIONALSUBGRADEREACTIONUNIT','MODULUSOFSUBGRADEREACTIONUNIT','MOISTUREDIFFUSIVITYUNIT','MOLECULARWEIGHTUNIT','MOMENTOFINERTIAUNIT','PHUNIT','PLANARFORCEUNIT','ROTATIONALFREQUENCYUNIT','ROTATIONALMASSUNIT','ROTATIONALSTIFFNESSUNIT','SECTIONAREAINTEGRALUNIT','SECTIONMODULUSUNIT','SHEARMODULUSUNIT','SOUNDPOWERLEVELUNIT','SOUNDPOWERUNIT','SOUNDPRESSURELEVELUNIT','SOUNDPRESSUREUNIT','SPECIFICHEATCAPACITYUNIT','TEMPERATUREGRADIENTUNIT','TEMPERATURERATEOFCHANGEUNIT','THERMALADMITTANCEUNIT','THERMALCONDUCTANCEUNIT','THERMALEXPANSIONCOEFFICIENTUNIT','THERMALRESISTANCEUNIT','THERMALTRANSMITTANCEUNIT','TORQUEUNIT','USERDEFINED','VAPORPERMEABILITYUNIT','VOLUMETRICFLOWRATEUNIT','WARPINGCONSTANTUNIT','WARPINGMOMENTUNIT');
         };
@@ -430,8 +430,8 @@ module default {
         property Identification -> str;
         required property Name -> str;
         property Description -> str;
-        link Roles -> IfcActorRole;
-        link Addresses -> IfcAddress;
+        multi link Roles -> IfcActorRole;
+        multi link Addresses -> IfcAddress;
     }
 
     type IfcOwnerHistory  {
@@ -464,14 +464,14 @@ module default {
         property MiddleNames -> tuple<str>;
         property PrefixTitles -> tuple<str>;
         property SuffixTitles -> tuple<str>;
-        link Roles -> IfcActorRole;
-        link Addresses -> IfcAddress;
+        multi link Roles -> IfcActorRole;
+        multi link Addresses -> IfcAddress;
     }
 
     type IfcPersonAndOrganization  {
         required link ThePerson -> IfcPerson;
         required link TheOrganization -> IfcOrganization;
-        link Roles -> IfcActorRole;
+        multi link Roles -> IfcActorRole;
     }
 
     abstract type IfcPlacement extending IfcGeometricRepresentationItem {
@@ -534,7 +534,7 @@ module default {
     abstract type IfcProductRepresentation  {
         property Name -> str;
         property Description -> str;
-        required link Representations -> IfcRepresentation;
+        required multi link Representations -> IfcRepresentation;
     }
 
     type IfcProject extending IfcContext {
@@ -554,14 +554,14 @@ module default {
 
     type IfcRelAggregates extending IfcRelDecomposes {
         required link RelatingObject -> IfcObjectDefinition;
-        required link RelatedObjects -> IfcObjectDefinition;
+        required multi link RelatedObjects -> IfcObjectDefinition;
     }
 
     abstract type IfcRelConnects extending IfcRelationship {
     }
 
     type IfcRelContainedInSpatialStructure extending IfcRelConnects {
-        required link RelatedElements -> IfcProduct;
+        required multi link RelatedElements -> IfcProduct;
         required link RelatingStructure -> IfcSpatialElement;
     }
 
@@ -575,7 +575,7 @@ module default {
         required link ContextOfItems -> IfcRepresentationContext;
         property RepresentationIdentifier -> str;
         property RepresentationType -> str;
-        required link Items -> IfcRepresentationItem;
+        required multi link Items -> IfcRepresentationItem;
     }
 
     abstract type IfcRepresentationContext  {
@@ -741,11 +741,11 @@ module default {
     }
 
     type IfcUnitAssignment  {
-        required link Units -> IfcUnit;
+        required multi link Units -> IfcUnit;
     }
 
     type IfcValue {
-        link IfcValue -> IfcDerivedMeasureValue | IfcMeasureValue | IfcSimpleValue;
+        link IfcValue -> IfcAbsorbedDoseMeasure | IfcAccelerationMeasure | IfcAngularVelocityMeasure | IfcAreaDensityMeasure | IfcCompoundPlaneAngleMeasure | IfcCurvatureMeasure | IfcDoseEquivalentMeasure | IfcDynamicViscosityMeasure | IfcElectricCapacitanceMeasure | IfcElectricChargeMeasure | IfcElectricConductanceMeasure | IfcElectricResistanceMeasure | IfcElectricVoltageMeasure | IfcEnergyMeasure | IfcForceMeasure | IfcFrequencyMeasure | IfcHeatFluxDensityMeasure | IfcHeatingValueMeasure | IfcIlluminanceMeasure | IfcInductanceMeasure | IfcIntegerCountRateMeasure | IfcIonConcentrationMeasure | IfcIsothermalMoistureCapacityMeasure | IfcKinematicViscosityMeasure | IfcLinearForceMeasure | IfcLinearMomentMeasure | IfcLinearStiffnessMeasure | IfcLinearVelocityMeasure | IfcLuminousFluxMeasure | IfcLuminousIntensityDistributionMeasure | IfcMagneticFluxDensityMeasure | IfcMagneticFluxMeasure | IfcMassDensityMeasure | IfcMassFlowRateMeasure | IfcMassPerLengthMeasure | IfcModulusOfElasticityMeasure | IfcModulusOfLinearSubgradeReactionMeasure | IfcModulusOfRotationalSubgradeReactionMeasure | IfcModulusOfSubgradeReactionMeasure | IfcMoistureDiffusivityMeasure | IfcMolecularWeightMeasure | IfcMomentOfInertiaMeasure | IfcMonetaryMeasure | IfcPHMeasure | IfcPlanarForceMeasure | IfcPowerMeasure | IfcPressureMeasure | IfcRadioActivityMeasure | IfcRotationalFrequencyMeasure | IfcRotationalMassMeasure | IfcRotationalStiffnessMeasure | IfcSectionModulusMeasure | IfcSectionalAreaIntegralMeasure | IfcShearModulusMeasure | IfcSoundPowerLevelMeasure | IfcSoundPowerMeasure | IfcSoundPressureLevelMeasure | IfcSoundPressureMeasure | IfcSpecificHeatCapacityMeasure | IfcTemperatureGradientMeasure | IfcTemperatureRateOfChangeMeasure | IfcThermalAdmittanceMeasure | IfcThermalConductivityMeasure | IfcThermalExpansionCoefficientMeasure | IfcThermalResistanceMeasure | IfcThermalTransmittanceMeasure | IfcTorqueMeasure | IfcVaporPermeabilityMeasure | IfcVolumetricFlowRateMeasure | IfcWarpingConstantMeasure | IfcWarpingMomentMeasure | IfcAmountOfSubstanceMeasure | IfcAreaMeasure | IfcComplexNumber | IfcContextDependentMeasure | IfcCountMeasure | IfcDescriptiveMeasure | IfcElectricCurrentMeasure | IfcLengthMeasure | IfcLuminousIntensityMeasure | IfcMassMeasure | IfcNonNegativeLengthMeasure | IfcNormalisedRatioMeasure | IfcNumericMeasure | IfcParameterValue | IfcPlaneAngleMeasure | IfcPositiveLengthMeasure | IfcPositivePlaneAngleMeasure | IfcPositiveRatioMeasure | IfcRatioMeasure | IfcSolidAngleMeasure | IfcThermodynamicTemperatureMeasure | IfcTimeMeasure | IfcVolumeMeasure | IfcBinary | IfcBoolean | IfcDate | IfcDateTime | IfcDuration | IfcIdentifier | IfcInteger | IfcLabel | IfcLogical | IfcPositiveInteger | IfcReal | IfcText | IfcTime | IfcTimeStamp;
     }
 
     type IfcVaporPermeabilityMeasure {

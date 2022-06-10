@@ -41,8 +41,10 @@ def insert(ifc_file, schema_name):
             with tx:
                 for item in ifc_items:
                     insert_str = em.get_entity_insert_str(item)
+                    print(40 * "-" + str(item) + "START")
                     print(insert_str)
                     tx.execute(insert_str)
+                    print(40 * "-" + str(item) + "END")
 
 
 if __name__ == "__main__":

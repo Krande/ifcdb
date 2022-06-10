@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import pathlib
 from dataclasses import dataclass, field
 from typing import ClassVar, Union, List, Dict
 
@@ -167,6 +168,10 @@ class AttributeEdgeModel:
             return True
         return optional
 
+    @property
+    def ref_to_many(self):
+        return self.array_ref() is not None
+
     def get_type_ref(self) -> str | EntityEdgeModel | SelectEdgeModel | ArrayEdgeModel:
         array_ref = self.array_ref()
         entity_ref = self.entity_ref()
@@ -185,10 +190,12 @@ class AttributeEdgeModel:
 
     def entity_ref(self) -> Union[None, str, EntityEdgeModel, SelectEdgeModel]:
         typeof = self.att.type_of_attribute()
+
         if isinstance(typeof, wrap.aggregation_type):
             typeof = get_aggregation_type(typeof)
             if isinstance(typeof, str):
                 return None
+
         result = get_base_type_name(typeof)
         if isinstance(result, str):
             return result
@@ -196,24 +203,28 @@ class AttributeEdgeModel:
         return self.edge_model.get_entity_by_name(result.name())
 
     def to_str(self):
-        value_ref = self.entity_ref() if self.entity_ref() is not None else self.array_ref()
-
+        array_ref = self.array_ref()
+        value_ref = self.entity_ref()
         prefix_str = "" if self.optional is True else "required "
         name = self.edge_model.reserved_keys.get(self.name.lower(), self.name)
 
         if isinstance(value_ref, str):
             prefix_str += "property"
             value_name = value_ref
+        elif isinstance(array_ref, ArrayEdgeModel):
+            param = array_ref.parameter_type
+            if isinstance(param, str):
+                prefix_str += "property" if array_ref.list_type == ArrayEdgeModel.LIST else "multi property"
+            else:
+                prefix_str += "multi link"
+
+            if "multi" in prefix_str:
+                value_name = value_ref.name
+            else:
+                value_name = array_ref.to_str()
         elif isinstance(value_ref, (EntityEdgeModel, SelectEdgeModel)):
             prefix_str += "link"
             value_name = value_ref.name
-        elif isinstance(value_ref, ArrayEdgeModel):
-            param = value_ref.parameter_type
-            if value_ref.list_type == ArrayEdgeModel.LIST:
-                prefix_str += "property" if isinstance(param, str) else "multi link"
-            else:
-                prefix_str += "multi property" if isinstance(param, str) else "multi link"
-            value_name = value_ref.to_str()
         elif isinstance(value_ref, EnumEdgeModel):
             prefix_str += "property"
             items_str = ",".join(f"'{x}'" for x in value_ref.get_enum_items())
@@ -275,6 +286,7 @@ class ArrayEdgeModel:
         levels = self.get_levels()
         if isinstance(self.parameter_type, str) and self.list_type in (self.SET,):
             return self.parameter_type
+
         return get_array_str(levels)
 
 
@@ -292,7 +304,7 @@ class EntityBaseEdgeModel:
     def schema(self):
         return self.edge_model.schema
 
-    def to_insert_str(self, entity: ifcopenshell.entity_instance) -> str:
+    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = "") -> str:
         raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
 
     def to_str(self) -> str:
@@ -404,16 +416,16 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
         return atts_str
 
-    def to_insert_str(self, entity: ifcopenshell.entity_instance):
-        insert_str = f"INSERT {self.name} {{\n"
+    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = ""):
+        insert_str = f"{indent}INSERT {self.name} {{"
         # empty_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is None]
         all_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
+
         for i, att in enumerate(all_atts):
             res = getattr(entity, att.name)
             att_ref = att.get_type_ref()
             name = att.name
-            if name == 'ValueComponent':
-                print('sd')
+
             if name is None:
                 raise ValueError()
             if res is None:
@@ -424,10 +436,9 @@ class EntityEdgeModel(EntityBaseEdgeModel):
                 value_str = f"'{res}'"
             elif isinstance(res, tuple):
                 if isinstance(res[0], ifcopenshell.entity_instance):
-                    value_str = "("
-                    for r in res:
-                        value_str += f"{self.edge_model.get_entity_insert_str(r)}"
-                    value_str += ")"
+                    value_str = "{"
+                    value_str += ','.join([f"({self.edge_model.get_entity_insert_str(r)})" for r in res])
+                    value_str += "}"
                 else:
                     if isinstance(res[0], tuple):
                         value_str = list(res)
@@ -454,7 +465,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             else:
                 comma_str = ","
 
-            insert_str += f"{name} := {value_str}{comma_str}\n"
+            insert_str += f"{name} := {value_str}{comma_str}"
 
         return insert_str + "}\n"
 
@@ -467,6 +478,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     {prop_prefix}type {name} {parent_str} {{
 {att_str}    }}
 """
+
 
 """
 INSERT IfcMeasureWithUnit {
@@ -490,6 +502,7 @@ INSERT IfcMeasureWithUnit {
         }
     )
 }"""
+
 
 @dataclass
 class EnumEdgeModel(EntityBaseEdgeModel):
@@ -531,7 +544,7 @@ class TypeEdgeModel(EntityBaseEdgeModel):
 
         return isinstance(cur_decl, wrap.aggregation_type)
 
-    def to_insert_str(self, entity: ifcopenshell.entity_instance) -> str:
+    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = "") -> str:
         # value = get_base_type_name(self.entity)
         return f"INSERT {self.name} {{{self.name} := {entity.wrappedValue} }}"
 
@@ -568,11 +581,14 @@ class TypeEdgeModel(EntityBaseEdgeModel):
 class SelectEdgeModel(EntityBaseEdgeModel):
     entity: wrap.select_type
 
-    def get_select_entities(self) -> list[EntityEdgeModel]:
-        return [self.edge_model.get_entity_by_name(x.name()) for x in self.entity.select_list()]
+    def get_select_entities(self, unwrap_all=False) -> list[EntityEdgeModel]:
+        if unwrap_all is False:
+            return [self.edge_model.get_entity_by_name(x.name()) for x in self.entity.select_list()]
+        res = [self.edge_model.get_entity_by_name(x.name()) for x in unwrap_selected_items(self.entity)]
+        return res
 
     def to_str(self) -> str:
-        ent_names = " | ".join(x.name for x in self.get_select_entities())
+        ent_names = " | ".join(x.name for x in self.get_select_entities(self.edge_model.select_types_unwrap))
         return f"""
     type {self.entity.name()} {{
         link {self.entity.name()} -> {ent_names};
@@ -589,6 +605,7 @@ class EdgeModel:
     select_types: Dict[str, SelectEdgeModel] = None
 
     modify_circular_deps: bool = False
+    select_types_unwrap: bool = True
 
     reserved_keys: ClassVar[dict] = dict(
         start="`Start`", union="`UNION`", group="`GROUP`", move="`MOVE`", check="`CHECK`", window="`WINDOW`"
@@ -733,6 +750,16 @@ class EdgeModel:
         res = self.get_entity_by_name(entity)
         return res.to_str()
 
-    def get_entity_insert_str(self, ifc_entity: ifcopenshell.entity_instance) -> str:
+    def get_entity_insert_str(self, ifc_entity: ifcopenshell.entity_instance, indent: str = "") -> str:
         entity = self.get_entity_by_name(ifc_entity.is_a())
-        return entity.to_insert_str(ifc_entity)
+        return entity.to_insert_str(ifc_entity, indent=indent)
+
+    def write_entities_to_esdl_file(self, entities: list[str], esdl_file_path, module_name="default"):
+        esdl_file_path = pathlib.Path(esdl_file_path)
+
+        with open(esdl_file_path, "w") as f:
+            f.write(f"module {module_name} {{\n\n")
+            for entity_name in entities:
+                edge_str = self.entity_to_edge_str(entity_name)
+                f.write(edge_str)
+            f.write("}")
