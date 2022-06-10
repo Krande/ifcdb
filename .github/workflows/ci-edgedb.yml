@@ -22,6 +22,7 @@ jobs:
           python -m pip install --no-deps --ignore-installed .
         shell: bash -l {0}
       - uses: edgedb/setup-edgedb@v1
+      - name: Test package
         run: pytest tests
         shell: bash -l {0}
 #        env:
