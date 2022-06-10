@@ -6,13 +6,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: CI with EdgeDB action
-    services:
-      edgedb:
-        image: edgedb/edgedb:1.4
-        env:
-          EDGEDB_SERVER_SECURITY: insecure_dev_mode
-        ports:
-          - 5656:5656
     steps:
       - uses: actions/checkout@v2
         with:
