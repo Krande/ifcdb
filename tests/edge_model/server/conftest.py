@@ -17,7 +17,7 @@ def pytest_sessionstart(session):
     before performing collection and entering the run test loop.
     """
     res = os.environ.get("EDGEDB_SERVER", None)
-    if res is None:
+    if res is not None:
         return
     subprocess.run(f"edgedb instance destroy {SERVER_NAME} --force")
     subprocess.run(f"edgedb instance create {SERVER_NAME}")
