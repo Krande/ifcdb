@@ -1,3 +1,5 @@
+name: ci-ifc-edgedb
+
 on: push
 
 jobs:

@@ -4,6 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - ifcopenshell
+  - python==3.10
   - pyparsing
   - pydantic
   - pytest
