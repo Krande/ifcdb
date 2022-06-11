@@ -35,12 +35,12 @@ def main(ifc_file: pathlib.Path, schema_name):
 
 def insert(ifc_file, schema_name):
     em = EdgeModel(schema=wrap.schema_by_name(schema_name))
-    with IfcToEdge(ifc_file) as ifc:
+    with IfcToEdge(ifc_file, em) as ifc:
         ifc_items = ifc.get_ifc_objects_by_sorted_insert_order()
         for tx in ifc.client.transaction():
             with tx:
                 for item in ifc_items:
-                    insert_str = em.get_entity_insert_str(item)
+                    insert_str = ifc.em.get_entity_insert_str(item)
                     print(40 * "-" + str(item) + "START")
                     print(insert_str)
                     tx.execute(insert_str)

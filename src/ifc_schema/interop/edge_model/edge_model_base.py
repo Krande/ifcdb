@@ -417,7 +417,8 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         return atts_str
 
     def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = ""):
-        insert_str = f"{indent}INSERT {self.name} {{"
+        ifc_ent = ifcopenshell.entity_instance
+        insert_str = f"{indent}INSERT {self.name} {{\n  "
         # empty_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is None]
         all_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
 
@@ -434,16 +435,20 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
             if isinstance(res, str):
                 value_str = f"'{res}'"
-            elif isinstance(res, tuple):
-                if isinstance(res[0], ifcopenshell.entity_instance):
-                    value_str = "{"
-                    value_str += ','.join([f"({self.edge_model.get_entity_insert_str(r)})" for r in res])
-                    value_str += "}"
+            elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) and isinstance(res[0], ifc_ent):
+                value_str = "{"
+                aname = att_ref.parameter_type.name
+                value_str += ",".join(
+                    [f"(INSERT {aname} {{ `{aname}` := ({self.edge_model.get_entity_insert_str(r)})}})" for r in res]
+                )
+                value_str += "}"
+            elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
+                if isinstance(res[0], tuple):
+                    value_str = list(res)
                 else:
-                    if isinstance(res[0], tuple):
-                        value_str = list(res)
-                    else:
-                        value_str = res
+                    value_str = res
+            elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) is False:
+                value_str = res
             elif isinstance(res, (int, float)):
                 value_str = res
             elif isinstance(res, ifcopenshell.entity_instance):
@@ -454,7 +459,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
                     res_name = res.__dict__["type"]
                     subref = self.edge_model.get_entity_by_name(res_name)
                     styp = att.att.type_of_attribute()
-                    value_str = f"(INSERT {aname} {{ {aname} := {entity_str} }})"
+                    value_str = f"(\n       INSERT {aname} {{\n    {aname} := {entity_str} }})"
                 else:
                     value_str = entity_str
             else:
