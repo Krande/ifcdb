@@ -48,7 +48,7 @@ def test_roundtrip_ifc_tesselated(ifc_files_dir, em_ifc4x1, server_name):
         # subprocess.run(f"{server_prefix} migrate", cwd=db_schema_dir.parent, shell=True)
 
         # Insert Objects
-        ifc_items = ie.get_ifc_objects_by_sorted_insert_order()
+        ifc_items = ie.get_ifc_objects_by_sorted_insert_order_flat()
         for tx in ie.client.transaction():
             with tx:
                 for item in ifc_items:

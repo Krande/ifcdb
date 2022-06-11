@@ -4,7 +4,7 @@ import time
 import logging
 from dataclasses import dataclass
 from multiprocessing.pool import ThreadPool
-from toposort import toposort_flatten
+from toposort import toposort_flatten, toposort
 from ifc_schema.interop.edge_model.edge_model_base import EdgeModel
 
 import edgedb
@@ -40,17 +40,27 @@ class IfcToEdge:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.close()
 
-    def get_ifc_objects_by_sorted_insert_order(self):
+    def get_ifc_dep_map(self, use_ids=True):
         dep_map = dict()
         for inst in self.ifc_obj:
-            if inst.id() not in dep_map.keys():
-                dep_map[inst.id()] = []
+            id_ref = inst.id() if use_ids else inst
+            if id_ref not in dep_map.keys():
+                dep_map[id_ref] = []
             for dep in self.ifc_obj.traverse(inst, max_levels=1)[1:]:
-                dep_map[inst.id()].append(dep.id())
+                dep_ref = dep.id() if use_ids else dep
+                dep_map[id_ref if use_ids else inst].append(dep_ref)
+        return dep_map
+
+    def get_ifc_objects_by_sorted_insert_order_flat(self):
+        dep_map = self.get_ifc_dep_map()
         return [self.ifc_obj.by_id(x) for x in toposort_flatten(dep_map, sort=True) if x != 0]
 
+    def get_ifc_objects_by_sorted_insert_order_grouped(self):
+        dep_map = self.get_ifc_dep_map()
+        return [[self.ifc_obj.by_id(x) for x in group if x != 0] for group in toposort(dep_map)]
+
     def get_unique_class_entities_of_ifc_content(self, include_related=False) -> list[str]:
-        entities = list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order()]))
+        entities = list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order_flat()]))
         if include_related is False:
             return entities
 
@@ -74,7 +84,7 @@ class IfcToEdge:
 
     def chunk_uploader(self, chunk):
         start = time.time()
-        insert_ifc_building_element_proxies(self.client, chunk)
+        # insert_ifc_building_element_proxies(self.client, chunk)
         diff = time.time() - start
         logging.info(f'Insert complete in "{diff:.1f}" seconds')
 
@@ -85,7 +95,3 @@ class IfcToEdge:
         self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
 
 
-@dataclass
-class IfcEntity:
-    ifc_entity: ifcopenshell.entity_instance
-    em: Ed

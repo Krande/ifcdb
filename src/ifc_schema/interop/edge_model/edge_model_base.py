@@ -326,21 +326,6 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     }
     _attributes: list[AttributeEdgeModel] = field(default=None)
 
-    def _skip_due_to_circular_deps(self, att_name):
-        circular_refs = [
-            ("IfcFillAreaStyleTiles", "Tiles"),
-            ("IfcClassificationReference", "ReferencedSource"),
-            ("IfcBooleanResult", "FirstOperand"),
-            ("IfcBooleanResult", "SecondOperand"),
-        ]
-        should_skip = False
-        for circ_class, circ_att in circular_refs:
-            if self.name == circ_class and att_name == circ_att:
-                should_skip = True
-                break
-
-        return should_skip
-
     def get_derive_map(self) -> dict[str, bool] | None:
         derived = self.entity.derived()
         attributes = self.entity.all_attributes()
@@ -400,6 +385,21 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
         return children_all
 
+    def _skip_due_to_circular_deps(self, att_name):
+        circular_refs = [
+            ("IfcFillAreaStyleTiles", "Tiles"),
+            ("IfcClassificationReference", "ReferencedSource"),
+            ("IfcBooleanResult", "FirstOperand"),
+            ("IfcBooleanResult", "SecondOperand"),
+        ]
+        should_skip = False
+        for circ_class, circ_att in circular_refs:
+            if self.name == circ_class and att_name == circ_att:
+                should_skip = True
+                break
+
+        return should_skip
+
     @property
     def ancestor_str(self):
         ancestor_str = ""
@@ -416,61 +416,24 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
         return atts_str
 
+    def get_entity_atts(self, entity: ifcopenshell.entity_instance):
+        return [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
+
     def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = ""):
-        ifc_ent = ifcopenshell.entity_instance
         insert_str = f"{indent}INSERT {self.name} {{\n  "
-        # empty_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is None]
-        all_atts = [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
+        all_atts = self.get_entity_atts(entity)
 
         for i, att in enumerate(all_atts):
-            res = getattr(entity, att.name)
-            att_ref = att.get_type_ref()
-            name = att.name
-
-            if name is None:
-                raise ValueError()
+            res = get_att_str(att, entity)
             if res is None:
-                logging.debug(f'Property att: "{name}" is None')
                 continue
-
-            if isinstance(res, str):
-                value_str = f"'{res}'"
-            elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) and isinstance(res[0], ifc_ent):
-                value_str = "{"
-                aname = att_ref.parameter_type.name
-                value_str += ",".join(
-                    [f"(INSERT {aname} {{ `{aname}` := ({self.edge_model.get_entity_insert_str(r)})}})" for r in res]
-                )
-                value_str += "}"
-            elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
-                if isinstance(res[0], tuple):
-                    value_str = list(res)
-                else:
-                    value_str = res
-            elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) is False:
-                value_str = res
-            elif isinstance(res, (int, float)):
-                value_str = res
-            elif isinstance(res, ifcopenshell.entity_instance):
-                entity_str = f"({self.edge_model.get_entity_insert_str(res)})"
-                if isinstance(att_ref, SelectEdgeModel):
-                    aname = att_ref.name
-                    select_entities = att_ref.get_select_entities()
-                    res_name = res.__dict__["type"]
-                    subref = self.edge_model.get_entity_by_name(res_name)
-                    styp = att.att.type_of_attribute()
-                    value_str = f"(\n       INSERT {aname} {{\n    {aname} := {entity_str} }})"
-                else:
-                    value_str = entity_str
-            else:
-                raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
 
             if i == len(all_atts) - 1:
                 comma_str = ""
             else:
                 comma_str = ","
 
-            insert_str += f"{name} := {value_str}{comma_str}"
+            insert_str += res + comma_str
 
         return insert_str + "}\n"
 
@@ -483,30 +446,6 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     {prop_prefix}type {name} {parent_str} {{
 {att_str}    }}
 """
-
-
-"""
-INSERT IfcMeasureWithUnit {
-    ValueComponent := (
-        INSERT IfcValue {
-            IfcValue := (
-                INSERT IfcMeasureValue { 
-                    IfcMeasureValue := (INSERT IfcPlaneAngleMeasure {IfcPlaneAngleMeasure := 0.017453293 })
-                }
-            )
-        }
-    ),
-    UnitComponent := (
-        INSERT IfcUnit {
-            IfcUnit := (
-                INSERT IfcSIUnit {
-                    UnitType := 'PLANEANGLEUNIT',
-                    Name := 'RADIAN'
-                }
-            )
-        }
-    )
-}"""
 
 
 @dataclass
@@ -768,3 +707,58 @@ class EdgeModel:
                 edge_str = self.entity_to_edge_str(entity_name)
                 f.write(edge_str)
             f.write("}")
+
+
+def get_att_str(
+    att: AttributeEdgeModel,
+    entity: ifcopenshell.entity_instance,
+    em: EdgeModel,
+    uuid_map: dict = None,
+) -> str | None:
+    res = getattr(entity, att.name)
+    att_ref = att.get_type_ref()
+    name = att.name
+
+    if name is None:
+        raise ValueError()
+    if res is None:
+        logging.debug(f'Property att: "{name}" is None')
+        return None
+
+    if isinstance(res, str):
+        value_str = f"'{res}'"
+    elif (
+        isinstance(res, tuple)
+        and isinstance(att_ref, ArrayEdgeModel)
+        and isinstance(res[0], ifcopenshell.entity_instance)
+    ):
+        value_str = "{"
+        aname = att_ref.parameter_type.name
+        for i, r in enumerate(res):
+            uuid_obj = uuid_map.get(r, None)
+            if uuid_obj is None:
+                value_str += f"(INSERT {aname} {{ `{aname}` := ({em.get_entity_insert_str(r)})}})"
+            else:
+                value_str += f"(SELECT <uuid>{uuid_obj})"
+            value_str += "" if i == len(r) - 1 else ","
+        value_str += "}"
+    elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
+        if isinstance(res[0], tuple):
+            value_str = list(res)
+        else:
+            value_str = res
+    elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) is False:
+        value_str = res
+    elif isinstance(res, (int, float)):
+        value_str = res
+    elif isinstance(res, ifcopenshell.entity_instance):
+        entity_str = f"({em.get_entity_insert_str(res)})"
+        if isinstance(att_ref, SelectEdgeModel):
+            aname = att_ref.name
+            value_str = f"(INSERT {aname} {{ {aname} := {entity_str} }})"
+        else:
+            value_str = entity_str
+    else:
+        raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
+
+    return f"{name} := {value_str}"
