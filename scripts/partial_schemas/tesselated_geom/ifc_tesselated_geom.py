@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import json
 
 import edgedb.blocking_client
 
@@ -9,13 +10,31 @@ from ifc_schema.interop.edge_model.edge_model_base import EdgeModel, get_att_str
 from ifc_schema.interop.edge_model.insert_model import IfcToEdge
 from ifc_schema.interop.edge_model.utils import copy_server_files
 from ifc_schema.utils import top_dir
+from edgedb._testbase import DatabaseTestCase, AsyncQueryTestCase, SyncQueryTestCase
+
 import ifcopenshell
 
 wrap = ifcopenshell.ifcopenshell_wrapper
 
+#
+# class DbTest(SyncQueryTestCase):
+#     output_dir = pathlib.Path("db").resolve().absolute()
+#     SCHEMA = str(output_dir / "dbschema/default.esdl")
+#
+#     def test_edgeql_insert_1(self):
+#         for tx in self.client.transaction():
+#             with tx:
+#                 tx.execute(
+#                     """
+#                     INSERT IfcMassMeasure {
+#                         IfcMassMeasure := 64
+#                     };
+#                 """
+#                 )
+
 
 def case1(ifc_file: pathlib.Path, em: EdgeModel):
-    with IfcToEdge(ifc_file) as ifc:
+    with IfcToEdge(ifc_file, em) as ifc:
         return em.get_related_entities(ifc.get_unique_class_entities_of_ifc_content())
 
 
@@ -56,10 +75,23 @@ def insert_items(i2e: IfcToEdge, tx: edgedb.blocking_client):
         # INSERT block
         insert_str = f"select (INSERT {entity.name} {{\n  "
         for i, att in enumerate(all_atts):
-            insert_str += get_att_str(att, item, i2e.em, )
-        insert_str += '})'
-        res = tx.query_single_json(insert_str)
+            att_str = get_att_str(
+                att,
+                item,
+                i2e.em,
+                uuid_map=uuid_map
+            )
+            if i == len(all_atts) - 1:
+                comma_str = ""
+            else:
+                comma_str = ","
 
+            insert_str += att_str + comma_str
+        insert_str += "})"
+        print(insert_str)
+        query_res = json.loads(tx.query_single_json(insert_str))
+        print(query_res)
+        uuid_map[item] = query_res["id"]
 
 
 if __name__ == "__main__":

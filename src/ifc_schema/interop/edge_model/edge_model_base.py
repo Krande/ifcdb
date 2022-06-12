@@ -739,7 +739,7 @@ def get_att_str(
             if uuid_obj is None:
                 value_str += f"(INSERT {aname} {{ `{aname}` := ({em.get_entity_insert_str(r)})}})"
             else:
-                value_str += f"(SELECT <uuid>{uuid_obj})"
+                value_str += f'(SELECT <uuid>"{uuid_obj}")'
             value_str += "" if i == len(r) - 1 else ","
         value_str += "}"
     elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
@@ -752,7 +752,11 @@ def get_att_str(
     elif isinstance(res, (int, float)):
         value_str = res
     elif isinstance(res, ifcopenshell.entity_instance):
-        entity_str = f"({em.get_entity_insert_str(res)})"
+        uuid_obj = uuid_map.get(res, None)
+        if uuid_obj is None:
+            entity_str = f"({em.get_entity_insert_str(res)})"
+        else:
+            entity_str = f'(SELECT <uuid>"{uuid_obj}")'
         if isinstance(att_ref, SelectEdgeModel):
             aname = att_ref.name
             value_str = f"(INSERT {aname} {{ {aname} := {entity_str} }})"
