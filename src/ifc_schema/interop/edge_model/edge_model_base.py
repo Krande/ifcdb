@@ -714,6 +714,7 @@ def get_att_str(
     entity: ifcopenshell.entity_instance,
     em: EdgeModel,
     uuid_map: dict = None,
+    with_map: dict[str, str] = None
 ) -> str | None:
     res = getattr(entity, att.name)
     att_ref = att.get_type_ref()
@@ -735,11 +736,15 @@ def get_att_str(
         value_str = "{"
         aname = att_ref.parameter_type.name
         for i, r in enumerate(res):
+            r: ifcopenshell.entity_instance
             uuid_obj = uuid_map.get(r, None)
             if uuid_obj is None:
-                value_str += f"(INSERT {aname} {{ `{aname}` := ({em.get_entity_insert_str(r)})}})"
+                ref_str = f"(INSERT {aname} {{ `{aname}` := ({em.get_entity_insert_str(r)})}})"
             else:
-                value_str += f'(SELECT <uuid>"{uuid_obj}")'
+                ref_str = f'(SELECT <uuid>"{uuid_obj}")'
+            unique_ref_name = f"ifc_{r.id()}"
+            value_str += unique_ref_name
+            with_map[unique_ref_name] = ref_str
             value_str += "" if i == len(r) - 1 else ","
         value_str += "}"
     elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
@@ -753,15 +758,22 @@ def get_att_str(
         value_str = res
     elif isinstance(res, ifcopenshell.entity_instance):
         uuid_obj = uuid_map.get(res, None)
+        aname = att_ref.name
         if uuid_obj is None:
             entity_str = f"({em.get_entity_insert_str(res)})"
         else:
-            entity_str = f'(SELECT <uuid>"{uuid_obj}")'
+            entity_str = f'(SELECT {aname} filter .id = <uuid>"{uuid_obj}")'
+        unique_ref_name_a = f"ifc_{res.id()+100000}"
+        with_map[unique_ref_name_a] = entity_str
+
         if isinstance(att_ref, SelectEdgeModel):
-            aname = att_ref.name
-            value_str = f"(INSERT {aname} {{ {aname} := {entity_str} }})"
+            ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
         else:
-            value_str = entity_str
+            ref_str = unique_ref_name_a
+
+        unique_ref_name = f"ifc_{res.id()}"
+        value_str = unique_ref_name
+        with_map[unique_ref_name] = ref_str
     else:
         raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
 

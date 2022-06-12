@@ -68,29 +68,31 @@ def insert_items(i2e: IfcToEdge, tx: edgedb.blocking_client):
     res = i2e.get_ifc_dep_map(False)
 
     uuid_map = dict()
+
     for item in ifc_items:
         entity = i2e.em.get_entity_by_name(item.is_a())
         all_atts = entity.get_entity_atts(item)
 
         # INSERT block
-        insert_str = f"select (INSERT {entity.name} {{\n  "
+        with_map = dict()
+        insert_str = f"select (INSERT {entity.name} {{\n    "
         for i, att in enumerate(all_atts):
-            att_str = get_att_str(
-                att,
-                item,
-                i2e.em,
-                uuid_map=uuid_map
-            )
+            att_str = get_att_str(att, item, i2e.em, uuid_map=uuid_map, with_map=with_map)
             if i == len(all_atts) - 1:
                 comma_str = ""
             else:
-                comma_str = ","
+                comma_str = ",\n    "
 
             insert_str += att_str + comma_str
-        insert_str += "})"
-        print(insert_str)
-        query_res = json.loads(tx.query_single_json(insert_str))
-        print(query_res)
+        insert_str += "\n   }\n)"
+
+        with_str = "WITH\n" if len(with_map.keys()) > 0 else ''
+        for key, value in with_map.items():
+            with_str += 4 * " " + f"{key} := {value},\n"
+
+        total_insert_str = with_str + insert_str
+        print(total_insert_str)
+        query_res = json.loads(tx.query_single_json(total_insert_str))
         uuid_map[item] = query_res["id"]
 
 
