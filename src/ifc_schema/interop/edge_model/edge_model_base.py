@@ -420,11 +420,13 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         return [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
 
     def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = ""):
+        from .insert_model import get_att_str
+
         insert_str = f"{indent}INSERT {self.name} {{\n  "
         all_atts = self.get_entity_atts(entity)
 
         for i, att in enumerate(all_atts):
-            res = get_att_str(att, entity)
+            res = get_att_str(att, entity, self.edge_model)
             if res is None:
                 continue
 
@@ -707,74 +709,3 @@ class EdgeModel:
                 edge_str = self.entity_to_edge_str(entity_name)
                 f.write(edge_str)
             f.write("}")
-
-
-def get_att_str(
-    att: AttributeEdgeModel,
-    entity: ifcopenshell.entity_instance,
-    em: EdgeModel,
-    uuid_map: dict = None,
-    with_map: dict[str, str] = None
-) -> str | None:
-    res = getattr(entity, att.name)
-    att_ref = att.get_type_ref()
-    name = att.name
-
-    if name is None:
-        raise ValueError()
-    if res is None:
-        logging.debug(f'Property att: "{name}" is None')
-        return None
-
-    if isinstance(res, str):
-        value_str = f"'{res}'"
-    elif (
-        isinstance(res, tuple)
-        and isinstance(att_ref, ArrayEdgeModel)
-        and isinstance(res[0], ifcopenshell.entity_instance)
-    ):
-        value_str = "{"
-        aname = att_ref.parameter_type.name
-        for i, r in enumerate(res):
-            r: ifcopenshell.entity_instance
-            uuid_obj = uuid_map.get(r, None)
-            if uuid_obj is None:
-                ref_str = f"(INSERT {aname} {{ `{aname}` := ({em.get_entity_insert_str(r)})}})"
-            else:
-                ref_str = f'(SELECT <uuid>"{uuid_obj}")'
-            unique_ref_name = f"ifc_{r.id()}"
-            value_str += unique_ref_name
-            with_map[unique_ref_name] = ref_str
-            value_str += "" if i == len(r) - 1 else ","
-        value_str += "}"
-    elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
-        if isinstance(res[0], tuple):
-            value_str = list(res)
-        else:
-            value_str = res
-    elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) is False:
-        value_str = res
-    elif isinstance(res, (int, float)):
-        value_str = res
-    elif isinstance(res, ifcopenshell.entity_instance):
-        uuid_obj = uuid_map.get(res, None)
-        aname = att_ref.name
-        if uuid_obj is None:
-            entity_str = f"({em.get_entity_insert_str(res)})"
-        else:
-            entity_str = f'(SELECT {aname} filter .id = <uuid>"{uuid_obj}")'
-        unique_ref_name_a = f"ifc_{res.id()+100000}"
-        with_map[unique_ref_name_a] = entity_str
-
-        if isinstance(att_ref, SelectEdgeModel):
-            ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
-        else:
-            ref_str = unique_ref_name_a
-
-        unique_ref_name = f"ifc_{res.id()}"
-        value_str = unique_ref_name
-        with_map[unique_ref_name] = ref_str
-    else:
-        raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
-
-    return f"{name} := {value_str}"
