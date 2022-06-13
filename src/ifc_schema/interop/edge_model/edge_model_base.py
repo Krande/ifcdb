@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import logging
 import pathlib
 import edgedb
@@ -7,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar, Union, List, Dict
 
 import ifcopenshell
-from toposort import toposort_flatten
+from toposort import toposort_flatten, toposort
 
 wrap = ifcopenshell.ifcopenshell_wrapper
 
@@ -703,6 +704,7 @@ class EdgeModel:
 
     def write_entities_to_esdl_file(self, entities: list[str], esdl_file_path, module_name="default"):
         esdl_file_path = pathlib.Path(esdl_file_path)
+        os.makedirs(esdl_file_path.parent, exist_ok=True)
 
         with open(esdl_file_path, "w") as f:
             f.write(f"module {module_name} {{\n\n")
@@ -747,3 +749,29 @@ class EdgeIO:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.close()
+
+    def get_ifc_dep_map(self, use_ids=True):
+        dep_map = dict()
+        for inst in self.ifc_obj:
+            id_ref = inst.id() if use_ids else inst
+            if id_ref not in dep_map.keys():
+                dep_map[id_ref] = []
+            for dep in self.ifc_obj.traverse(inst, max_levels=1)[1:]:
+                dep_ref = dep.id() if use_ids else dep
+                dep_map[id_ref if use_ids else inst].append(dep_ref)
+        return dep_map
+
+    def get_ifc_objects_by_sorted_insert_order_flat(self):
+        dep_map = self.get_ifc_dep_map()
+        return [self.ifc_obj.by_id(x) for x in toposort_flatten(dep_map, sort=True) if x != 0]
+
+    def get_ifc_objects_by_sorted_insert_order_grouped(self):
+        dep_map = self.get_ifc_dep_map()
+        return [[self.ifc_obj.by_id(x) for x in group if x != 0] for group in toposort(dep_map)]
+
+    def get_unique_class_entities_of_ifc_content(self, include_related=False) -> list[str]:
+        entities = list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order_flat()]))
+        if include_related is False:
+            return entities
+
+        return self.em.get_related_entities(entities)

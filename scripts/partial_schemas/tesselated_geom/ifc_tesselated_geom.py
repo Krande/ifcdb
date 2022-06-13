@@ -30,33 +30,34 @@ wrap = ifcopenshell.ifcopenshell_wrapper
 #                 )
 
 
-def case1(ifc_file: pathlib.Path, em: EdgeModel):
-    with IfcToEdge(ifc_file, em) as ifc:
-        return em.get_related_entities(ifc.get_unique_class_entities_of_ifc_content())
-
 
 def create_schema(ifc_file: pathlib.Path, schema_name):
-    em = EdgeModel(schema=wrap.schema_by_name(schema_name))
-    ordered_entity_names = case1(ifc_file, em)
     output_dir = pathlib.Path("db")
-    os.makedirs(output_dir / "dbschema", exist_ok=True)
-
-    with open(output_dir / "dbschema/default.esdl", "w") as f:
-        f.write("module default {\n\n")
-        for entity_name in ordered_entity_names:
-            edge_str = em.entity_to_edge_str(entity_name)
-            f.write(edge_str)
-        f.write("}")
-
+    with IfcToEdge(ifc_file, schema_name=schema_name) as io:
+        io.write_ifc_entities_to_esdl_file(output_dir / "dbschema/default.esdl")
     copy_server_files(output_dir)
+
+
+def query_data(ifc_file, schema_name: str):
+    with EdgeToIfc(ifc_file=ifc_file,schema_name=schema_name) as io:
+        # res = io.get_spatial_content('Test Building')
+        ents = io.get_unique_class_entities_of_ifc_content(True)
+        res = io.get_all(ents)
+        num_res = 0
+        for r in res:
+            if isinstance(r, dict):
+                for key, value in r.items():
+                    if len(value) == 0:
+                        continue
+                    print(key, value)
+                    num_res += 1
+            else:
+                print(r)
+        print(f'Number of classes with content = {num_res}')
 
 
 if __name__ == "__main__":
     ifc_f = top_dir() / "files/tessellated-item.ifc"
     # create_schema(ifc_f, "IFC4x1")
     # insert_ifc(ifc_f, "IFC4x1")
-    with EdgeToIfc(schema_name="IFC4x1") as io:
-        # res = io.get_spatial_content('Test Building')
-        res = io.get_all()
-        for r in res:
-            print(r)
+    query_data(ifc_f, "IFC4x1")

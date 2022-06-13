@@ -20,31 +20,7 @@ import ifcopenshell
 
 @dataclass
 class IfcToEdge(EdgeIO):
-    def get_ifc_dep_map(self, use_ids=True):
-        dep_map = dict()
-        for inst in self.ifc_obj:
-            id_ref = inst.id() if use_ids else inst
-            if id_ref not in dep_map.keys():
-                dep_map[id_ref] = []
-            for dep in self.ifc_obj.traverse(inst, max_levels=1)[1:]:
-                dep_ref = dep.id() if use_ids else dep
-                dep_map[id_ref if use_ids else inst].append(dep_ref)
-        return dep_map
 
-    def get_ifc_objects_by_sorted_insert_order_flat(self):
-        dep_map = self.get_ifc_dep_map()
-        return [self.ifc_obj.by_id(x) for x in toposort_flatten(dep_map, sort=True) if x != 0]
-
-    def get_ifc_objects_by_sorted_insert_order_grouped(self):
-        dep_map = self.get_ifc_dep_map()
-        return [[self.ifc_obj.by_id(x) for x in group if x != 0] for group in toposort(dep_map)]
-
-    def get_unique_class_entities_of_ifc_content(self, include_related=False) -> list[str]:
-        entities = list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order_flat()]))
-        if include_related is False:
-            return entities
-
-        return self.em.get_related_entities(entities)
 
     def upload_ifc_w_threading(self):
         proxy_elements = list(self.ifc_obj.by_type("IFCBuildingElementProxy"))
@@ -76,8 +52,7 @@ class IfcToEdge(EdgeIO):
 
 
 def insert_ifc(ifc_file, schema_name: str = None, em: EdgeModel = None, instance_name: str = None):
-
-    with IfcToEdge(ifc_file, em, instance_name=instance_name) as ifc:
+    with IfcToEdge(ifc_file, schema_name=schema_name, em=em, instance_name=instance_name) as ifc:
         for tx in ifc.client.transaction():
             with tx:
                 insert_items(ifc, tx)

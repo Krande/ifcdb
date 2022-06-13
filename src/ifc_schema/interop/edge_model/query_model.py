@@ -32,15 +32,35 @@ class EdgeToIfc(EdgeIO):
 
         return result
 
-    def get_all(self) -> dict:
-        select_str = "" #"set {\n"
-        for entity_name, entity in self.em.entities.items():
-            select_str += f"SELECT {entity_name} {{"
-            all_atts = entity.get_attributes(True)
-            for i, att in enumerate(all_atts):
-                select_str += 4 * " " + f"`{att.name}`"
-                select_str += "" if i == len(all_atts) - 1 else ","
-            select_str += "};\n"
-        # select_str += "}"
-        print(select_str)
+    def get_all(self, entities: list[str] = None) -> dict:
+        from ifc_schema.interop.edge_model.edge_model_base import (
+            TypeEdgeModel,
+            EnumEdgeModel,
+            SelectEdgeModel,
+            EntityEdgeModel,
+        )
+
+        select_str = "select {\n"
+        if entities is None:
+            ent_dict = self.em.entities
+        else:
+            ent_dict = {x: self.em.get_entity_by_name(x) for x in self.em.get_related_entities(entities)}
+
+        for entity_name, entity in ent_dict.items():
+            if isinstance(entity, EnumEdgeModel):
+                continue
+            if isinstance(entity, EntityEdgeModel) and entity.entity.is_abstract():
+                continue
+            select_str += f"{entity_name} := (SELECT {entity_name} {{"
+            if isinstance(entity, (SelectEdgeModel, TypeEdgeModel)):
+                select_str += 4 * " " + f"id,\n"
+                select_str += 4 * " " + f"`{entity.name}`"
+            else:
+                all_atts = entity.get_attributes(True)
+                select_str += 4 * " " + f"id,\n"
+                for i, att in enumerate(all_atts):
+                    select_str += 4 * " " + f"`{att.name}`"
+                    select_str += "" if i == len(all_atts) - 1 else ","
+            select_str += "}),\n"
+        select_str += "}"
         return json.loads(self.client.query_json(select_str))
