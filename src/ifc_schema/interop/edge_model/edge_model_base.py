@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import edgedb
 from dataclasses import dataclass, field
 from typing import ClassVar, Union, List, Dict
 
@@ -709,3 +710,40 @@ class EdgeModel:
                 edge_str = self.entity_to_edge_str(entity_name)
                 f.write(edge_str)
             f.write("}")
+
+
+@dataclass
+class EdgeIO:
+    ifc_file: str | pathlib.Path = None
+    schema_name: str = None
+    em: EdgeModel = None
+    ifc_obj: ifcopenshell.file = None
+    client: edgedb.Client = None
+    database: str = None
+    port: int | None = 5656
+    instance_name: str = None
+
+    def __post_init__(self):
+        self.wrap = ifcopenshell.ifcopenshell_wrapper
+        if self.em is None:
+            self.em = EdgeModel(schema=wrap.schema_by_name(self.schema_name))
+
+    def __enter__(self):
+        if self.ifc_file is not None:
+            self.ifc_obj = ifcopenshell.open(self.ifc_file)
+
+        if self.instance_name is None:
+            conn_str = f"edgedb://edgedb@localhost:{self.port}"
+        else:
+            conn_str = self.instance_name
+
+        self.client = edgedb.create_client(
+            conn_str,
+            tls_security="insecure",
+            database=self.database,
+        )
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.client.close()

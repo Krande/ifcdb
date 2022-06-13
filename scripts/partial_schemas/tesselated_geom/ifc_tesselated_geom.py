@@ -7,6 +7,7 @@ import ifcopenshell
 
 from ifc_schema.interop.edge_model.edge_model_base import EdgeModel
 from ifc_schema.interop.edge_model.insert_model import IfcToEdge, insert_ifc
+from ifc_schema.interop.edge_model.query_model import EdgeToIfc
 from ifc_schema.interop.edge_model.utils import copy_server_files
 from ifc_schema.utils import top_dir
 
@@ -53,4 +54,9 @@ def create_schema(ifc_file: pathlib.Path, schema_name):
 if __name__ == "__main__":
     ifc_f = top_dir() / "files/tessellated-item.ifc"
     # create_schema(ifc_f, "IFC4x1")
-    insert_ifc(ifc_f, "IFC4x1")
+    # insert_ifc(ifc_f, "IFC4x1")
+    with EdgeToIfc(schema_name="IFC4x1") as io:
+        # res = io.get_spatial_content('Test Building')
+        res = io.get_all()
+        for r in res:
+            print(r)

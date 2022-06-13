@@ -6,41 +6,20 @@ import logging
 from dataclasses import dataclass
 from multiprocessing.pool import ThreadPool
 from toposort import toposort_flatten, toposort
-from ifc_schema.interop.edge_model.edge_model_base import EdgeModel, AttributeEdgeModel, ArrayEdgeModel, SelectEdgeModel
+from ifc_schema.interop.edge_model.edge_model_base import (
+    EdgeModel,
+    AttributeEdgeModel,
+    ArrayEdgeModel,
+    SelectEdgeModel,
+    EdgeIO,
+)
 
 import edgedb
 import ifcopenshell
 
 
 @dataclass
-class IfcToEdge:
-    ifc_file: str | pathlib.Path
-    em: EdgeModel
-    ifc_obj: ifcopenshell.file = None
-    client: edgedb.Client = None
-    wrap: ifcopenshell.ifcopenshell_wrapper = None
-    database: str = None
-    port: int | None = 5656
-    instance_name: str = None
-
-    def __enter__(self):
-        self.ifc_obj = ifcopenshell.open(self.ifc_file)
-        if self.instance_name is None:
-            conn_str = f"edgedb://edgedb@localhost:{self.port}"
-        else:
-            conn_str = self.instance_name
-
-        self.client = edgedb.create_client(
-            conn_str,
-            tls_security="insecure",
-            database=self.database,
-        )
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.client.close()
-
+class IfcToEdge(EdgeIO):
     def get_ifc_dep_map(self, use_ids=True):
         dep_map = dict()
         for inst in self.ifc_obj:
@@ -97,8 +76,7 @@ class IfcToEdge:
 
 
 def insert_ifc(ifc_file, schema_name: str = None, em: EdgeModel = None, instance_name: str = None):
-    wrap = ifcopenshell.ifcopenshell_wrapper
-    em = EdgeModel(schema=wrap.schema_by_name(schema_name)) if em is None else em
+
     with IfcToEdge(ifc_file, em, instance_name=instance_name) as ifc:
         for tx in ifc.client.transaction():
             with tx:
@@ -119,7 +97,7 @@ def insert_items(i2e: IfcToEdge, tx: edgedb.blocking_client):
         print(f'inserting ifc item ({i} of {len(ifc_items)}) "{item}"')
         # INSERT block
         with_map = dict()
-        insert_str = f"select (INSERT {entity.name} {{\n    "
+        insert_str = f"SELECT (INSERT {entity.name} {{\n    "
         for j, att in enumerate(all_atts):
             att_str = get_att_str(att, item, i2e.em, uuid_map=uuid_map, with_map=with_map)
             if j == len(all_atts) - 1:
@@ -150,9 +128,6 @@ def get_att_str(
     res = getattr(entity, att.name)
     att_ref = att.get_type_ref()
     name = att.name
-
-    if name == "Units" and entity.is_a() == "IfcUnitAssignment":
-        print("sd")
 
     if name is None:
         raise ValueError()
@@ -192,31 +167,28 @@ def get_att_str(
 def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
     uuid_obj = uuid_map.get(res, None)
 
-    if res.is_a() == 'IfcUnitAssignment':
-        print('sd')
-
     if uuid_obj is None:
         entity_str = f"({em.get_entity_insert_str(res)})"
-        unique_ref_name_a = f"ifc_{res.id() + 100000}"
-        with_map[unique_ref_name_a] = entity_str
     else:
         res_name = res.is_a()
         entity_str = f'(SELECT {res_name} filter .id = <uuid>"{uuid_obj}")'
-        unique_ref_name_a = f"ifc_{res.id() + 100000}"
-        with_map[unique_ref_name_a] = entity_str
 
     if isinstance(att_ref, ArrayEdgeModel):
         ptype = att_ref.parameter_type
         if isinstance(ptype, SelectEdgeModel):
             aname = ptype.name
+            unique_ref_name_a = f"ifc_{res.id() + 100000}"
+            with_map[unique_ref_name_a] = entity_str
             ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
         else:
-            ref_str = unique_ref_name_a
+            ref_str = entity_str
     elif isinstance(att_ref, SelectEdgeModel):
         aname = att_ref.name
+        unique_ref_name_a = f"ifc_{res.id() + 100000}"
+        with_map[unique_ref_name_a] = entity_str
         ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
     else:
-        ref_str = unique_ref_name_a
+        ref_str = entity_str
 
     unique_ref_name = f"ifc_{res.id()}"
     with_map[unique_ref_name] = ref_str
