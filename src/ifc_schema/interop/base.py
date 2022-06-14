@@ -19,7 +19,7 @@ class BaseModel:
         "STRING": "str",
         "STRING(22) FIXED": "str",
         "BINARY": "str",
-        "STRING(255)": "str"
+        "STRING(255)": "str",
     }
 
     def __post_init__(self):
@@ -27,7 +27,9 @@ class BaseModel:
         all_entity_types = set(Entity.BASE_TYPES)
         result = all_entity_types.difference(base_types)
         if len(result) > 0:
-            raise ValueError(f'The following IFC base types have not been defined in the output format "{result}"')
+            raise ValueError(
+                f'The following IFC base types have not been defined in the output format "{result}"'
+            )
 
     def get_entities(self, entity_names: List[str]) -> List[Entity]:
         related_entities = []

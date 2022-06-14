@@ -13,7 +13,7 @@ def main(express_file):
             "IfcExtrudedAreaSolid",
             "IfcRelContainedInSpatialStructure",
             "IfcBuilding",
-            "IfcProject"
+            "IfcProject",
         ],
         main_str=build_test_str(),
     )

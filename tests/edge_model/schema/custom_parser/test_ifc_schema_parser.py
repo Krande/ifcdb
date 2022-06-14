@@ -100,5 +100,11 @@ def test_ifc_trimmed_curve(ifc_4x1_exp_file):
     res = exp_reader.entity_dict["IfcTrimmedCurve"]
 
     keys = set(res.instance_attributes.keys())
-    should_be = {"SenseAgreement", "MasterRepresentation", "BasisCurve", "Trim1", "Trim2"}
+    should_be = {
+        "SenseAgreement",
+        "MasterRepresentation",
+        "BasisCurve",
+        "Trim1",
+        "Trim2",
+    }
     assert len(should_be.intersection(keys)) == len(keys)

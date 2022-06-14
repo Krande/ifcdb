@@ -1,12 +1,13 @@
 import logging
 import operator
 import os
-from dataclasses import dataclass
-from typing import Union, List
 import pathlib
+from dataclasses import dataclass
+from typing import List, Union
 
 from ifc_schema.att_types import Array
 from ifc_schema.entities import Entity
+
 from .base import BaseModel
 
 
@@ -68,7 +69,7 @@ class {self.entity.name}{ancestor_str}:
 """
 
     def to_enum_class_str(self) -> str:
-        enum_str = '\n'.join(f'    {x} = auto()' for x in self.entity.enum_values)
+        enum_str = "\n".join(f"    {x} = auto()" for x in self.entity.enum_values)
         return f"""
 class {self.entity.name}(Enum):
 {enum_str}
@@ -99,7 +100,10 @@ class {self.entity.name}{self.ancestor_str}:
     @property
     def attributes_str(self):
         atts_str = ""
-        attributes = sorted(self.entity.instance_attributes.values(), key=operator.attrgetter("optional"))
+        attributes = sorted(
+            self.entity.instance_attributes.values(),
+            key=operator.attrgetter("optional"),
+        )
         for val in attributes:
             if val.parent != self.entity:
                 continue
@@ -161,7 +165,9 @@ def array_to_str(array: Array) -> str:
 class PyModel(BaseModel):
     output_dir: pathlib.Path = pathlib.Path("temp/pymodel")
 
-    def export_all_related_to_dataclasses(self, entity_names: Union[str, List[str]], main_str: str = None):
+    def export_all_related_to_dataclasses(
+        self, entity_names: Union[str, List[str]], main_str: str = None
+    ):
         header_str = "from __future__ import annotations\n"
         header_str += "from dataclasses import dataclass\n"
         header_str += "from enum import Enum, auto\n"

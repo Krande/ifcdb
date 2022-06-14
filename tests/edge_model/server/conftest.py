@@ -1,7 +1,7 @@
 import os
+import subprocess
 
 import pytest
-import subprocess
 
 SERVER_NAME = "ifc_test_server"
 

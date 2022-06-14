@@ -9,11 +9,14 @@ from multiprocessing.pool import ThreadPool
 import edgedb
 import ifcopenshell
 
-from ifc_schema.interop.edge_model.inserts import insert_ifc_building_element_proxies
+from ifc_schema.interop.edge_model.inserts import \
+    insert_ifc_building_element_proxies
 from ifc_schema.interop.edge_model.query import get_all_proxy_elements
 
 
-def get_element_proxy_products(ifc_file: pathlib.Path | str) -> list[ifcopenshell.entity_instance]:
+def get_element_proxy_products(
+    ifc_file: pathlib.Path | str,
+) -> list[ifcopenshell.entity_instance]:
     print(f'Reading IFC file "{ifc_file}"')
     ifc = ifcopenshell.open(ifc_file)
     print(f"Reading Complete")
@@ -21,7 +24,9 @@ def get_element_proxy_products(ifc_file: pathlib.Path | str) -> list[ifcopenshel
 
 
 def chunk_uploader(chunk):
-    client = edgedb.create_client("edgedb://edgedb@localhost:5656", tls_security="insecure")
+    client = edgedb.create_client(
+        "edgedb://edgedb@localhost:5656", tls_security="insecure"
+    )
     start = time.time()
     insert_ifc_building_element_proxies(client, chunk)
     diff = time.time() - start
@@ -31,7 +36,9 @@ def chunk_uploader(chunk):
 
 
 def upload_ifc_sync(ifc_file):
-    client = edgedb.create_client("edgedb://edgedb@localhost:5656", tls_security="insecure")
+    client = edgedb.create_client(
+        "edgedb://edgedb@localhost:5656", tls_security="insecure"
+    )
     # client = edgedb.create_async_client("edgedb://edgedb@localhost:5656", tls_security="insecure", max_concurrency=32)
 
     proxy_elements = get_element_proxy_products(ifc_file)
@@ -51,7 +58,9 @@ def upload_ifc_sync(ifc_file):
 
 
 def query(ifc_file=None):
-    client = edgedb.create_client("edgedb://edgedb@localhost:5656", tls_security="insecure")
+    client = edgedb.create_client(
+        "edgedb://edgedb@localhost:5656", tls_security="insecure"
+    )
     res2 = get_all_proxy_elements(client)
     # for el in res2:
     #     print(el)
@@ -64,7 +73,9 @@ def query(ifc_file=None):
         ifc_set = set(ifc_elements.keys())
         res = key_set.intersection(ifc_set)
         if len(res) != len(res2):
-            logging.warning(f"Number of EdgeDB objects found in IFC {len(res)} != {len(res2)} EdgeDB objects ")
+            logging.warning(
+                f"Number of EdgeDB objects found in IFC {len(res)} != {len(res2)} EdgeDB objects "
+            )
 
         for guid, value in guid_map.items():
             ifc_elem = ifc_elements.get(guid)
@@ -93,7 +104,9 @@ def upload_ifc_w_threading(ifc_file):
         start = time.time()
         for i, chunk in enumerate(pool.imap_unordered(chunk_uploader, chunks), start=1):
             now = time.time()
-            print(f'Finished ({i} of {len(chunks)}) -> {len(chunk)} elements @ "{now - start:.1f}" seconds ')
+            print(
+                f'Finished ({i} of {len(chunks)}) -> {len(chunk)} elements @ "{now - start:.1f}" seconds '
+            )
             start = time.time()
     print(f"Total run time {time.time() - total_start:.1f} seconds")
 

@@ -18,8 +18,16 @@ class ExpressBaseTypes:
     STRING = "STRING"
     LOGICAL = "LOGICAL"
 
-    entity_map = dict(IfcBoolean="bool", IfcPositiveLengthMeasure="float", IfcStateEnum="str")
-    entity_type_map = {"INTEGER": "int", "STRING(255)": "str", "STRING": "str", "STRING(22) FIXED": "str", "REAL": "float"}
+    entity_map = dict(
+        IfcBoolean="bool", IfcPositiveLengthMeasure="float", IfcStateEnum="str"
+    )
+    entity_type_map = {
+        "INTEGER": "int",
+        "STRING(255)": "str",
+        "STRING": "str",
+        "STRING(22) FIXED": "str",
+        "REAL": "float",
+    }
 
 
 @dataclass

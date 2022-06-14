@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-
-import ifcopenshell
-import edgedb
 import logging
+
+import edgedb
+import ifcopenshell
 
 
 def tria_face_element_data(ifc_tria: ifcopenshell.entity_instance) -> dict:
@@ -20,11 +20,15 @@ def tria_face_element_data(ifc_tria: ifcopenshell.entity_instance) -> dict:
     )
 
 
-def insert_ifc_building_element_proxies(client: edgedb.Client, ifc_bld_proxies: list[ifcopenshell.entity_instance]):
+def insert_ifc_building_element_proxies(
+    client: edgedb.Client, ifc_bld_proxies: list[ifcopenshell.entity_instance]
+):
     bld_proxies = []
     for ifc_bld_proxy in ifc_bld_proxies:
         if ifc_bld_proxy.Representation is None:
-            logging.warning(f'IFC element "{ifc_bld_proxy.Name}" Representation object is None')
+            logging.warning(
+                f'IFC element "{ifc_bld_proxy.Name}" Representation object is None'
+            )
             continue
 
         repr_items = []
@@ -38,7 +42,9 @@ def insert_ifc_building_element_proxies(client: edgedb.Client, ifc_bld_proxies: 
         bld_prox = dict(
             guid=ifc_bld_proxy.GlobalId,
             name=ifc_bld_proxy.Name,
-            descr=ifc_bld_proxy.Description if ifc_bld_proxy.Description is not None else "",
+            descr=ifc_bld_proxy.Description
+            if ifc_bld_proxy.Description is not None
+            else "",
             csysdim=3,
             coords=(0, 0, 0),
             axis=(0, 0, 1),
@@ -112,3 +118,48 @@ FOR bld_prox IN json_array_unpack(bld_proxies) UNION (
     logging.info("Beginning EdgeDB insert query")
     client.query(query_str, bld_proxies_json=json.dumps(bld_proxies))
     logging.info("Edge Query Finished")
+
+
+def get_all_proxy_elements(client: edgedb.Client):
+    user_set = client.query_json(
+        """
+        SELECT IfcBuildingElementProxy {
+            Name, 
+            GlobalId,
+            Representation: {
+                Representations: {
+                        Items: {
+                            # [IS IfcTriangulatedFaceSet].Coordinates: { CoordList },
+                            # [IS IfcTriangulatedFaceSet].Normals,
+                            # [IS IfcTriangulatedFaceSet].CoordIndex,
+                        }
+                    }
+                },
+            }
+
+        """,
+    )
+    return json.loads(user_set)
+
+
+def get_geometry_by_guid(client: edgedb.Client, guid):
+    user_set = client.query_json(
+        """
+        SELECT IfcBuildingElementProxy {
+            Name, 
+            GlobalId, 
+            Representation: {
+                Representations: {
+                        Items: {
+                            [IS IfcTriangulatedFaceSet].Coordinates: { CoordList },
+                            [IS IfcTriangulatedFaceSet].Normals,
+                            [IS IfcTriangulatedFaceSet].CoordIndex,
+                        }
+                    }
+                },
+            }
+            filter .GlobalId = <str>$guid
+        """,
+        guid=guid,
+    )
+    return json.loads(user_set)

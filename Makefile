@@ -9,3 +9,7 @@ local-itest:
 
 local-t:
 	act -j test
+
+
+format:
+	black . && isort . && flake8 .

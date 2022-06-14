@@ -1,5 +1,5 @@
-import shutil
 import pathlib
+import shutil
 
 
 def copy_server_files(output_dir):

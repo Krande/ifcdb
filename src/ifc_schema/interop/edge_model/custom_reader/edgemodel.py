@@ -3,7 +3,7 @@ import os
 import pathlib
 import shutil
 from dataclasses import dataclass
-from typing import Union, List, ClassVar
+from typing import ClassVar, List, Union
 
 from ifc_schema.att_types import Array
 from ifc_schema.entities import Entity
@@ -23,8 +23,17 @@ class EntityModel:
             return self.to_esdl_enum_str()
 
         att_str = self.attributes_str
-        prop_prefix = "abstract " if self.entity.supertype_of is not None and len(self.entity.supertype_of) > 0 else ""
-        parent_str = f"extending {self.entity.parent_type}" if self.entity.parent_type is not None else ""
+        prop_prefix = (
+            "abstract "
+            if self.entity.supertype_of is not None
+            and len(self.entity.supertype_of) > 0
+            else ""
+        )
+        parent_str = (
+            f"extending {self.entity.parent_type}"
+            if self.entity.parent_type is not None
+            else ""
+        )
 
         return f"""
     {prop_prefix}type {self.entity.name} {parent_str} {{
@@ -42,7 +51,10 @@ class EntityModel:
     def attributes_str(self):
         atts_str = ""
         indent_str = 8 * " "
-        attributes = sorted(self.entity.instance_attributes.values(), key=operator.attrgetter("optional"))
+        attributes = sorted(
+            self.entity.instance_attributes.values(),
+            key=operator.attrgetter("optional"),
+        )
 
         for val in attributes:
             if val.parent != self.entity:
@@ -54,21 +66,40 @@ class EntityModel:
             if isinstance(vtyp, Array):
                 att_ref = array_to_esdl(vtyp)
                 vtype_oftype = vtyp.of_type
-                if isinstance(vtype_oftype, Entity) and vtype_oftype.is_base_type is False:
-                    atts_str += indent_str + f"{att_prefix}multi link {val.name} -> {att_ref};\n"
+                if (
+                    isinstance(vtype_oftype, Entity)
+                    and vtype_oftype.is_base_type is False
+                ):
+                    atts_str += (
+                        indent_str
+                        + f"{att_prefix}multi link {val.name} -> {att_ref};\n"
+                    )
                 else:
-                    atts_str += indent_str + f"{att_prefix}property {val.name} -> {att_ref};\n"
+                    atts_str += (
+                        indent_str + f"{att_prefix}property {val.name} -> {att_ref};\n"
+                    )
             else:
                 if isinstance(vtyp, Entity) is False:
-                    atts_str += indent_str + f"{att_prefix}property {val.name} -> {vtyp};\n"
+                    atts_str += (
+                        indent_str + f"{att_prefix}property {val.name} -> {vtyp};\n"
+                    )
                 else:
                     if vtyp.is_base_type:
                         att_ref = EdgeModel.base_type_map.get(vtyp.content)
-                        atts_str += indent_str + f"{att_prefix}property {val.name} -> {att_ref};\n"
+                        atts_str += (
+                            indent_str
+                            + f"{att_prefix}property {val.name} -> {att_ref};\n"
+                        )
                     elif vtyp.is_enum:
-                        atts_str += indent_str + f"{att_prefix}property {val.name} -> {vtyp.name};\n"
+                        atts_str += (
+                            indent_str
+                            + f"{att_prefix}property {val.name} -> {vtyp.name};\n"
+                        )
                     else:
-                        atts_str += indent_str + f"{att_prefix}link {val.name} -> {vtyp.name};\n"
+                        atts_str += (
+                            indent_str
+                            + f"{att_prefix}link {val.name} -> {vtyp.name};\n"
+                        )
 
         return atts_str
 

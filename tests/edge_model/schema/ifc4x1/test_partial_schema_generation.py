@@ -1,11 +1,9 @@
-from ifc_schema.interop.edge_model.edge_model_base import (
-    SelectEdgeModel,
-    EntityEdgeModel,
-    EnumEdgeModel,
-    TypeEdgeModel,
-    AttributeEdgeModel,
-    ArrayEdgeModel,
-)
+from ifc_schema.interop.edge_model.edge_model_base import (ArrayEdgeModel,
+                                                           AttributeEdgeModel,
+                                                           EntityEdgeModel,
+                                                           EnumEdgeModel,
+                                                           SelectEdgeModel,
+                                                           TypeEdgeModel)
 
 
 def test_ifc_set_and_list(em_ifc4x1):
@@ -56,7 +54,10 @@ def test_ifc_buildingelementproxy(em_ifc4x1):
 
 def test_ifc_unit_assigment(em_ifc4x1):
     class_name = "IfcUnitAssignment"
-    related_entities = [em_ifc4x1.get_entity_by_name(x) for x in em_ifc4x1.get_related_entities(class_name)]
+    related_entities = [
+        em_ifc4x1.get_entity_by_name(x)
+        for x in em_ifc4x1.get_related_entities(class_name)
+    ]
     for rele in related_entities:
         x = rele.to_str()
         print(x)

@@ -1,4 +1,4 @@
-from rdflib import Graph, RDF
+from rdflib import RDF, Graph
 
 
 def main():
@@ -6,7 +6,10 @@ def main():
     g = Graph()
 
     # Parse in an RDF file hosted on the Internet
-    g.parse("https://standards.buildingsmart.org/IFC/DEV/IFC4_1/OWL/ontology.xml", format="application/rdf+xml")
+    g.parse(
+        "https://standards.buildingsmart.org/IFC/DEV/IFC4_1/OWL/ontology.xml",
+        format="application/rdf+xml",
+    )
 
     # Loop through each triple in the graph (subj, pred, obj)
     # for subj, pred, obj in g:
