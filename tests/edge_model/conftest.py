@@ -3,8 +3,8 @@ import pathlib
 import ifcopenshell
 import pytest
 
-from ifc_schema.interop.base import ExpReader
-from ifc_schema.interop.edge_model.edge_model_base import EdgeModel
+from ifcdb.interop.base import ExpReader
+from ifcdb.interop.edge_model.edge_model_base import EdgeModel
 
 
 @pytest.fixture

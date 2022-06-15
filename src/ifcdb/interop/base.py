@@ -2,8 +2,8 @@ import pathlib
 from dataclasses import dataclass
 from typing import ClassVar, List
 
-from ifc_schema.entities import Entity
-from ifc_schema.exp_reader import ExpReader
+from ifcdb.entities import Entity
+from ifcdb.exp_reader import ExpReader
 
 
 @dataclass

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -15,10 +16,13 @@ import edgedb
 import ifcopenshell
 from toposort import toposort, toposort_flatten
 
-from ifc_schema.interop.edge_model.edge_model_base import (
+from ifcdb.interop.edge_model.edge_model_base import (
     AttributeEdgeModel,
     EdgeModel,
     EntityEdgeModel,
+    EnumEdgeModel,
+    SelectEdgeModel,
+    TypeEdgeModel,
 )
 
 
@@ -66,7 +70,8 @@ class IfcIO:
 class EdgeIOBase:
     ifc_file: str | pathlib.Path = None
     ifc_io: IfcIO = None
-    schema_name: str = None
+    ifc_schema: str = None
+    db_schema_dir: str | pathlib.Path = None
     em: EdgeModel = None
     client: edgedb.Client = None
     database: str = None
@@ -76,7 +81,10 @@ class EdgeIOBase:
     def __post_init__(self):
         self.wrap = ifcopenshell.ifcopenshell_wrapper
         if self.em is None:
-            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.schema_name))
+            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
+
+        if self.db_schema_dir is not None:
+            self.db_schema_dir = pathlib.Path(self.db_schema_dir)
 
     @property
     def conn_str(self):
@@ -106,19 +114,26 @@ class EdgeIOBase:
 
     # IFC utils
 
-    def create_schema_from_ifc_file(self, dbschema_dir, should_copy_server_files=False):
-        from ifc_schema.interop.edge_model.utils import copy_server_files
+    def create_schema_from_ifc_file(self, dbschema_dir=None, should_copy_server_files=False):
+        from ifcdb.interop.edge_model.utils import copy_server_files
 
-        dbschema_dir = pathlib.Path(dbschema_dir)
+        if dbschema_dir is not None:
+            dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
+        else:
+            dbschema_dir = self.db_schema_dir
+
         self.write_ifc_entities_to_esdl_file(dbschema_dir / "default.esdl")
 
         if should_copy_server_files:
             copy_server_files(dbschema_dir.parent)
 
-    def setup_database(self, dbschema_dir):
+    def setup_database(self, dbschema_dir=None):
         from .query_utils import create_local_instance
 
-        dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
+        if dbschema_dir is not None:
+            dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
+        else:
+            dbschema_dir = self.db_schema_dir
 
         print(f"Dropping existing database '{self.database}' and creating a new in its place")
         if self.instance_name is not None:
@@ -256,13 +271,6 @@ class EdgeIO(EdgeIOBase):
 
     def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
-        from ifc_schema.interop.edge_model.edge_model_base import (
-            EntityEdgeModel,
-            EnumEdgeModel,
-            SelectEdgeModel,
-            TypeEdgeModel,
-        )
-
         if limit_to_ifc_entities is True and entities is None:
             entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
 
@@ -303,36 +311,41 @@ class EdgeIO(EdgeIOBase):
 
     # Exports
     def export_ifc_elements_to_ifc_str(self) -> str:
-        from toposort import toposort_flatten
-
         res = self.get_all(limit_to_ifc_entities=True)
         obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
+        ordered_results = resolve_order_of_result_entities(obj_set)
 
-        # Ensure objects are inserted in the order of dependencies
-        edm = dict()
-        self.em.get_related_entities([x for x, value in obj_set.items()], entity_dep_map=edm)
-
-        ordered_seq = [x for x in toposort_flatten(edm, sort=True) if x in obj_set.keys()]
-        ordered_dict = {x: obj_set.get(x) for x in ordered_seq}
-
-        f = ifcopenshell.file(schema=self.schema_name)
+        f = ifcopenshell.file(schema=self.ifc_schema)
         id_map: dict[str, Node] = dict()
-        for ifc_class, instances in ordered_dict.items():
-            # print(ifc_class, len(instances), instances)
+        for instance_data in ordered_results:
+            ifc_class = instance_data.get("class")
+            instance_props = instance_data.get("props")
+            vid = instance_data.get("id")
+            props = get_props(ifc_class, instance_props, id_map, self.em)
 
-            for v in instances:
-                vid = v.pop("id")
-                props = get_props(ifc_class, v, id_map, self.em)
-
+            if isinstance(props, dict) and ifc_class not in instance_props.keys():
+                entity = self.em.get_entity_by_name(ifc_class)
+                if isinstance(entity, EntityEdgeModel):
+                    derive_list = entity.entity.derived()
+                    all_atts = entity.get_attributes(True)
+                    for i, x in enumerate(all_atts):
+                        if derive_list[i] is False:
+                            continue
+                        if props[x.name] is not None:
+                            logging.debug(f"Removing insert of derived property ({x.name} = {props[x.name]})")
+                            props.pop(x.name)
+                try:
+                    ifc_id = f.create_entity(ifc_class, **props)
+                except TypeError as e:
+                    raise TypeError(f"{ifc_class} insert error -> {e}")
+            elif isinstance(props, (float, str, ifcopenshell.entity_instance)):
+                ifc_id = f.create_entity(ifc_class, props)
+            else:
                 ifc_id = None
-                if ifc_class != "IfcValue":
-                    if isinstance(props, dict):
-                        ifc_id = f.create_entity(ifc_class, **props)
-                    else:
-                        ifc_id = f.create_entity(ifc_class, props)
 
+            if ifc_id is not None:
                 print(ifc_id)
-                id_map[vid] = Node(ifc_class, vid, props, ifc_id=ifc_id)
+            id_map[vid] = Node(ifc_class, vid, props, ifc_id=ifc_id)
 
         print(f"Number of EdgeDB objects with content = {len(obj_set.keys())}")
         return StringIO(f.wrapped_data.to_string()).read()
@@ -346,37 +359,82 @@ class Node:
     ifc_id: ifcopenshell.entity_instance = None
 
 
-def get_props(ifc_class: str, v: dict, id_map: dict, em: EdgeModel) -> str | dict:
+def get_ids(obj: dict, id_list):
+    top_id = obj.get("id", None)
+    if top_id is not None:
+        id_list.append(top_id)
+    for key, value in obj.items():
+        if isinstance(value, dict):
+            get_ids(value, id_list)
+        elif isinstance(value, list):
+            for subinst in value:
+                if isinstance(subinst, dict):
+                    get_ids(subinst, id_list)
+
+
+def resolve_order_of_result_entities(results: dict) -> list:
+    id_map = dict()
+    key_map = dict()
+    for key, value in results.items():
+        for instance in value:
+            ids = []
+            get_ids(instance, ids)
+            instance_id = instance.pop("id")
+            ids.pop(ids.index(instance_id))
+            key_map[instance_id] = {"class": key, "props": instance, "id": instance_id}
+            id_map[instance_id] = ids
+        else:
+            logging.debug(f'skipping "{key}, {value}"')
+
+    result = toposort_flatten(id_map, sort=True)
+    output = [key_map.get(x) for x in result]
+    return output
+
+
+def get_ref_id(ref_id, id_map):
+    n: Node = id_map.get(ref_id.get("id"))
+    if n is None:
+        raise ValueError("missing " + ref_id.get("id"))
+
+    if n.ifc_id is None:
+        res = n.props.get(n.name)
+        if res is None:
+            raise ValueError(f'IFC refers to empty IFC id "{n.ifc_id}"')
+        return res
+
+    return n.ifc_id
+
+
+def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> str | dict:
     entity = em.get_entity_by_name(ifc_class)
     atts = None
     if isinstance(entity, EntityEdgeModel):
         atts = {att.name: att for att in entity.get_attributes(True)}
 
     props = dict()
-    for key, value in v.items():
+    for key, value in db_props.items():
+        if value is None:
+            props[key] = value
+            continue
+
         if isinstance(value, dict):
-            node = id_map.get(value.get("id"))
-            if node is None:
-                print("missing " + value.get("id"))
-            props[key] = node.ifc_id
+            props[key] = get_ref_id(value, id_map)
         elif isinstance(value, list) and len(value) > 0:
             att_type: AttributeEdgeModel = atts.get(key)
             arr_ref = att_type.array_ref()
-            if arr_ref is None:
-                print("sd")
             par_type = arr_ref.parameter_type
             if par_type in ("float64", "float32"):
                 if type(value[0]) != list:
                     value = [float(x) for x in value]
                 else:
                     value = [[float(y) for y in x] for x in value]
-            elif isinstance(par_type, EntityEdgeModel) and isinstance(value[0], dict):
-                value = []
+            elif isinstance(par_type, (EntityEdgeModel, SelectEdgeModel)) and isinstance(value[0], dict):
+                output = []
                 for subr in value:
-                    node = id_map.get(subr.get("id"))
-                    value.append(node.ifc_id)
+                    output.append(get_ref_id(subr, id_map))
+                value = output
             else:
-                print("do_something")
+                logging.debug(f"Do nothing with '{par_type}'")
 
             props[key] = value
         else:

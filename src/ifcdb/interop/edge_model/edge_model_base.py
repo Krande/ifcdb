@@ -308,7 +308,13 @@ class EntityBaseEdgeModel:
     def schema(self):
         return self.edge_model.schema
 
-    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = "") -> str:
+    def to_insert_str(
+        self,
+        entity: ifcopenshell.entity_instance,
+        indent: str = "",
+        with_map: dict = None,
+        uuid_map: dict = None,
+    ) -> str:
         raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
 
     def to_str(self) -> str:
@@ -423,14 +429,20 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     def get_entity_atts(self, entity: ifcopenshell.entity_instance):
         return [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
 
-    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = ""):
-        from .insert_model import get_att_str
+    def to_insert_str(
+        self,
+        entity: ifcopenshell.entity_instance,
+        indent: str = "",
+        uuid_map: dict = None,
+        with_map: dict[str, str] = None,
+    ):
+        from ifcdb.interop.edge_model.query_utils import get_att_str
 
         insert_str = f"{indent}INSERT {self.name} {{\n  "
         all_atts = self.get_entity_atts(entity)
 
         for i, att in enumerate(all_atts):
-            res = get_att_str(att, entity, self.edge_model)
+            res = get_att_str(att, entity, self.edge_model, uuid_map=uuid_map, with_map=with_map)
             if res is None:
                 continue
 
@@ -494,7 +506,13 @@ class TypeEdgeModel(EntityBaseEdgeModel):
 
         return isinstance(cur_decl, wrap.aggregation_type)
 
-    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = "") -> str:
+    def to_insert_str(
+        self,
+        entity: ifcopenshell.entity_instance,
+        indent: str = "",
+        with_map: dict = None,
+        uuid_map: dict = None,
+    ) -> str:
         # value = get_base_type_name(self.entity)
         return f"INSERT {self.name} {{{self.name} := {entity.wrappedValue} }}"
 
@@ -710,14 +728,20 @@ class EdgeModel:
         res = self.get_entity_by_name(entity)
         return res.to_str()
 
-    def get_entity_insert_str(self, ifc_entity: ifcopenshell.entity_instance, indent: str = "") -> str:
+    def get_entity_insert_str(
+        self,
+        ifc_entity: ifcopenshell.entity_instance,
+        indent: str = "",
+        uuid_map: dict = None,
+        with_map: dict[str, str] = None,
+    ) -> str:
         entity = self.get_entity_by_name(ifc_entity.is_a())
-        return entity.to_insert_str(ifc_entity, indent=indent)
+        return entity.to_insert_str(ifc_entity, indent=indent, uuid_map=uuid_map, with_map=with_map)
 
     def write_entities_to_esdl_file(
         self, entities: list[str], esdl_file_path, module_name="default", include_server_files=False
     ):
-        from ifc_schema.interop.edge_model.utils import copy_server_files
+        from ifcdb.interop.edge_model.utils import copy_server_files
 
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)

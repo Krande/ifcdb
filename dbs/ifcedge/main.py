@@ -9,7 +9,10 @@ from multiprocessing.pool import ThreadPool
 import edgedb
 import ifcopenshell
 
-from ifc_schema.interop.edge_model.manual_examples import insert_ifc_building_element_proxies, get_all_proxy_elements
+from ifcdb.interop.edge_model.manual_examples import (
+    get_all_proxy_elements,
+    insert_ifc_building_element_proxies,
+)
 
 
 def get_element_proxy_products(

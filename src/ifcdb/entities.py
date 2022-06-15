@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Dict, List, Union
 
 if TYPE_CHECKING:
-    from ifc_schema.att_types import Attribute
-    from ifc_schema.exp_reader import ExpReader
+    from ifcdb.att_types import Attribute
+    from ifcdb.exp_reader import ExpReader
 
 re_flags = re.DOTALL | re.MULTILINE | re.IGNORECASE
 
@@ -60,7 +60,7 @@ class Entity:
 
     def get_related_entities_and_types(self, related_entities=None) -> List[Entity]:
         """Loop over ancestry and used types to list up all defined types and entities"""
-        from ifc_schema.att_types import Array
+        from ifcdb.att_types import Array
 
         related_entities = [] if related_entities is None else related_entities
         for ancestor in self.ancestry:
@@ -127,7 +127,7 @@ class Entity:
 
     @property
     def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
-        from ifc_schema.att_types import Attribute
+        from ifcdb.att_types import Attribute
 
         re_att = re.compile(r"^\s*(?P<key>[a-zA-Z0-9]{0,20}) :(?P<value>.*?);", re_flags)
 

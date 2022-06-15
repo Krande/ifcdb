@@ -6,7 +6,7 @@ import subprocess
 
 import ifcopenshell
 
-from ifc_schema.interop.edge_model.edge_model_base import (
+from ifcdb.interop.edge_model.edge_model_base import (
     ArrayEdgeModel,
     AttributeEdgeModel,
     EdgeModel,
@@ -74,7 +74,7 @@ def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
     uuid_obj = uuid_map.get(res, None)
 
     if uuid_obj is None:
-        entity_str = f"({em.get_entity_insert_str(res)})"
+        entity_str = f"({em.get_entity_insert_str(res, uuid_map=uuid_map, with_map=with_map)})"
     else:
         res_name = res.is_a()
         entity_str = f'(SELECT {res_name} filter .id = <uuid>"{uuid_obj}")'

@@ -1,4 +1,8 @@
-from ifc_schema.interop.edge_model.edge_model_base import ArrayEdgeModel, AttributeEdgeModel, EntityEdgeModel
+from ifcdb.interop.edge_model.edge_model_base import (
+    ArrayEdgeModel,
+    AttributeEdgeModel,
+    EntityEdgeModel,
+)
 
 
 def test_ifc_set_and_list(em_ifc4x1):

@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass, field
 from typing import ClassVar, Dict
 
-from ifc_schema.entities import Entity
+from ifcdb.entities import Entity
 
 re_flags = re.DOTALL | re.MULTILINE | re.IGNORECASE
 

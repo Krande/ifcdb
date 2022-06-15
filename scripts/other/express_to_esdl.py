@@ -1,6 +1,6 @@
-from ifc_schema.exp_reader import ExpReader
-from ifc_schema.interop.edge_model.custom_reader.edgemodel import EdgeModel
-from ifc_schema.interop.edge_model.utils import copy_server_files
+from ifcdb.exp_reader import ExpReader
+from ifcdb.interop.edge_model.custom_reader.edgemodel import EdgeModel
+from ifcdb.interop.edge_model.utils import copy_server_files
 
 
 def main(express_file):

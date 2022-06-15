@@ -1,5 +1,5 @@
-from ifc_schema.exp_reader import ExpReader
-from ifc_schema.interop.pymodel import PyModel, build_test_str
+from ifcdb.exp_reader import ExpReader
+from ifcdb.interop.pymodel import PyModel, build_test_str
 
 
 def main(express_file):

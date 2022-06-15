@@ -5,9 +5,9 @@ import shutil
 from dataclasses import dataclass
 from typing import ClassVar, List, Union
 
-from ifc_schema.att_types import Array
-from ifc_schema.entities import Entity
-from ifc_schema.interop.base import BaseModel
+from ifcdb.att_types import Array
+from ifcdb.entities import Entity
+from ifcdb.interop.base import BaseModel
 
 
 @dataclass

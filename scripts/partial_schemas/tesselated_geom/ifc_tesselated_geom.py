@@ -1,14 +1,29 @@
-from __future__ import annotations
+import os
 
-from ifc_schema.interop.edge_model import EdgeIO
-from ifc_schema.utils import top_dir
+from ifcdb import EdgeIO
+from ifcdb.utils import top_dir
 
-if __name__ == "__main__":
-    ifc_f = top_dir() / "files/tessellated-item.ifc"
-    db_schema_dir = "db/dbschema"
-    with EdgeIO(ifc_file=ifc_f, schema_name="IFC4x1", database="testdb") as io:
-        # io.create_schema_from_ifc_file(db_schema_dir)
-        io.setup_database(db_schema_dir)
+
+def main():
+    ifc_file = "tessellated-item.ifc"
+    # ifc_file = "cube-advanced-brep.ifc"
+    ifc_path = top_dir() / "files" / ifc_file
+
+    with EdgeIO(ifc_file=ifc_path, db_schema_dir="db/dbschema", ifc_schema="IFC4x1", database="testdb") as io:
+        io.create_schema_from_ifc_file()
+        io.setup_database()
         io.insert_ifc()
         res = io.export_ifc_elements_to_ifc_str()
-        print(res)
+        # result = io.get_all(limit_to_ifc_entities=True)
+        # obj_set = {key: value for key, value in result[0].items() if len(value) != 0}
+        #
+        # for key, value in obj_set.items():
+        #     print('sd')
+
+    os.makedirs("temp", exist_ok=True)
+    with open(f"temp/{ifc_file}-roundtripped.ifc", "w") as f:
+        f.write(res)
+
+
+if __name__ == "__main__":
+    main()
