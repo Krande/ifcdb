@@ -54,9 +54,18 @@ def get_att_str(
             value_str += "" if i == len(r) - 1 else ","
         value_str += "}"
     elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
+        levels = att_ref.get_levels()
+        num_levels = len(levels)
+        ptype = att_ref.parameter_type
         if isinstance(res[0], tuple):
-            value_str = list(res)
+            value_str = [tuple([insert_ifc_entity(r, uuid_map, att_ref, with_map, em) for r in x]) for x in res]
         else:
+            levels = att_ref.get_levels()
+            b2 = levels[0].bound2()
+            if len(res) != b2:
+                logging.error(f"Length of insert tuple ({len(res)}) and db ({b2}) does not match")
+                # logging.error('Passing in arbitrary 3rd number. For debugging purposes only')
+                # res = tuple([*res, 999999999])
             value_str = res
     elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) is False:
         value_str = res
@@ -79,23 +88,25 @@ def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
         res_name = res.is_a()
         entity_str = f'(SELECT {res_name} filter .id = <uuid>"{uuid_obj}")'
 
+    res_id = res.id()
     if isinstance(att_ref, ArrayEdgeModel):
         ptype = att_ref.parameter_type
+        levels = att_ref.get_levels()
         if isinstance(ptype, SelectEdgeModel):
             aname = ptype.name
-            unique_ref_name_a = f"ifc_{res.id() + 100000}"
+            unique_ref_name_a = f"ifc_{res_id + 100000}"
             with_map[unique_ref_name_a] = entity_str
             ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
         else:
             ref_str = entity_str
     elif isinstance(att_ref, SelectEdgeModel):
         aname = att_ref.name
-        unique_ref_name_a = f"ifc_{res.id() + 100000}"
+        unique_ref_name_a = f"ifc_{res_id + 100000}"
         with_map[unique_ref_name_a] = entity_str
         ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
     else:
         ref_str = entity_str
 
-    unique_ref_name = f"ifc_{res.id()}"
+    unique_ref_name = f"ifc_{res_id}"
     with_map[unique_ref_name] = ref_str
     return unique_ref_name

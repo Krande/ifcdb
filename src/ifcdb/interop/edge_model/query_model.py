@@ -206,18 +206,20 @@ class EdgeIOBase:
         unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
         self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
 
-    def _insert_items_sequentially(self, tx: edgedb.blocking_client):
+    def _insert_items_sequentially(self, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
         from .query_utils import get_att_str
 
         ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-        ifc_items_grouped = self.ifc_io.get_ifc_objects_by_sorted_insert_order_grouped()
-        res = self.ifc_io.get_ifc_dep_map(False)
+        # ifc_items_grouped = self.ifc_io.get_ifc_objects_by_sorted_insert_order_grouped()
+        # res = self.ifc_io.get_ifc_dep_map(False)
 
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
+            if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
+                continue
             entity = self.em.get_entity_by_name(item.is_a())
             all_atts = entity.get_entity_atts(item)
-            deps = res.get(item, None)
+            # deps = res.get(item, None)
             print(f'inserting ifc item ({i} of {len(ifc_items)}) "{item}"')
             # INSERT block
             with_map = dict()
@@ -300,12 +302,12 @@ class EdgeIO(EdgeIOBase):
         return json.loads(self.client.query_json(select_str))
 
     # WRITE
-    def insert_ifc(self, method=INSERTS.SEQ):
+    def insert_ifc(self, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
         """Upload all IFC elements to EdgeDB instance"""
         for tx in self.client.transaction():
             with tx:
                 if method == INSERTS.SEQ:
-                    self._insert_items_sequentially(tx)
+                    self._insert_items_sequentially(tx, specific_ifc_ids)
                 else:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 
