@@ -6,10 +6,12 @@ import subprocess
 
 import ifcopenshell
 
-from ifc_schema.interop.edge_model.edge_model_base import (ArrayEdgeModel,
-                                                           AttributeEdgeModel,
-                                                           EdgeModel,
-                                                           SelectEdgeModel)
+from ifc_schema.interop.edge_model.edge_model_base import (
+    ArrayEdgeModel,
+    AttributeEdgeModel,
+    EdgeModel,
+    SelectEdgeModel,
+)
 
 
 def create_local_instance(server_name):
@@ -63,9 +65,7 @@ def get_att_str(
     elif isinstance(res, ifcopenshell.entity_instance):
         value_str = insert_ifc_entity(res, uuid_map, att_ref, with_map, em)
     else:
-        raise NotImplementedError(
-            f'Currently not added support for att: "{name}" -> {type(res)}'
-        )
+        raise NotImplementedError(f'Currently not added support for att: "{name}" -> {type(res)}')
 
     return f"{name} := {value_str}"
 

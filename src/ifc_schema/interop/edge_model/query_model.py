@@ -15,7 +15,11 @@ import edgedb
 import ifcopenshell
 from toposort import toposort, toposort_flatten
 
-from ifc_schema.interop.edge_model.edge_model_base import AttributeEdgeModel, EdgeModel, EntityEdgeModel
+from ifc_schema.interop.edge_model.edge_model_base import (
+    AttributeEdgeModel,
+    EdgeModel,
+    EntityEdgeModel,
+)
 
 
 class INSERTS:

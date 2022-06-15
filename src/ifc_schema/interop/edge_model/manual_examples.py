@@ -20,15 +20,11 @@ def tria_face_element_data(ifc_tria: ifcopenshell.entity_instance) -> dict:
     )
 
 
-def insert_ifc_building_element_proxies(
-    client: edgedb.Client, ifc_bld_proxies: list[ifcopenshell.entity_instance]
-):
+def insert_ifc_building_element_proxies(client: edgedb.Client, ifc_bld_proxies: list[ifcopenshell.entity_instance]):
     bld_proxies = []
     for ifc_bld_proxy in ifc_bld_proxies:
         if ifc_bld_proxy.Representation is None:
-            logging.warning(
-                f'IFC element "{ifc_bld_proxy.Name}" Representation object is None'
-            )
+            logging.warning(f'IFC element "{ifc_bld_proxy.Name}" Representation object is None')
             continue
 
         repr_items = []
@@ -42,9 +38,7 @@ def insert_ifc_building_element_proxies(
         bld_prox = dict(
             guid=ifc_bld_proxy.GlobalId,
             name=ifc_bld_proxy.Name,
-            descr=ifc_bld_proxy.Description
-            if ifc_bld_proxy.Description is not None
-            else "",
+            descr=ifc_bld_proxy.Description if ifc_bld_proxy.Description is not None else "",
             csysdim=3,
             coords=(0, 0, 0),
             axis=(0, 0, 1),

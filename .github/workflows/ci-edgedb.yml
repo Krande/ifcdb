@@ -6,6 +6,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: CI with EdgeDB action
+    services:
+      edgedb:
+        image: edgedb/edgedb:1.4
+        env:
+          EDGEDB_SERVER_SECURITY: insecure_dev_mode
+        ports:
+          - 5656:5656
     steps:
       - uses: actions/checkout@v2
         with:
@@ -29,6 +36,6 @@ jobs:
       - name: Test package
         run: pytest tests
         shell: bash -l {0}
-#        env:
+        env:
+          EDGEDB_SERVER: "--tls-security=insecure -P 5656"
 #          EDGEDB_EXE: "/opt/hostedtoolcache/edgedb-cli/1.1.2/x64/edgedb"
-#          EDGEDB_SERVER: "--tls-security=insecure -P 5656"

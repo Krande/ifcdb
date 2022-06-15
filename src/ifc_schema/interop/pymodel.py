@@ -165,9 +165,7 @@ def array_to_str(array: Array) -> str:
 class PyModel(BaseModel):
     output_dir: pathlib.Path = pathlib.Path("temp/pymodel")
 
-    def export_all_related_to_dataclasses(
-        self, entity_names: Union[str, List[str]], main_str: str = None
-    ):
+    def export_all_related_to_dataclasses(self, entity_names: Union[str, List[str]], main_str: str = None):
         header_str = "from __future__ import annotations\n"
         header_str += "from dataclasses import dataclass\n"
         header_str += "from enum import Enum, auto\n"

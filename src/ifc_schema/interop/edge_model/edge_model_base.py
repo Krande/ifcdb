@@ -3,13 +3,11 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
-import subprocess
 from dataclasses import dataclass, field
 from typing import ClassVar, Dict, List, Union
 
-import edgedb
 import ifcopenshell
-from toposort import toposort, toposort_flatten
+from toposort import toposort_flatten
 
 wrap = ifcopenshell.ifcopenshell_wrapper
 
@@ -66,9 +64,7 @@ def get_base_type_name(
     if isinstance(cur_decl, str):
         cast_type = EntityEdgeModel.simple_types.get(cur_decl)
         if cast_type is None:
-            raise ValueError(
-                f'Cast Simple Type not found for "{cur_decl}" related to {content_type}'
-            )
+            raise ValueError(f'Cast Simple Type not found for "{cur_decl}" related to {content_type}')
         return cast_type
 
     raise NotImplementedError(f"Base type is unknown type {cur_decl}")
@@ -101,12 +97,8 @@ def get_attribute_entities(entity: wrap.entity):
     return att_entities
 
 
-def unwrap_selected_items(
-    entity: wrap.select_type, selectable_type_entities: list[wrap.entity] = None
-):
-    selectable_type_entities = (
-        [] if selectable_type_entities is None else selectable_type_entities
-    )
+def unwrap_selected_items(entity: wrap.select_type, selectable_type_entities: list[wrap.entity] = None):
+    selectable_type_entities = [] if selectable_type_entities is None else selectable_type_entities
     for x in entity.select_list():
         if x in selectable_type_entities:
             continue
@@ -223,16 +215,15 @@ class AttributeEdgeModel:
         elif isinstance(array_ref, ArrayEdgeModel):
             param = array_ref.parameter_type
             if isinstance(param, str):
-                prefix_str += (
-                    "property"
-                    if array_ref.list_type == ArrayEdgeModel.LIST
-                    else "multi property"
-                )
+                prefix_str += "property" if array_ref.list_type == ArrayEdgeModel.LIST else "multi property"
             else:
                 prefix_str += "multi link"
 
             if "multi" in prefix_str:
-                value_name = value_ref.name
+                if value_ref is None:
+                    value_name = param
+                else:
+                    value_name = value_ref.name
             else:
                 value_name = array_ref.to_str()
         elif isinstance(value_ref, (EntityEdgeModel, SelectEdgeModel)):
@@ -241,9 +232,7 @@ class AttributeEdgeModel:
         elif isinstance(value_ref, EnumEdgeModel):
             prefix_str += "property"
             items_str = ",".join(f"'{x}'" for x in value_ref.get_enum_items())
-            value_name = (
-                f"str {{\n            constraint one_of ({items_str});\n        }}"
-            )
+            value_name = f"str {{\n            constraint one_of ({items_str});\n        }}"
         else:
             raise NotImplementedError(f'Unknown attribute type "{value_ref}"')
 
@@ -283,9 +272,7 @@ class ArrayEdgeModel:
         agg_type = self.agg_type.type_of_aggregation()
         result = agg_map.get(agg_type, None)
         if result is None:
-            raise NotImplementedError(
-                f'Have yet to add support for aggregation type "{agg_type}"'
-            )
+            raise NotImplementedError(f'Have yet to add support for aggregation type "{agg_type}"')
 
         return result
 
@@ -311,9 +298,7 @@ class ArrayEdgeModel:
 @dataclass
 class EntityBaseEdgeModel:
     edge_model: EdgeModel = field(repr=False)
-    entity: Union[
-        wrap.entity, wrap.select_type, wrap.enumeration_type, wrap.type_declaration
-    ]
+    entity: Union[wrap.entity, wrap.select_type, wrap.enumeration_type, wrap.type_declaration]
 
     @property
     def name(self):
@@ -323,17 +308,11 @@ class EntityBaseEdgeModel:
     def schema(self):
         return self.edge_model.schema
 
-    def to_insert_str(
-        self, entity: ifcopenshell.entity_instance, indent: str = ""
-    ) -> str:
-        raise NotImplementedError(
-            f"Have not added method for subclass '{self.__class__.__name__}'"
-        )
+    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = "") -> str:
+        raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
 
     def to_str(self) -> str:
-        raise NotImplementedError(
-            f"Have not added method for subclass '{self.__class__.__name__}'"
-        )
+        raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
 
 
 @dataclass
@@ -355,21 +334,15 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         derived = self.entity.derived()
         attributes = self.entity.all_attributes()
         if len(derived) != len(attributes):
-            logging.debug(
-                "Explicit attributes is NOT redeclared as derived in a subtype"
-            )
+            logging.debug("Explicit attributes is NOT redeclared as derived in a subtype")
             return None
         return {attref.name(): derived for derived, attref in zip(derived, attributes)}
 
-    def get_attributes(
-        self, include_inherited_attributes=False
-    ) -> list[AttributeEdgeModel]:
+    def get_attributes(self, include_inherited_attributes=False) -> list[AttributeEdgeModel]:
         if self._attributes is None or include_inherited_attributes is True:
             atts = []
             att_list = (
-                self.entity.attributes()
-                if include_inherited_attributes is False
-                else self.entity.all_attributes()
+                self.entity.attributes() if include_inherited_attributes is False else self.entity.all_attributes()
             )
 
             dmap = {x.name(): False for x in att_list}
@@ -388,9 +361,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
                     if self._skip_due_to_circular_deps(att_name):
                         continue
                 derived_data = dmap.get(att_name, None)
-                atts.append(
-                    AttributeEdgeModel(self.edge_model, att, derived=derived_data)
-                )
+                atts.append(AttributeEdgeModel(self.edge_model, att, derived=derived_data))
             self._attributes = atts
         return self._attributes
 
@@ -403,9 +374,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             parent = parent.supertype()
         return parents
 
-    def get_children(
-        self, current_child=None, children_all=None
-    ) -> list[EntityEdgeModel]:
+    def get_children(self, current_child=None, children_all=None) -> list[EntityEdgeModel]:
         children_all = [] if children_all is None else children_all
         current_child = self if current_child is None else current_child
 
@@ -413,9 +382,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         if children is None:
             return children_all
 
-        child_entities = [
-            self.edge_model.get_entity_by_name(child.name()) for child in children
-        ]
+        child_entities = [self.edge_model.get_entity_by_name(child.name()) for child in children]
         children_all += child_entities
         for child in child_entities:
             self.get_children(child, children_all)
@@ -454,9 +421,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         return atts_str
 
     def get_entity_atts(self, entity: ifcopenshell.entity_instance):
-        return [
-            x for x in self.get_attributes(True) if getattr(entity, x.name) is not None
-        ]
+        return [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
 
     def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = ""):
         from .insert_model import get_att_str
@@ -481,11 +446,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     def to_str(self) -> str:
         att_str = self.attributes_str
         prop_prefix = "abstract " if self.entity.is_abstract() is True else ""
-        parent_str = (
-            f"extending {self.entity.supertype().name()}"
-            if self.entity.supertype() is not None
-            else ""
-        )
+        parent_str = f"extending {self.entity.supertype().name()}" if self.entity.supertype() is not None else ""
         name = self.entity.name()
         return f"""
     {prop_prefix}type {name} {parent_str} {{
@@ -533,9 +494,7 @@ class TypeEdgeModel(EntityBaseEdgeModel):
 
         return isinstance(cur_decl, wrap.aggregation_type)
 
-    def to_insert_str(
-        self, entity: ifcopenshell.entity_instance, indent: str = ""
-    ) -> str:
+    def to_insert_str(self, entity: ifcopenshell.entity_instance, indent: str = "") -> str:
         # value = get_base_type_name(self.entity)
         return f"INSERT {self.name} {{{self.name} := {entity.wrappedValue} }}"
 
@@ -555,9 +514,7 @@ class TypeEdgeModel(EntityBaseEdgeModel):
             else:
                 levels = get_aggregation_levels(self.entity.declared_type())
                 if len(levels) != 1:
-                    logging.warning(
-                        "Get Array string has only been tested on a single level"
-                    )
+                    logging.warning("Get Array string has only been tested on a single level")
 
                 value = get_array_str(levels)
                 prop_str = "property"
@@ -576,21 +533,12 @@ class SelectEdgeModel(EntityBaseEdgeModel):
 
     def get_select_entities(self, unwrap_all=False) -> list[EntityEdgeModel]:
         if unwrap_all is False:
-            return [
-                self.edge_model.get_entity_by_name(x.name())
-                for x in self.entity.select_list()
-            ]
-        res = [
-            self.edge_model.get_entity_by_name(x.name())
-            for x in unwrap_selected_items(self.entity)
-        ]
+            return [self.edge_model.get_entity_by_name(x.name()) for x in self.entity.select_list()]
+        res = [self.edge_model.get_entity_by_name(x.name()) for x in unwrap_selected_items(self.entity)]
         return res
 
     def to_str(self) -> str:
-        ent_names = " | ".join(
-            x.name
-            for x in self.get_select_entities(self.edge_model.select_types_unwrap)
-        )
+        ent_names = " | ".join(x.name for x in self.get_select_entities(self.edge_model.select_types_unwrap))
         return f"""
     type {self.entity.name()} {{
         link {self.entity.name()} -> {ent_names};
@@ -620,35 +568,13 @@ class EdgeModel:
 
     def __post_init__(self):
         decl = self.schema.declarations()
-        self.select_types = {
-            x.name(): SelectEdgeModel(self, x)
-            for x in decl
-            if isinstance(x, wrap.select_type)
-        }
-        self.enum_types = {
-            x.name(): EnumEdgeModel(self, x)
-            for x in decl
-            if isinstance(x, wrap.enumeration_type)
-        }
-        self.base_types = {
-            x.name(): TypeEdgeModel(self, x)
-            for x in decl
-            if isinstance(x, wrap.type_declaration)
-        }
-        type_names = (
-            list(self.base_types.keys())
-            + list(self.select_types.keys())
-            + list(self.enum_types.keys())
-        )
-        self.entities = {
-            x.name(): EntityEdgeModel(self, x)
-            for x in decl
-            if x.name() not in type_names
-        }
+        self.select_types = {x.name(): SelectEdgeModel(self, x) for x in decl if isinstance(x, wrap.select_type)}
+        self.enum_types = {x.name(): EnumEdgeModel(self, x) for x in decl if isinstance(x, wrap.enumeration_type)}
+        self.base_types = {x.name(): TypeEdgeModel(self, x) for x in decl if isinstance(x, wrap.type_declaration)}
+        type_names = list(self.base_types.keys()) + list(self.select_types.keys()) + list(self.enum_types.keys())
+        self.entities = {x.name(): EntityEdgeModel(self, x) for x in decl if x.name() not in type_names}
 
-    def _find_dependencies(
-        self, entity_name, dep_tree: dict = None, search_recursively=True
-    ):
+    def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree
 
         entity_model = self.get_entity_by_name(entity_name)
@@ -695,9 +621,7 @@ class EdgeModel:
         return {
             x.name(): x
             for x in self.schema.declarations()
-            if isinstance(
-                x, (wrap.type_declaration, wrap.select_type, wrap.enumeration_type)
-            )
+            if isinstance(x, (wrap.type_declaration, wrap.select_type, wrap.enumeration_type))
         }
 
     def _fix_circular_deps(self, entity_dep_map):
@@ -744,13 +668,9 @@ class EdgeModel:
         for type_name in self.enum_types.keys():
             entity_dep_map[type_name] = []
         for entity_name in self.select_types.keys():
-            self._find_dependencies(
-                entity_name, entity_dep_map, search_recursively=False
-            )
+            self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
         for entity_name in self.entities.keys():
-            self._find_dependencies(
-                entity_name, entity_dep_map, search_recursively=False
-            )
+            self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
 
         if self.modify_circular_deps is False:
             return list(entity_dep_map.keys())
@@ -759,9 +679,7 @@ class EdgeModel:
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
 
-    def get_related_entities(
-        self, entity_names: Union[str, List[str]], entity_dep_map: dict = None
-    ) -> list[str]:
+    def get_related_entities(self, entity_names: Union[str, List[str]], entity_dep_map: dict = None) -> list[str]:
         if isinstance(entity_names, str):
             entity_names = [entity_names]
 
@@ -775,9 +693,7 @@ class EdgeModel:
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
 
-    def get_entity_by_name(
-        self, name: str
-    ) -> Union[EntityEdgeModel, EnumEdgeModel, TypeEdgeModel, SelectEdgeModel]:
+    def get_entity_by_name(self, name: str) -> Union[EntityEdgeModel, EnumEdgeModel, TypeEdgeModel, SelectEdgeModel]:
         for entity_types in [
             self.select_types,
             self.base_types,
@@ -794,15 +710,15 @@ class EdgeModel:
         res = self.get_entity_by_name(entity)
         return res.to_str()
 
-    def get_entity_insert_str(
-        self, ifc_entity: ifcopenshell.entity_instance, indent: str = ""
-    ) -> str:
+    def get_entity_insert_str(self, ifc_entity: ifcopenshell.entity_instance, indent: str = "") -> str:
         entity = self.get_entity_by_name(ifc_entity.is_a())
         return entity.to_insert_str(ifc_entity, indent=indent)
 
     def write_entities_to_esdl_file(
-        self, entities: list[str], esdl_file_path, module_name="default"
+        self, entities: list[str], esdl_file_path, module_name="default", include_server_files=False
     ):
+        from ifc_schema.interop.edge_model.utils import copy_server_files
+
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)
 
@@ -812,3 +728,6 @@ class EdgeModel:
                 edge_str = self.entity_to_edge_str(entity_name)
                 f.write(edge_str)
             f.write("}")
+
+        if include_server_files:
+            copy_server_files(esdl_file_path.parent.parent)

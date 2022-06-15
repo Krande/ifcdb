@@ -12,9 +12,7 @@ class ExpReader:
     express_file: str
     entity_dict: Dict[str, Entity] = field(default_factory=dict)
     type_dict: Dict[str, Entity] = field(default_factory=dict)
-    reg_entities: ClassVar[re.Pattern] = re.compile(
-        r"ENTITY\s*(?P<name>.*?)$(?P<content>.*?)END_ENTITY;", re_flags
-    )
+    reg_entities: ClassVar[re.Pattern] = re.compile(r"ENTITY\s*(?P<name>.*?)$(?P<content>.*?)END_ENTITY;", re_flags)
     reg_types: ClassVar[re.Pattern] = re.compile(
         r"TYPE\s*(?P<name>.*?)\s*=\s*(?P<content>.*?);(.*?)END_TYPE;", re_flags
     )
@@ -25,19 +23,11 @@ class ExpReader:
             data = f.read()
             lpos = data.find("ENTITY ")
             exp_entities: Dict[str, Entity] = {
-                co.name: co
-                for co in (
-                    convert_type(x, self)
-                    for x in self.reg_entities.finditer(data, pos=lpos - 5)
-                )
+                co.name: co for co in (convert_type(x, self) for x in self.reg_entities.finditer(data, pos=lpos - 5))
             }
 
             exp_types: Dict[str, Entity] = {
-                co.name: co
-                for co in (
-                    convert_type(x, self)
-                    for x in self.reg_types.finditer(data, endpos=lpos + 5)
-                )
+                co.name: co for co in (convert_type(x, self) for x in self.reg_types.finditer(data, endpos=lpos + 5))
             }
 
             self.entity_dict.update(exp_entities)

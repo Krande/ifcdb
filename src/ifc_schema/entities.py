@@ -74,10 +74,7 @@ class Entity:
                     att_type_index = related_entities.index(att_type)
                     ancestor_index = related_entities.index(ancestor)
                     if att_type_index > ancestor_index:
-                        (
-                            related_entities[att_type_index],
-                            related_entities[ancestor_index],
-                        ) = (
+                        (related_entities[att_type_index], related_entities[ancestor_index],) = (
                             related_entities[ancestor_index],
                             related_entities[att_type_index],
                         )
@@ -85,17 +82,13 @@ class Entity:
                     append_to(att_type_ref, related_entities)
                 elif isinstance(att_type, Array):
                     append_to(att_type.of_type, related_entities)
-                    for at_ancestor in att_type.of_type.get_related_entities_and_types(
-                        related_entities
-                    ):
+                    for at_ancestor in att_type.of_type.get_related_entities_and_types(related_entities):
                         append_to(at_ancestor, related_entities)
                 elif isinstance(att_type, Entity) is False:
                     continue
                 else:
                     append_to(att_type, related_entities)
-                    for at_ancestor in att_type.get_related_entities_and_types(
-                        related_entities
-                    ):
+                    for at_ancestor in att_type.get_related_entities_and_types(related_entities):
                         append_to(at_ancestor, related_entities)
         return related_entities
 
@@ -108,12 +101,7 @@ class Entity:
         if self.is_enum is False:
             return None
 
-        return [
-            x.strip()
-            for x in re.search(r"ENUMERATION OF\s*\((.*?)\)", self.content, re_flags)
-            .group(1)
-            .split(",")
-        ]
+        return [x.strip() for x in re.search(r"ENUMERATION OF\s*\((.*?)\)", self.content, re_flags).group(1).split(",")]
 
     @property
     def is_base_type(self):
@@ -141,19 +129,12 @@ class Entity:
     def entity_attributes(self) -> Union[None, Dict[str, Attribute]]:
         from ifc_schema.att_types import Attribute
 
-        re_att = re.compile(
-            r"^\s*(?P<key>[a-zA-Z0-9]{0,20}) :(?P<value>.*?);", re_flags
-        )
+        re_att = re.compile(r"^\s*(?P<key>[a-zA-Z0-9]{0,20}) :(?P<value>.*?);", re_flags)
 
         atts = dict()
         for line in self.content.splitlines():
             llow = line.lower()
-            if (
-                "where" in llow
-                or "inverse" in llow
-                or "derive" in llow
-                or "unique" in llow
-            ):
+            if "where" in llow or "inverse" in llow or "derive" in llow or "unique" in llow:
                 break
             result = re_att.search(line)
             if result is None:
@@ -161,9 +142,7 @@ class Entity:
             d = result.groupdict()
             key, value = d["key"], d["value"].strip()
             optional = value.upper().startswith("OPTIONAL")
-            atts[key] = Attribute(
-                key, value, optional=optional, parent=self, _exp_reader=self.exp_reader
-            )
+            atts[key] = Attribute(key, value, optional=optional, parent=self, _exp_reader=self.exp_reader)
         return atts
 
     @property
@@ -179,9 +158,7 @@ class Entity:
 
     @property
     def entity_inverse(self):
-        re_inverse_seg = re.search(
-            r"INVERSE\n(.*?)(?:^ [aA-zZ]|\Z)", self.content, re_flags
-        )
+        re_inverse_seg = re.search(r"INVERSE\n(.*?)(?:^ [aA-zZ]|\Z)", self.content, re_flags)
         re_att = re.compile(r"^	(?P<key>[a-zA-Z0-9_]{0,20}) :(?P<value>.*?);", re_flags)
         if re_inverse_seg is None:
             return None
