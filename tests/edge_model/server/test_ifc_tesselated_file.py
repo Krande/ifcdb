@@ -7,7 +7,7 @@ import pytest
 
 @pytest.mark.parametrize("ifc_file_name", ["tessellated-item.ifc", "cube-advanced-brep.ifc"])
 def test_roundtrip_ifc_tesselated(ifc_files_dir, em_ifc4x1, ifc_file_name):
-    db_name = "tess_db"
+    db_name = ifc_file_name.replace('.ifc', '').replace('-', '_')
     ifc_file = ifc_files_dir / ifc_file_name
 
     db_schema_dir = pathlib.Path("temp").resolve().absolute() / db_name / "dbschema"

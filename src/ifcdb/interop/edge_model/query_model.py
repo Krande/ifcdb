@@ -290,7 +290,8 @@ class EdgeIO(EdgeIOBase):
             ent_dict = {x: self.em.get_entity_by_name(x) for x in self.em.get_related_entities(entities)}
 
         for key, item in self.em.intermediate_classes.items():
-            ent_dict[key] = item
+            if item.written_to_file is True:
+                ent_dict[key] = item
 
         for entity_name, entity in ent_dict.items():
             if isinstance(entity, EnumEdgeModel):

@@ -13,6 +13,15 @@ jobs:
           EDGEDB_SERVER_SECURITY: insecure_dev_mode
         ports:
           - 5656:5656
+    strategy:
+      fail-fast: false
+      matrix:
+        pyver: [ { name: py310, distver: '3.10.2' } ]
+        platform: [
+          #          { name: Windows, distver: windows-latest, short: 'win-64' },
+          { name: Linux, distver: ubuntu-latest, short: 'linux-64' },
+          #          { name: macOS, distver: macos-latest, short: 'osx-64' }
+        ]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -20,7 +29,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2  # https://github.com/conda-incubator/setup-miniconda
         with:
           activate-environment: ifcdb
-          python-version: "3.10"
+          python-version: ${{ matrix.pyver.distver }}
           channel-priority: strict
           environment-file: environment.yml
           auto-update-conda: true
