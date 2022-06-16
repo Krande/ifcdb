@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pyver: [ { name: py310, distver: '3.10.2' } ]
+        pyver: [ { name: py310, distver: "3.10" } ]
         platform: [
           #          { name: Windows, distver: windows-latest, short: 'win-64' },
           { name: Linux, distver: ubuntu-latest, short: 'linux-64' },
