@@ -11,8 +11,9 @@ def main():
 
     with EdgeIO(ifc_file=ifc_path, db_schema_dir="db/dbschema", ifc_schema="IFC4x1", database="testdb") as io:
         # io.create_schema_from_ifc_file()
-        # io.setup_database()
-        io.insert_ifc(specific_ifc_ids=[36])
+        # io.setup_database(delete_existing_migrations=True)
+        # io.insert_ifc(specific_ifc_ids=[125])
+        # io.insert_ifc()
         res = io.export_ifc_elements_to_ifc_str()
         # result = io.get_all(limit_to_ifc_entities=True)
         # obj_set = {key: value for key, value in result[0].items() if len(value) != 0}

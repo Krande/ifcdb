@@ -131,24 +131,48 @@ def get_array_str(levels):
         cast_type_str = parameter
     else:
         cast_type_str = parameter.name()
-
+    indent = 4 * " "
     astr = ""
     ending = ""
+    constr_str = ""
     for i, level in enumerate(levels):
-        lbnum1 = level.bound1()
-        lbnum2 = level.bound2()
+        b1 = level.bound1()
+        b2 = level.bound2()
         if len(levels) > 1 and i == 0:
             array_str = "array<"
         else:
-            array_str = "array<" if lbnum2 == 1 else "tuple<"
-        max_num = max(max(lbnum1, lbnum2), 1)
-        entity_str = ", ".join([cast_type_str for i in range(max_num)])
+            array_str = "array<" if b2 == 1 else "tuple<"
+
+        if b1 != b2 and b2 != -1:
+            array_str = "array<"
+            g = 3 * indent
+            g2 = 2 * indent
+            range_str = ""
+            range_l = list(range(b1, b2 + 1))
+            for j, k in enumerate(range_l, start=1):
+                range_str += f"len(__subject__) = {k}"
+                range_str += " or " if j != len(range_l) else ""
+            constr_str = f"{{\n{g}constraint expression on ({range_str})\n{g2}}}"
+            entity_str = cast_type_str
+        else:
+            max_num = max(max(b1, b2), 1)
+            entity_str = ", ".join([cast_type_str for i in range(max_num)])
+
         if i == len(levels) - 1:
             astr += array_str + f"{entity_str}"
         else:
             astr += array_str
         ending += ">"
-    return astr + ending
+    return astr + ending + constr_str
+
+
+@dataclass
+class IntermediateClass:
+    name: str
+    type_str: str
+    attributes: list[tuple[str, EntityEdgeModel]]
+    parent_attribute: AttributeEdgeModel
+    written_to_file: bool = False
 
 
 # Attribute References
@@ -172,6 +196,43 @@ class AttributeEdgeModel:
     @property
     def ref_to_many(self):
         return self.array_ref() is not None
+
+    @property
+    def needs_intermediate_class_str(self):
+        att_ref = self.array_ref()
+        if att_ref is None:
+            return False
+        levels = att_ref.get_levels()
+        num_levels = len(levels)
+        ptype = att_ref.parameter_type
+        if num_levels > 1 and isinstance(ptype, str) is False:
+            return True
+        return False
+
+    def get_intermediate_array_class(self) -> IntermediateClass | None:
+        """Creates an intermediate class for nested links to Entities"""
+        if self.needs_intermediate_class_str is False:
+            return None
+
+        array = self.array_ref()
+        ptype = array.parameter_type
+        new_name = f"{ptype.name}List"
+
+        if new_name in self.edge_model.intermediate_classes:
+            return self.edge_model.intermediate_classes[new_name]
+        att_name = f"{ptype.name}s"
+        istr = f"""\n    type {new_name} {{ required multi link {att_name} -> {ptype.name} }}\n"""
+        self.edge_model.intermediate_classes[new_name] = IntermediateClass(new_name, istr, [(att_name, ptype)], self)
+        return self.edge_model.intermediate_classes[new_name]
+
+    @property
+    def intermediate_class_name(self):
+        if self.needs_intermediate_class_str is False:
+            return None
+        array = self.array_ref()
+        ptype = array.parameter_type
+        new_name = f"{ptype.name}List"
+        return new_name
 
     def get_type_ref(self) -> str | EntityEdgeModel | SelectEdgeModel | ArrayEdgeModel:
         array_ref = self.array_ref()
@@ -214,6 +275,7 @@ class AttributeEdgeModel:
             value_name = value_ref
         elif isinstance(array_ref, ArrayEdgeModel):
             param = array_ref.parameter_type
+
             if isinstance(param, str):
                 prefix_str += "property" if array_ref.list_type == ArrayEdgeModel.LIST else "multi property"
             else:
@@ -223,7 +285,9 @@ class AttributeEdgeModel:
                 if value_ref is None:
                     value_name = param
                 else:
-                    value_name = value_ref.name
+                    value_name = (
+                        value_ref.name if self.needs_intermediate_class_str is False else f"{value_ref.name}List"
+                    )
             else:
                 value_name = array_ref.to_str()
         elif isinstance(value_ref, (EntityEdgeModel, SelectEdgeModel)):
@@ -438,8 +502,9 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     ):
         from ifcdb.interop.edge_model.query_utils import get_att_str
 
-        insert_str = f"{indent}INSERT {self.name} {{\n  "
         all_atts = self.get_entity_atts(entity)
+        newline = "" if len(all_atts) == 1 else "\n"
+        insert_str = f"{indent}INSERT {self.name} {{{newline}  "
 
         for i, att in enumerate(all_atts):
             res = get_att_str(att, entity, self.edge_model, uuid_map=uuid_map, with_map=with_map)
@@ -453,14 +518,23 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
             insert_str += res + comma_str
 
-        return insert_str + "}\n"
+        return insert_str + f"}}{newline}"
 
     def to_str(self) -> str:
         att_str = self.attributes_str
         prop_prefix = "abstract " if self.entity.is_abstract() is True else ""
         parent_str = f"extending {self.entity.supertype().name()}" if self.entity.supertype() is not None else ""
         name = self.entity.name()
-        return f"""
+
+        # Check for any need to construct intermediate classes
+        intermediate_classes_str = ""
+        for att in self.get_attributes(True):
+            if att.needs_intermediate_class_str is True:
+                imc = att.get_intermediate_array_class()
+                if imc.written_to_file is False:
+                    intermediate_classes_str += imc.type_str
+                    imc.written_to_file = True
+        return f"""{intermediate_classes_str}
     {prop_prefix}type {name} {parent_str} {{
 {att_str}    }}
 """
@@ -575,6 +649,8 @@ class EdgeModel:
     modify_circular_deps: bool = False
     select_types_unwrap: bool = True
 
+    intermediate_classes: dict[str, IntermediateClass] = field(default_factory=dict)
+
     reserved_keys: ClassVar[dict] = dict(
         start="`Start`",
         union="`UNION`",
@@ -591,6 +667,10 @@ class EdgeModel:
         self.base_types = {x.name(): TypeEdgeModel(self, x) for x in decl if isinstance(x, wrap.type_declaration)}
         type_names = list(self.base_types.keys()) + list(self.select_types.keys()) + list(self.enum_types.keys())
         self.entities = {x.name(): EntityEdgeModel(self, x) for x in decl if x.name() not in type_names}
+
+        for ent in self.entities.values():
+            for att in ent.get_attributes():
+                att.get_intermediate_array_class()
 
     def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree

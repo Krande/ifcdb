@@ -43,10 +43,12 @@ module default {
         link RefDirection -> IfcDirection;
     }
 
+    type IfcCartesianPointList { required multi link IfcCartesianPoints -> IfcCartesianPoint }
+
     abstract type IfcBSplineSurface extending IfcBoundedSurface {
         required property UDegree -> int64;
         required property VDegree -> int64;
-        required multi link ControlPointsList -> IfcCartesianPoint;
+        required multi link ControlPointsList -> IfcCartesianPointList;
         required property SurfaceForm -> str {
             constraint one_of ('CONICAL_SURF','CYLINDRICAL_SURF','GENERALISED_CONE','PLANE_SURF','QUADRIC_SURF','RULED_SURF','SPHERICAL_SURF','SURF_OF_LINEAR_EXTRUSION','SURF_OF_REVOLUTION','TOROIDAL_SURF','UNSPECIFIED');
         };
@@ -87,7 +89,9 @@ module default {
     }
 
     type IfcCartesianPoint extending IfcPoint {
-        required property Coordinates -> tuple<float64, float64, float64>;
+        required property Coordinates -> array<float64>{
+            constraint expression on (len(__subject__) = 1 or len(__subject__) = 2 or len(__subject__) = 3)
+        };
     }
 
     type IfcClosedShell extending IfcConnectedFaceSet {
@@ -132,7 +136,9 @@ module default {
     }
 
     type IfcDirection extending IfcGeometricRepresentationItem {
-        required property DirectionRatios -> tuple<float64, float64, float64>;
+        required property DirectionRatios -> array<float64>{
+            constraint expression on (len(__subject__) = 2 or len(__subject__) = 3)
+        };
     }
 
     type IfcEdge extending IfcTopologicalRepresentationItem {

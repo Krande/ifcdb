@@ -12,6 +12,9 @@ from ifcdb.interop.edge_model.edge_model_base import (
     EdgeModel,
     SelectEdgeModel,
 )
+from itertools import count
+
+_INSERT_COUNTER = count(start=1)
 
 
 def create_local_instance(server_name):
@@ -49,23 +52,41 @@ def get_att_str(
         and isinstance(res[0], ifcopenshell.entity_instance)
     ):
         value_str = "{"
-        for i, r in enumerate(res):
-            value_str += insert_ifc_entity(r, uuid_map, att_ref, with_map, em)
-            value_str += "" if i == len(r) - 1 else ","
+        value_str += ','.join([insert_ifc_entity(r, uuid_map, att_ref, with_map, em) for r in res])
         value_str += "}"
     elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
         levels = att_ref.get_levels()
         num_levels = len(levels)
+        curr_level = levels[-1]
         ptype = att_ref.parameter_type
-        if isinstance(res[0], tuple):
-            value_str = [tuple([insert_ifc_entity(r, uuid_map, att_ref, with_map, em) for r in x]) for x in res]
+        b1 = curr_level.bound1()
+        b2 = curr_level.bound2()
+        if num_levels > 1 and isinstance(ptype, str) is False:
+            if att.needs_intermediate_class_str is True and att.intermediate_class_name is not None:
+                int_class = att.intermediate_class_name
+                value_str = "{"
+                for i, x in enumerate(res, start=1):
+                    int_name = f"{int_class}_{next(_INSERT_COUNTER)}"
+                    int_value_str = "{"
+                    int_value_str += ",".join([insert_ifc_entity(r, uuid_map, att_ref, with_map, em) for r in x])
+                    int_value_str += "}"
+                    with_map[int_name] = f"(INSERT {int_class} {{ {ptype.name}s := {int_value_str} }})"
+                    value_str += int_name
+                    value_str += "," if i != len(res) else ""
+
+                value_str += "}"
+            else:
+                value_str = "["
+                for x in res:
+                    value_str += "("
+                    value_str += ",".join([f"{insert_ifc_entity(r, uuid_map, att_ref, with_map, em)}" for r in x])
+                    value_str += "),"
+                value_str += "]"
+        elif num_levels > 1 and isinstance(ptype, str):
+            value_str = list(res)
         else:
-            levels = att_ref.get_levels()
-            b2 = levels[0].bound2()
-            if len(res) != b2:
-                logging.error(f"Length of insert tuple ({len(res)}) and db ({b2}) does not match")
-                # logging.error('Passing in arbitrary 3rd number. For debugging purposes only')
-                # res = tuple([*res, 999999999])
+            if b1 != b2 and b2 != -1:
+                res = list(res)
             value_str = res
     elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) is False:
         value_str = res
@@ -91,7 +112,6 @@ def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
     res_id = res.id()
     if isinstance(att_ref, ArrayEdgeModel):
         ptype = att_ref.parameter_type
-        levels = att_ref.get_levels()
         if isinstance(ptype, SelectEdgeModel):
             aname = ptype.name
             unique_ref_name_a = f"ifc_{res_id + 100000}"

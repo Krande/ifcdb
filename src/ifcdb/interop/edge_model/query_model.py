@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import copy
 import json
 import logging
 import os
 import pathlib
+import shutil
 import subprocess
 import time
 from dataclasses import dataclass
@@ -23,6 +23,7 @@ from ifcdb.interop.edge_model.edge_model_base import (
     EnumEdgeModel,
     SelectEdgeModel,
     TypeEdgeModel,
+    IntermediateClass
 )
 
 
@@ -84,7 +85,7 @@ class EdgeIOBase:
             self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
 
         if self.db_schema_dir is not None:
-            self.db_schema_dir = pathlib.Path(self.db_schema_dir)
+            self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
 
     @property
     def conn_str(self):
@@ -127,7 +128,12 @@ class EdgeIOBase:
         if should_copy_server_files:
             copy_server_files(dbschema_dir.parent)
 
-    def setup_database(self, dbschema_dir=None):
+        if len(self.em.intermediate_classes) > 0:
+            print('The following intermediate classes was created to enable nested entity relationships')
+        for class_name in self.em.intermediate_classes:
+            print(class_name)
+
+    def setup_database(self, dbschema_dir=None, delete_existing_migrations=False):
         from .query_utils import create_local_instance
 
         if dbschema_dir is not None:
@@ -158,9 +164,11 @@ class EdgeIOBase:
         client.execute(f"CREATE DATABASE {self.database}")
         client.close()
 
-        print("Migrating schema to fresh database")
+        print(f"Migrating schema to fresh database")
         client = edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
         migrations_dir = pathlib.Path(dbschema_dir / "migrations")
+        if delete_existing_migrations is True and migrations_dir.exists():
+            shutil.rmtree(migrations_dir)
         if migrations_dir.exists() is False:
             if dbschema_dir.exists() is False:
                 raise NotADirectoryError()
@@ -210,16 +218,12 @@ class EdgeIOBase:
         from .query_utils import get_att_str
 
         ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-        # ifc_items_grouped = self.ifc_io.get_ifc_objects_by_sorted_insert_order_grouped()
-        # res = self.ifc_io.get_ifc_dep_map(False)
-
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
             if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
                 continue
             entity = self.em.get_entity_by_name(item.is_a())
             all_atts = entity.get_entity_atts(item)
-            # deps = res.get(item, None)
             print(f'inserting ifc item ({i} of {len(ifc_items)}) "{item}"')
             # INSERT block
             with_map = dict()
@@ -282,6 +286,9 @@ class EdgeIO(EdgeIOBase):
         else:
             ent_dict = {x: self.em.get_entity_by_name(x) for x in self.em.get_related_entities(entities)}
 
+        for key, item in self.em.intermediate_classes.items():
+            ent_dict[key] = item
+
         for entity_name, entity in ent_dict.items():
             if isinstance(entity, EnumEdgeModel):
                 continue
@@ -291,6 +298,12 @@ class EdgeIO(EdgeIOBase):
             if isinstance(entity, (SelectEdgeModel, TypeEdgeModel)):
                 select_str += 4 * " " + f"id,\n"
                 select_str += 4 * " " + f"`{entity.name}`"
+            elif isinstance(entity, IntermediateClass):
+                all_atts = entity.attributes
+                select_str += 4 * " " + f"id,\n"
+                for i, (name, att) in enumerate(all_atts):
+                    select_str += 4 * " " + f"`{name}`"
+                    select_str += "" if i == len(all_atts) - 1 else ","
             else:
                 all_atts = entity.get_attributes(True)
                 select_str += 4 * " " + f"id,\n"
@@ -320,10 +333,15 @@ class EdgeIO(EdgeIOBase):
         f = ifcopenshell.file(schema=self.ifc_schema)
         id_map: dict[str, Node] = dict()
         for instance_data in ordered_results:
+            if instance_data is None:
+                continue
             ifc_class = instance_data.get("class")
             instance_props = instance_data.get("props")
             vid = instance_data.get("id")
             props = get_props(ifc_class, instance_props, id_map, self.em)
+            if ifc_class in self.em.intermediate_classes.keys():
+                id_map[vid] = Node(ifc_class, vid, props, intermediate_class=self.em.intermediate_classes[ifc_class])
+                continue
 
             if isinstance(props, dict) and ifc_class not in instance_props.keys():
                 entity = self.em.get_entity_by_name(ifc_class)
@@ -359,7 +377,7 @@ class Node:
     id: str
     props: dict
     ifc_id: ifcopenshell.entity_instance = None
-
+    intermediate_class: IntermediateClass = None
 
 def get_ids(obj: dict, id_list):
     top_id = obj.get("id", None)
@@ -383,13 +401,15 @@ def resolve_order_of_result_entities(results: dict) -> list:
             get_ids(instance, ids)
             instance_id = instance.pop("id")
             ids.pop(ids.index(instance_id))
+            if instance_id is None:
+                raise ValueError(f"Instance ID is missing for \"{instance}\"")
             key_map[instance_id] = {"class": key, "props": instance, "id": instance_id}
             id_map[instance_id] = ids
-        else:
-            logging.debug(f'skipping "{key}, {value}"')
 
     result = toposort_flatten(id_map, sort=True)
     output = [key_map.get(x) for x in result]
+    if None in output:
+        raise ValueError()
     return output
 
 
@@ -397,6 +417,9 @@ def get_ref_id(ref_id, id_map):
     n: Node = id_map.get(ref_id.get("id"))
     if n is None:
         raise ValueError("missing " + ref_id.get("id"))
+
+    if n.intermediate_class is not None:
+        return n
 
     if n.ifc_id is None:
         res = n.props.get(n.name)
@@ -423,6 +446,14 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
             props[key] = get_ref_id(value, id_map)
         elif isinstance(value, list) and len(value) > 0:
             att_type: AttributeEdgeModel = atts.get(key)
+            if att_type is None:
+                # This is an Intermediate Class
+                output = []
+                for subr in value:
+                    output.append(get_ref_id(subr, id_map))
+                value = output
+                props[key] = value
+                continue
             arr_ref = att_type.array_ref()
             par_type = arr_ref.parameter_type
             if par_type in ("float64", "float32"):
@@ -433,7 +464,13 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
             elif isinstance(par_type, (EntityEdgeModel, SelectEdgeModel)) and isinstance(value[0], dict):
                 output = []
                 for subr in value:
-                    output.append(get_ref_id(subr, id_map))
+                    ref_obj = get_ref_id(subr, id_map)
+                    if isinstance(ref_obj, Node):
+                        prop = ref_obj.props
+                        for att_name, entity_model in ref_obj.intermediate_class.attributes:
+                            output.append(prop[att_name])
+                    else:
+                        output.append(ref_obj)
                 value = output
             else:
                 logging.debug(f"Do nothing with '{par_type}'")
