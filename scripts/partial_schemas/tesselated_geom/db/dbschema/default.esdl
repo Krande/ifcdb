@@ -1,6 +1,14 @@
 module default {
 
 
+    type IfcAbsorbedDoseMeasure {
+        required property `IfcAbsorbedDoseMeasure` -> float64;
+    }
+
+    type IfcAccelerationMeasure {
+        required property `IfcAccelerationMeasure` -> float64;
+    }
+
     type IfcActorRole  {
         required property Role -> str {
             constraint one_of ('ARCHITECT','BUILDINGOPERATOR','BUILDINGOWNER','CIVILENGINEER','CLIENT','COMMISSIONINGENGINEER','CONSTRUCTIONMANAGER','CONSULTANT','CONTRACTOR','COSTENGINEER','ELECTRICALENGINEER','ENGINEER','FACILITIESMANAGER','FIELDCONSTRUCTIONMANAGER','MANUFACTURER','MECHANICALENGINEER','OWNER','PROJECTMANAGER','RESELLER','STRUCTURALENGINEER','SUBCONTRACTOR','SUPPLIER','USERDEFINED');
@@ -17,10 +25,12 @@ module default {
         property UserDefinedPurpose -> str;
     }
 
-    type IfcAdvancedBrep extending IfcManifoldSolidBrep {
+    type IfcAmountOfSubstanceMeasure {
+        required property `IfcAmountOfSubstanceMeasure` -> float64;
     }
 
-    type IfcAdvancedFace extending IfcFaceSurface {
+    type IfcAngularVelocityMeasure {
+        required property `IfcAngularVelocityMeasure` -> float64;
     }
 
     type IfcApplication  {
@@ -28,6 +38,14 @@ module default {
         required property Version -> str;
         required property ApplicationFullName -> str;
         required property ApplicationIdentifier -> str;
+    }
+
+    type IfcAreaDensityMeasure {
+        required property `IfcAreaDensityMeasure` -> float64;
+    }
+
+    type IfcAreaMeasure {
+        required property `IfcAreaMeasure` -> float64;
     }
 
     type IfcAxis2Placement {
@@ -43,34 +61,12 @@ module default {
         link RefDirection -> IfcDirection;
     }
 
-    type IfcCartesianPointList { required multi link IfcCartesianPoints -> IfcCartesianPoint }
-
-    abstract type IfcBSplineSurface extending IfcBoundedSurface {
-        required property UDegree -> int64;
-        required property VDegree -> int64;
-        required multi link ControlPointsList -> IfcCartesianPointList;
-        required property SurfaceForm -> str {
-            constraint one_of ('CONICAL_SURF','CYLINDRICAL_SURF','GENERALISED_CONE','PLANE_SURF','QUADRIC_SURF','RULED_SURF','SPHERICAL_SURF','SURF_OF_LINEAR_EXTRUSION','SURF_OF_REVOLUTION','TOROIDAL_SURF','UNSPECIFIED');
-        };
-        required property UClosed -> bool;
-        required property VClosed -> bool;
-        required property SelfIntersect -> bool;
+    type IfcBinary {
+        required property `IfcBinary` -> bytes;
     }
 
-    type IfcBSplineSurfaceWithKnots extending IfcBSplineSurface {
-        required property UMultiplicities -> tuple<int64, int64>;
-        required property VMultiplicities -> tuple<int64, int64>;
-        required property UKnots -> tuple<float64, float64>;
-        required property VKnots -> tuple<float64, float64>;
-        required property KnotSpec -> str {
-            constraint one_of ('PIECEWISE_BEZIER_KNOTS','QUASI_UNIFORM_KNOTS','UNIFORM_KNOTS','UNSPECIFIED');
-        };
-    }
-
-    abstract type IfcBoundedCurve extending IfcCurve {
-    }
-
-    abstract type IfcBoundedSurface extending IfcSurface {
+    type IfcBoolean {
+        required property `IfcBoolean` -> bool;
     }
 
     type IfcBuilding extending IfcSpatialStructureElement {
@@ -94,11 +90,24 @@ module default {
         };
     }
 
-    type IfcClosedShell extending IfcConnectedFaceSet {
+    abstract type IfcCartesianPointList extending IfcGeometricRepresentationItem {
     }
 
-    type IfcConnectedFaceSet extending IfcTopologicalRepresentationItem {
-        required multi link CfsFaces -> IfcFace;
+    type IfcCartesianPointList3D extending IfcCartesianPointList {
+        required property CoordList -> array<tuple<float64, float64, float64>>;
+        property TagList -> tuple<str>;
+    }
+
+    type IfcComplexNumber {
+        required property `IfcComplexNumber` -> array<float64>{
+            constraint expression on (len(__subject__) = 1 or len(__subject__) = 2)
+        };
+    }
+
+    type IfcCompoundPlaneAngleMeasure {
+        required property `IfcCompoundPlaneAngleMeasure` -> array<int64>{
+            constraint expression on (len(__subject__) = 3 or len(__subject__) = 4)
+        };
     }
 
     abstract type IfcContext extending IfcObjectDefinition {
@@ -109,7 +118,33 @@ module default {
         link UnitsInContext -> IfcUnitAssignment;
     }
 
-    abstract type IfcCurve extending IfcGeometricRepresentationItem {
+    type IfcContextDependentMeasure {
+        required property `IfcContextDependentMeasure` -> float64;
+    }
+
+    type IfcConversionBasedUnit extending IfcNamedUnit {
+        required property Name -> str;
+        required link ConversionFactor -> IfcMeasureWithUnit;
+    }
+
+    type IfcCountMeasure {
+        required property `IfcCountMeasure` -> int64;
+    }
+
+    type IfcCurvatureMeasure {
+        required property `IfcCurvatureMeasure` -> float64;
+    }
+
+    type IfcDate {
+        required property `IfcDate` -> str;
+    }
+
+    type IfcDateTime {
+        required property `IfcDateTime` -> str;
+    }
+
+    type IfcDerivedMeasureValue {
+        link IfcDerivedMeasureValue -> IfcAbsorbedDoseMeasure | IfcAccelerationMeasure | IfcAngularVelocityMeasure | IfcAreaDensityMeasure | IfcCompoundPlaneAngleMeasure | IfcCurvatureMeasure | IfcDoseEquivalentMeasure | IfcDynamicViscosityMeasure | IfcElectricCapacitanceMeasure | IfcElectricChargeMeasure | IfcElectricConductanceMeasure | IfcElectricResistanceMeasure | IfcElectricVoltageMeasure | IfcEnergyMeasure | IfcForceMeasure | IfcFrequencyMeasure | IfcHeatFluxDensityMeasure | IfcHeatingValueMeasure | IfcIlluminanceMeasure | IfcInductanceMeasure | IfcIntegerCountRateMeasure | IfcIonConcentrationMeasure | IfcIsothermalMoistureCapacityMeasure | IfcKinematicViscosityMeasure | IfcLinearForceMeasure | IfcLinearMomentMeasure | IfcLinearStiffnessMeasure | IfcLinearVelocityMeasure | IfcLuminousFluxMeasure | IfcLuminousIntensityDistributionMeasure | IfcMagneticFluxDensityMeasure | IfcMagneticFluxMeasure | IfcMassDensityMeasure | IfcMassFlowRateMeasure | IfcMassPerLengthMeasure | IfcModulusOfElasticityMeasure | IfcModulusOfLinearSubgradeReactionMeasure | IfcModulusOfRotationalSubgradeReactionMeasure | IfcModulusOfSubgradeReactionMeasure | IfcMoistureDiffusivityMeasure | IfcMolecularWeightMeasure | IfcMomentOfInertiaMeasure | IfcMonetaryMeasure | IfcPHMeasure | IfcPlanarForceMeasure | IfcPowerMeasure | IfcPressureMeasure | IfcRadioActivityMeasure | IfcRotationalFrequencyMeasure | IfcRotationalMassMeasure | IfcRotationalStiffnessMeasure | IfcSectionModulusMeasure | IfcSectionalAreaIntegralMeasure | IfcShearModulusMeasure | IfcSoundPowerLevelMeasure | IfcSoundPowerMeasure | IfcSoundPressureLevelMeasure | IfcSoundPressureMeasure | IfcSpecificHeatCapacityMeasure | IfcTemperatureGradientMeasure | IfcTemperatureRateOfChangeMeasure | IfcThermalAdmittanceMeasure | IfcThermalConductivityMeasure | IfcThermalExpansionCoefficientMeasure | IfcThermalResistanceMeasure | IfcThermalTransmittanceMeasure | IfcTorqueMeasure | IfcVaporPermeabilityMeasure | IfcVolumetricFlowRateMeasure | IfcWarpingConstantMeasure | IfcWarpingMomentMeasure;
     }
 
     type IfcDerivedUnit  {
@@ -123,6 +158,10 @@ module default {
     type IfcDerivedUnitElement  {
         required link Unit -> IfcNamedUnit;
         required property Exponent -> int64;
+    }
+
+    type IfcDescriptiveMeasure {
+        required property `IfcDescriptiveMeasure` -> str;
     }
 
     type IfcDimensionalExponents  {
@@ -141,43 +180,56 @@ module default {
         };
     }
 
-    type IfcEdge extending IfcTopologicalRepresentationItem {
-        link EdgeStart -> IfcVertex;
-        link EdgeEnd -> IfcVertex;
+    type IfcDoseEquivalentMeasure {
+        required property `IfcDoseEquivalentMeasure` -> float64;
     }
 
-    type IfcEdgeCurve extending IfcEdge {
-        required link EdgeGeometry -> IfcCurve;
-        required property SameSense -> bool;
+    type IfcDuration {
+        required property `IfcDuration` -> str;
     }
 
-    type IfcEdgeLoop extending IfcLoop {
-        required multi link EdgeList -> IfcOrientedEdge;
+    type IfcDynamicViscosityMeasure {
+        required property `IfcDynamicViscosityMeasure` -> float64;
+    }
+
+    type IfcElectricCapacitanceMeasure {
+        required property `IfcElectricCapacitanceMeasure` -> float64;
+    }
+
+    type IfcElectricChargeMeasure {
+        required property `IfcElectricChargeMeasure` -> float64;
+    }
+
+    type IfcElectricConductanceMeasure {
+        required property `IfcElectricConductanceMeasure` -> float64;
+    }
+
+    type IfcElectricCurrentMeasure {
+        required property `IfcElectricCurrentMeasure` -> float64;
+    }
+
+    type IfcElectricResistanceMeasure {
+        required property `IfcElectricResistanceMeasure` -> float64;
+    }
+
+    type IfcElectricVoltageMeasure {
+        required property `IfcElectricVoltageMeasure` -> float64;
     }
 
     abstract type IfcElement extending IfcProduct {
         property Tag -> str;
     }
 
-    abstract type IfcElementarySurface extending IfcSurface {
-        required link Position -> IfcAxis2Placement3D;
+    type IfcEnergyMeasure {
+        required property `IfcEnergyMeasure` -> float64;
     }
 
-    type IfcFace extending IfcTopologicalRepresentationItem {
-        required multi link Bounds -> IfcFaceBound;
+    type IfcForceMeasure {
+        required property `IfcForceMeasure` -> float64;
     }
 
-    type IfcFaceBound extending IfcTopologicalRepresentationItem {
-        required link Bound -> IfcLoop;
-        required property Orientation -> bool;
-    }
-
-    type IfcFaceOuterBound extending IfcFaceBound {
-    }
-
-    type IfcFaceSurface extending IfcFace {
-        required link FaceSurface -> IfcSurface;
-        required property SameSense -> bool;
+    type IfcFrequencyMeasure {
+        required property `IfcFrequencyMeasure` -> float64;
     }
 
     type IfcGeometricRepresentationContext extending IfcRepresentationContext {
@@ -190,16 +242,163 @@ module default {
     abstract type IfcGeometricRepresentationItem extending IfcRepresentationItem {
     }
 
+    type IfcGeometricRepresentationSubContext extending IfcGeometricRepresentationContext {
+        required link ParentContext -> IfcGeometricRepresentationContext;
+        property TargetScale -> float64;
+        required property TargetView -> str {
+            constraint one_of ('ELEVATION_VIEW','GRAPH_VIEW','MODEL_VIEW','NOTDEFINED','PLAN_VIEW','REFLECTED_PLAN_VIEW','SECTION_VIEW','SKETCH_VIEW','USERDEFINED');
+        };
+        property UserDefinedTargetView -> str;
+    }
+
+    type IfcHeatFluxDensityMeasure {
+        required property `IfcHeatFluxDensityMeasure` -> float64;
+    }
+
+    type IfcHeatingValueMeasure {
+        required property `IfcHeatingValueMeasure` -> float64;
+    }
+
+    type IfcIdentifier {
+        required property `IfcIdentifier` -> str;
+    }
+
+    type IfcIlluminanceMeasure {
+        required property `IfcIlluminanceMeasure` -> float64;
+    }
+
+    type IfcInductanceMeasure {
+        required property `IfcInductanceMeasure` -> float64;
+    }
+
+    type IfcInteger {
+        required property `IfcInteger` -> int64;
+    }
+
+    type IfcIntegerCountRateMeasure {
+        required property `IfcIntegerCountRateMeasure` -> int64;
+    }
+
+    type IfcIonConcentrationMeasure {
+        required property `IfcIonConcentrationMeasure` -> float64;
+    }
+
+    type IfcIsothermalMoistureCapacityMeasure {
+        required property `IfcIsothermalMoistureCapacityMeasure` -> float64;
+    }
+
+    type IfcKinematicViscosityMeasure {
+        required property `IfcKinematicViscosityMeasure` -> float64;
+    }
+
+    type IfcLabel {
+        required property `IfcLabel` -> str;
+    }
+
+    type IfcLengthMeasure {
+        required property `IfcLengthMeasure` -> float64;
+    }
+
+    type IfcLinearForceMeasure {
+        required property `IfcLinearForceMeasure` -> float64;
+    }
+
+    type IfcLinearMomentMeasure {
+        required property `IfcLinearMomentMeasure` -> float64;
+    }
+
+    type IfcLinearStiffnessMeasure {
+        required property `IfcLinearStiffnessMeasure` -> float64;
+    }
+
+    type IfcLinearVelocityMeasure {
+        required property `IfcLinearVelocityMeasure` -> float64;
+    }
+
     type IfcLocalPlacement extending IfcObjectPlacement {
         link PlacementRelTo -> IfcObjectPlacement;
         required link RelativePlacement -> IfcAxis2Placement;
     }
 
-    type IfcLoop extending IfcTopologicalRepresentationItem {
+    type IfcLogical {
+        required property `IfcLogical` -> bool;
     }
 
-    abstract type IfcManifoldSolidBrep extending IfcSolidModel {
-        required link Outer -> IfcClosedShell;
+    type IfcLuminousFluxMeasure {
+        required property `IfcLuminousFluxMeasure` -> float64;
+    }
+
+    type IfcLuminousIntensityDistributionMeasure {
+        required property `IfcLuminousIntensityDistributionMeasure` -> float64;
+    }
+
+    type IfcLuminousIntensityMeasure {
+        required property `IfcLuminousIntensityMeasure` -> float64;
+    }
+
+    type IfcMagneticFluxDensityMeasure {
+        required property `IfcMagneticFluxDensityMeasure` -> float64;
+    }
+
+    type IfcMagneticFluxMeasure {
+        required property `IfcMagneticFluxMeasure` -> float64;
+    }
+
+    type IfcMassDensityMeasure {
+        required property `IfcMassDensityMeasure` -> float64;
+    }
+
+    type IfcMassFlowRateMeasure {
+        required property `IfcMassFlowRateMeasure` -> float64;
+    }
+
+    type IfcMassMeasure {
+        required property `IfcMassMeasure` -> float64;
+    }
+
+    type IfcMassPerLengthMeasure {
+        required property `IfcMassPerLengthMeasure` -> float64;
+    }
+
+    type IfcMeasureValue {
+        link IfcMeasureValue -> IfcAmountOfSubstanceMeasure | IfcAreaMeasure | IfcComplexNumber | IfcContextDependentMeasure | IfcCountMeasure | IfcDescriptiveMeasure | IfcElectricCurrentMeasure | IfcLengthMeasure | IfcLuminousIntensityMeasure | IfcMassMeasure | IfcNonNegativeLengthMeasure | IfcNormalisedRatioMeasure | IfcNumericMeasure | IfcParameterValue | IfcPlaneAngleMeasure | IfcPositiveLengthMeasure | IfcPositivePlaneAngleMeasure | IfcPositiveRatioMeasure | IfcRatioMeasure | IfcSolidAngleMeasure | IfcThermodynamicTemperatureMeasure | IfcTimeMeasure | IfcVolumeMeasure;
+    }
+
+    type IfcMeasureWithUnit  {
+        required link ValueComponent -> IfcValue;
+        required link UnitComponent -> IfcUnit;
+    }
+
+    type IfcModulusOfElasticityMeasure {
+        required property `IfcModulusOfElasticityMeasure` -> float64;
+    }
+
+    type IfcModulusOfLinearSubgradeReactionMeasure {
+        required property `IfcModulusOfLinearSubgradeReactionMeasure` -> float64;
+    }
+
+    type IfcModulusOfRotationalSubgradeReactionMeasure {
+        required property `IfcModulusOfRotationalSubgradeReactionMeasure` -> float64;
+    }
+
+    type IfcModulusOfSubgradeReactionMeasure {
+        required property `IfcModulusOfSubgradeReactionMeasure` -> float64;
+    }
+
+    type IfcMoistureDiffusivityMeasure {
+        required property `IfcMoistureDiffusivityMeasure` -> float64;
+    }
+
+    type IfcMolecularWeightMeasure {
+        required property `IfcMolecularWeightMeasure` -> float64;
+    }
+
+    type IfcMomentOfInertiaMeasure {
+        required property `IfcMomentOfInertiaMeasure` -> float64;
+    }
+
+    type IfcMonetaryMeasure {
+        required property `IfcMonetaryMeasure` -> float64;
     }
 
     type IfcMonetaryUnit  {
@@ -211,6 +410,18 @@ module default {
         required property UnitType -> str {
             constraint one_of ('ABSORBEDDOSEUNIT','AMOUNTOFSUBSTANCEUNIT','AREAUNIT','DOSEEQUIVALENTUNIT','ELECTRICCAPACITANCEUNIT','ELECTRICCHARGEUNIT','ELECTRICCONDUCTANCEUNIT','ELECTRICCURRENTUNIT','ELECTRICRESISTANCEUNIT','ELECTRICVOLTAGEUNIT','ENERGYUNIT','FORCEUNIT','FREQUENCYUNIT','ILLUMINANCEUNIT','INDUCTANCEUNIT','LENGTHUNIT','LUMINOUSFLUXUNIT','LUMINOUSINTENSITYUNIT','MAGNETICFLUXDENSITYUNIT','MAGNETICFLUXUNIT','MASSUNIT','PLANEANGLEUNIT','POWERUNIT','PRESSUREUNIT','RADIOACTIVITYUNIT','SOLIDANGLEUNIT','THERMODYNAMICTEMPERATUREUNIT','TIMEUNIT','USERDEFINED','VOLUMEUNIT');
         };
+    }
+
+    type IfcNonNegativeLengthMeasure {
+        required property `IfcNonNegativeLengthMeasure` -> float64;
+    }
+
+    type IfcNormalisedRatioMeasure {
+        required property `IfcNormalisedRatioMeasure` -> float64;
+    }
+
+    type IfcNumericMeasure {
+        required property `IfcNumericMeasure` -> int64;
     }
 
     abstract type IfcObject extending IfcObjectDefinition {
@@ -231,11 +442,6 @@ module default {
         multi link Addresses -> IfcAddress;
     }
 
-    type IfcOrientedEdge extending IfcEdge {
-        required link EdgeElement -> IfcEdge;
-        required property Orientation -> bool;
-    }
-
     type IfcOwnerHistory  {
         required link OwningUser -> IfcPersonAndOrganization;
         required link OwningApplication -> IfcApplication;
@@ -249,6 +455,14 @@ module default {
         link LastModifyingUser -> IfcPersonAndOrganization;
         link LastModifyingApplication -> IfcApplication;
         required property CreationDate -> int64;
+    }
+
+    type IfcPHMeasure {
+        required property `IfcPHMeasure` -> float64;
+    }
+
+    type IfcParameterValue {
+        required property `IfcParameterValue` -> float64;
     }
 
     type IfcPerson  {
@@ -272,14 +486,31 @@ module default {
         required link Location -> IfcCartesianPoint;
     }
 
-    type IfcPlane extending IfcElementarySurface {
+    type IfcPlanarForceMeasure {
+        required property `IfcPlanarForceMeasure` -> float64;
+    }
+
+    type IfcPlaneAngleMeasure {
+        required property `IfcPlaneAngleMeasure` -> float64;
     }
 
     abstract type IfcPoint extending IfcGeometricRepresentationItem {
     }
 
-    type IfcPolyline extending IfcBoundedCurve {
-        required multi link Points -> IfcCartesianPoint;
+    type IfcPositiveInteger {
+        required property `IfcPositiveInteger` -> int64;
+    }
+
+    type IfcPositiveLengthMeasure {
+        required property `IfcPositiveLengthMeasure` -> float64;
+    }
+
+    type IfcPositivePlaneAngleMeasure {
+        required property `IfcPositivePlaneAngleMeasure` -> float64;
+    }
+
+    type IfcPositiveRatioMeasure {
+        required property `IfcPositiveRatioMeasure` -> float64;
     }
 
     type IfcPostalAddress extending IfcAddress {
@@ -290,6 +521,14 @@ module default {
         property Region -> str;
         property PostalCode -> str;
         property Country -> str;
+    }
+
+    type IfcPowerMeasure {
+        required property `IfcPowerMeasure` -> float64;
+    }
+
+    type IfcPressureMeasure {
+        required property `IfcPressureMeasure` -> float64;
     }
 
     abstract type IfcProduct extending IfcObject {
@@ -307,6 +546,18 @@ module default {
     }
 
     type IfcProject extending IfcContext {
+    }
+
+    type IfcRadioActivityMeasure {
+        required property `IfcRadioActivityMeasure` -> float64;
+    }
+
+    type IfcRatioMeasure {
+        required property `IfcRatioMeasure` -> float64;
+    }
+
+    type IfcReal {
+        required property `IfcReal` -> float64;
     }
 
     type IfcRelAggregates extending IfcRelDecomposes {
@@ -350,6 +601,18 @@ module default {
         property Description -> str;
     }
 
+    type IfcRotationalFrequencyMeasure {
+        required property `IfcRotationalFrequencyMeasure` -> float64;
+    }
+
+    type IfcRotationalMassMeasure {
+        required property `IfcRotationalMassMeasure` -> float64;
+    }
+
+    type IfcRotationalStiffnessMeasure {
+        required property `IfcRotationalStiffnessMeasure` -> float64;
+    }
+
     type IfcSIUnit extending IfcNamedUnit {
         property Prefix -> str {
             constraint one_of ('ATTO','CENTI','DECA','DECI','EXA','FEMTO','GIGA','HECTO','KILO','MEGA','MICRO','MILLI','NANO','PETA','PICO','TERA');
@@ -359,13 +622,46 @@ module default {
         };
     }
 
+    type IfcSectionModulusMeasure {
+        required property `IfcSectionModulusMeasure` -> float64;
+    }
+
+    type IfcSectionalAreaIntegralMeasure {
+        required property `IfcSectionalAreaIntegralMeasure` -> float64;
+    }
+
     abstract type IfcShapeModel extending IfcRepresentation {
     }
 
     type IfcShapeRepresentation extending IfcShapeModel {
     }
 
-    abstract type IfcSolidModel extending IfcGeometricRepresentationItem {
+    type IfcShearModulusMeasure {
+        required property `IfcShearModulusMeasure` -> float64;
+    }
+
+    type IfcSimpleValue {
+        link IfcSimpleValue -> IfcBinary | IfcBoolean | IfcDate | IfcDateTime | IfcDuration | IfcIdentifier | IfcInteger | IfcLabel | IfcLogical | IfcPositiveInteger | IfcReal | IfcText | IfcTime | IfcTimeStamp;
+    }
+
+    type IfcSolidAngleMeasure {
+        required property `IfcSolidAngleMeasure` -> float64;
+    }
+
+    type IfcSoundPowerLevelMeasure {
+        required property `IfcSoundPowerLevelMeasure` -> float64;
+    }
+
+    type IfcSoundPowerMeasure {
+        required property `IfcSoundPowerMeasure` -> float64;
+    }
+
+    type IfcSoundPressureLevelMeasure {
+        required property `IfcSoundPressureLevelMeasure` -> float64;
+    }
+
+    type IfcSoundPressureMeasure {
+        required property `IfcSoundPressureMeasure` -> float64;
     }
 
     abstract type IfcSpatialElement extending IfcProduct {
@@ -378,10 +674,74 @@ module default {
         };
     }
 
-    abstract type IfcSurface extending IfcGeometricRepresentationItem {
+    type IfcSpecificHeatCapacityMeasure {
+        required property `IfcSpecificHeatCapacityMeasure` -> float64;
     }
 
-    abstract type IfcTopologicalRepresentationItem extending IfcRepresentationItem {
+    type IfcTemperatureGradientMeasure {
+        required property `IfcTemperatureGradientMeasure` -> float64;
+    }
+
+    type IfcTemperatureRateOfChangeMeasure {
+        required property `IfcTemperatureRateOfChangeMeasure` -> float64;
+    }
+
+    abstract type IfcTessellatedFaceSet extending IfcTessellatedItem {
+        required link Coordinates -> IfcCartesianPointList3D;
+    }
+
+    abstract type IfcTessellatedItem extending IfcGeometricRepresentationItem {
+    }
+
+    type IfcText {
+        required property `IfcText` -> str;
+    }
+
+    type IfcThermalAdmittanceMeasure {
+        required property `IfcThermalAdmittanceMeasure` -> float64;
+    }
+
+    type IfcThermalConductivityMeasure {
+        required property `IfcThermalConductivityMeasure` -> float64;
+    }
+
+    type IfcThermalExpansionCoefficientMeasure {
+        required property `IfcThermalExpansionCoefficientMeasure` -> float64;
+    }
+
+    type IfcThermalResistanceMeasure {
+        required property `IfcThermalResistanceMeasure` -> float64;
+    }
+
+    type IfcThermalTransmittanceMeasure {
+        required property `IfcThermalTransmittanceMeasure` -> float64;
+    }
+
+    type IfcThermodynamicTemperatureMeasure {
+        required property `IfcThermodynamicTemperatureMeasure` -> float64;
+    }
+
+    type IfcTime {
+        required property `IfcTime` -> str;
+    }
+
+    type IfcTimeMeasure {
+        required property `IfcTimeMeasure` -> float64;
+    }
+
+    type IfcTimeStamp {
+        required property `IfcTimeStamp` -> int64;
+    }
+
+    type IfcTorqueMeasure {
+        required property `IfcTorqueMeasure` -> float64;
+    }
+
+    type IfcTriangulatedFaceSet extending IfcTessellatedFaceSet {
+        property Normals -> array<tuple<float64, float64, float64>>;
+        property Closed -> bool;
+        required property CoordIndex -> array<tuple<int64, int64, int64>>;
+        property PnIndex -> tuple<int64>;
     }
 
     type IfcUnit {
@@ -392,10 +752,27 @@ module default {
         required multi link Units -> IfcUnit;
     }
 
-    type IfcVertex extending IfcTopologicalRepresentationItem {
+    type IfcValue {
+        link IfcValue -> IfcAbsorbedDoseMeasure | IfcAccelerationMeasure | IfcAngularVelocityMeasure | IfcAreaDensityMeasure | IfcCompoundPlaneAngleMeasure | IfcCurvatureMeasure | IfcDoseEquivalentMeasure | IfcDynamicViscosityMeasure | IfcElectricCapacitanceMeasure | IfcElectricChargeMeasure | IfcElectricConductanceMeasure | IfcElectricResistanceMeasure | IfcElectricVoltageMeasure | IfcEnergyMeasure | IfcForceMeasure | IfcFrequencyMeasure | IfcHeatFluxDensityMeasure | IfcHeatingValueMeasure | IfcIlluminanceMeasure | IfcInductanceMeasure | IfcIntegerCountRateMeasure | IfcIonConcentrationMeasure | IfcIsothermalMoistureCapacityMeasure | IfcKinematicViscosityMeasure | IfcLinearForceMeasure | IfcLinearMomentMeasure | IfcLinearStiffnessMeasure | IfcLinearVelocityMeasure | IfcLuminousFluxMeasure | IfcLuminousIntensityDistributionMeasure | IfcMagneticFluxDensityMeasure | IfcMagneticFluxMeasure | IfcMassDensityMeasure | IfcMassFlowRateMeasure | IfcMassPerLengthMeasure | IfcModulusOfElasticityMeasure | IfcModulusOfLinearSubgradeReactionMeasure | IfcModulusOfRotationalSubgradeReactionMeasure | IfcModulusOfSubgradeReactionMeasure | IfcMoistureDiffusivityMeasure | IfcMolecularWeightMeasure | IfcMomentOfInertiaMeasure | IfcMonetaryMeasure | IfcPHMeasure | IfcPlanarForceMeasure | IfcPowerMeasure | IfcPressureMeasure | IfcRadioActivityMeasure | IfcRotationalFrequencyMeasure | IfcRotationalMassMeasure | IfcRotationalStiffnessMeasure | IfcSectionModulusMeasure | IfcSectionalAreaIntegralMeasure | IfcShearModulusMeasure | IfcSoundPowerLevelMeasure | IfcSoundPowerMeasure | IfcSoundPressureLevelMeasure | IfcSoundPressureMeasure | IfcSpecificHeatCapacityMeasure | IfcTemperatureGradientMeasure | IfcTemperatureRateOfChangeMeasure | IfcThermalAdmittanceMeasure | IfcThermalConductivityMeasure | IfcThermalExpansionCoefficientMeasure | IfcThermalResistanceMeasure | IfcThermalTransmittanceMeasure | IfcTorqueMeasure | IfcVaporPermeabilityMeasure | IfcVolumetricFlowRateMeasure | IfcWarpingConstantMeasure | IfcWarpingMomentMeasure | IfcAmountOfSubstanceMeasure | IfcAreaMeasure | IfcComplexNumber | IfcContextDependentMeasure | IfcCountMeasure | IfcDescriptiveMeasure | IfcElectricCurrentMeasure | IfcLengthMeasure | IfcLuminousIntensityMeasure | IfcMassMeasure | IfcNonNegativeLengthMeasure | IfcNormalisedRatioMeasure | IfcNumericMeasure | IfcParameterValue | IfcPlaneAngleMeasure | IfcPositiveLengthMeasure | IfcPositivePlaneAngleMeasure | IfcPositiveRatioMeasure | IfcRatioMeasure | IfcSolidAngleMeasure | IfcThermodynamicTemperatureMeasure | IfcTimeMeasure | IfcVolumeMeasure | IfcBinary | IfcBoolean | IfcDate | IfcDateTime | IfcDuration | IfcIdentifier | IfcInteger | IfcLabel | IfcLogical | IfcPositiveInteger | IfcReal | IfcText | IfcTime | IfcTimeStamp;
     }
 
-    type IfcVertexPoint extending IfcVertex {
-        required link VertexGeometry -> IfcPoint;
+    type IfcVaporPermeabilityMeasure {
+        required property `IfcVaporPermeabilityMeasure` -> float64;
+    }
+
+    type IfcVolumeMeasure {
+        required property `IfcVolumeMeasure` -> float64;
+    }
+
+    type IfcVolumetricFlowRateMeasure {
+        required property `IfcVolumetricFlowRateMeasure` -> float64;
+    }
+
+    type IfcWarpingConstantMeasure {
+        required property `IfcWarpingConstantMeasure` -> float64;
+    }
+
+    type IfcWarpingMomentMeasure {
+        required property `IfcWarpingMomentMeasure` -> float64;
     }
 }

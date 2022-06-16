@@ -6,7 +6,7 @@ cli-install:
 
 # Docker Commands
 up:
-	docker-compose up
+	docker-compose up -d
 
 mig-i:
 	docker-compose exec edgedb edgedb --tls-security=insecure migration create --non-interactive

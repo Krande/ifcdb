@@ -216,7 +216,7 @@ class AttributeEdgeModel:
 
         array = self.array_ref()
         ptype = array.parameter_type
-        new_name = f"{ptype.name}List"
+        new_name = f"{ptype.name}ICList"
 
         if new_name in self.edge_model.intermediate_classes:
             return self.edge_model.intermediate_classes[new_name]
@@ -668,6 +668,10 @@ class EdgeModel:
         type_names = list(self.base_types.keys()) + list(self.select_types.keys()) + list(self.enum_types.keys())
         self.entities = {x.name(): EntityEdgeModel(self, x) for x in decl if x.name() not in type_names}
 
+        # Resolve all intermediary classes
+        self._resolve_intermediary_classes()
+
+    def _resolve_intermediary_classes(self):
         for ent in self.entities.values():
             for att in ent.get_attributes():
                 att.get_intermediate_array_class()

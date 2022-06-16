@@ -23,7 +23,7 @@ from ifcdb.interop.edge_model.edge_model_base import (
     EnumEdgeModel,
     SelectEdgeModel,
     TypeEdgeModel,
-    IntermediateClass
+    IntermediateClass,
 )
 
 
@@ -129,7 +129,7 @@ class EdgeIOBase:
             copy_server_files(dbschema_dir.parent)
 
         if len(self.em.intermediate_classes) > 0:
-            print('The following intermediate classes was created to enable nested entity relationships')
+            print("The following intermediate classes was created to enable nested entity relationships")
         for class_name in self.em.intermediate_classes:
             print(class_name)
 
@@ -223,6 +223,7 @@ class EdgeIOBase:
             if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
                 continue
             entity = self.em.get_entity_by_name(item.is_a())
+
             all_atts = entity.get_entity_atts(item)
             print(f'inserting ifc item ({i} of {len(ifc_items)}) "{item}"')
             # INSERT block
@@ -277,8 +278,10 @@ class EdgeIO(EdgeIOBase):
 
     def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
-        if limit_to_ifc_entities is True and entities is None:
-            entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
+        if limit_to_ifc_entities is True:
+            if entities is None:
+                entities = []
+            entities += self.ifc_io.get_unique_class_entities_of_ifc_content(True)
 
         select_str = "select {\n"
         if entities is None:
@@ -325,10 +328,10 @@ class EdgeIO(EdgeIOBase):
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 
     # Exports
-    def export_ifc_elements_to_ifc_str(self) -> str:
-        res = self.get_all(limit_to_ifc_entities=True)
+    def export_ifc_elements_to_ifc_str(self, specific_ifc_classes: list[str] = None, limit_to_ifc_entities=True) -> str:
+        res = self.get_all(entities=specific_ifc_classes, limit_to_ifc_entities=limit_to_ifc_entities)
         obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
-        ordered_results = resolve_order_of_result_entities(obj_set)
+        ordered_results = resolve_order_of_result_entities(obj_set, self.em)
 
         f = ifcopenshell.file(schema=self.ifc_schema)
         id_map: dict[str, Node] = dict()
@@ -365,6 +368,7 @@ class EdgeIO(EdgeIOBase):
 
             if ifc_id is not None:
                 print(ifc_id)
+
             id_map[vid] = Node(ifc_class, vid, props, ifc_id=ifc_id)
 
         print(f"Number of EdgeDB objects with content = {len(obj_set.keys())}")
@@ -379,6 +383,7 @@ class Node:
     ifc_id: ifcopenshell.entity_instance = None
     intermediate_class: IntermediateClass = None
 
+
 def get_ids(obj: dict, id_list):
     top_id = obj.get("id", None)
     if top_id is not None:
@@ -392,7 +397,7 @@ def get_ids(obj: dict, id_list):
                     get_ids(subinst, id_list)
 
 
-def resolve_order_of_result_entities(results: dict) -> list:
+def resolve_order_of_result_entities(results: dict, em: EdgeModel) -> list:
     id_map = dict()
     key_map = dict()
     for key, value in results.items():
@@ -402,14 +407,31 @@ def resolve_order_of_result_entities(results: dict) -> list:
             instance_id = instance.pop("id")
             ids.pop(ids.index(instance_id))
             if instance_id is None:
-                raise ValueError(f"Instance ID is missing for \"{instance}\"")
+                raise ValueError(f'Instance ID is missing for "{instance}"')
+
+            if instance_id in key_map.keys() or instance_id in id_map.keys():
+                existing_obj = key_map.get(instance_id)
+                existing_ifc_class = existing_obj["class"]
+                entity = em.get_entity_by_name(existing_ifc_class)
+                ancestors = [x.name for x in entity.get_ancestors()]
+                if key in ancestors:
+                    logging.debug(f'Skipping Ancestor class "{key}" of existing IFC class "{existing_ifc_class}"')
+                    continue
+                else:
+                    entity = em.get_entity_by_name(key)
+                    ancestors = [x.name for x in entity.get_ancestors()]
+                    if existing_ifc_class not in ancestors:
+                        raise ValueError(f"DB IFC classes {existing_ifc_class} & {key} share uuid but are not related")
+                    logging.debug(f'Replacing Ancestor class "{existing_ifc_class}" of existing IFC class "{key}"')
+
             key_map[instance_id] = {"class": key, "props": instance, "id": instance_id}
             id_map[instance_id] = ids
 
     result = toposort_flatten(id_map, sort=True)
     output = [key_map.get(x) for x in result]
     if None in output:
-        raise ValueError()
+        raise ValueError("Key Map contains 'None' elements. Likely missing object dependencies in export")
+
     return output
 
 
@@ -476,6 +498,8 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
                 logging.debug(f"Do nothing with '{par_type}'")
 
             props[key] = value
+        elif isinstance(value, list) and len(value) == 0:
+            props[key] = None
         else:
             if key == ifc_class:
                 props = value
