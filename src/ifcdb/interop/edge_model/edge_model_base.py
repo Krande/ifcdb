@@ -168,11 +168,24 @@ def get_array_str(levels):
 
 @dataclass
 class IntermediateClass:
-    name: str
-    type_str: str
-    attributes: list[tuple[str, EntityEdgeModel]]
-    parent_attribute: AttributeEdgeModel
-    written_to_file: bool = False
+    source_attribute: AttributeEdgeModel = field(repr=False)
+    written_to_file: bool = field(default=False)
+
+    @property
+    def name(self):
+        array = self.source_attribute.array_ref()
+        ptype = array.parameter_type
+        return f"List_of_{ptype.name}"
+
+    @property
+    def att_name(self):
+        ptype = self.source_attribute.array_ref().parameter_type
+        return f"{ptype.name}s"
+
+    @property
+    def type_str(self):
+        ptype = self.source_attribute.array_ref().parameter_type
+        return f"""\n    type {self.name} {{ required multi link {self.att_name} -> {ptype.name} }}\n"""
 
 
 # Attribute References
@@ -209,30 +222,22 @@ class AttributeEdgeModel:
             return True
         return False
 
-    def get_intermediate_array_class(self) -> IntermediateClass | None:
+    def get_intermediate_array_class(self) -> IntermediateClass:
         """Creates an intermediate class for nested links to Entities"""
-        if self.needs_intermediate_class_str is False:
-            return None
+        new_class = IntermediateClass(self)
+        class_name = new_class.name
+        if class_name in self.edge_model.intermediate_classes:
+            return self.edge_model.intermediate_classes[class_name]
 
-        array = self.array_ref()
-        ptype = array.parameter_type
-        new_name = f"{ptype.name}ICList"
-
-        if new_name in self.edge_model.intermediate_classes:
-            return self.edge_model.intermediate_classes[new_name]
-        att_name = f"{ptype.name}s"
-        istr = f"""\n    type {new_name} {{ required multi link {att_name} -> {ptype.name} }}\n"""
-        self.edge_model.intermediate_classes[new_name] = IntermediateClass(new_name, istr, [(att_name, ptype)], self)
-        return self.edge_model.intermediate_classes[new_name]
+        self.edge_model.intermediate_classes[class_name] = new_class
+        return self.edge_model.intermediate_classes[class_name]
 
     @property
     def intermediate_class_name(self):
         if self.needs_intermediate_class_str is False:
             return None
-        array = self.array_ref()
-        ptype = array.parameter_type
-        new_name = f"{ptype.name}List"
-        return new_name
+        imc = self.get_intermediate_array_class()
+        return imc.name
 
     def get_type_ref(self) -> str | EntityEdgeModel | SelectEdgeModel | ArrayEdgeModel:
         array_ref = self.array_ref()
@@ -285,9 +290,11 @@ class AttributeEdgeModel:
                 if value_ref is None:
                     value_name = param
                 else:
-                    value_name = (
-                        value_ref.name if self.needs_intermediate_class_str is False else f"{value_ref.name}List"
-                    )
+                    if self.needs_intermediate_class_str is False:
+                        value_name = value_ref.name
+                    else:
+                        imc = self.get_intermediate_array_class()
+                        value_name = imc.name
             else:
                 value_name = array_ref.to_str()
         elif isinstance(value_ref, (EntityEdgeModel, SelectEdgeModel)):
@@ -308,8 +315,8 @@ class AttributeEdgeModel:
 
 @dataclass
 class ArrayEdgeModel:
-    entity: wrap.attribute
-    edge_model: EdgeModel
+    entity: wrap.attribute = field(repr=False)
+    edge_model: EdgeModel = field(repr=False)
 
     LIST: ClassVar[str] = "list"
     SET: ClassVar[str] = "set"
@@ -362,7 +369,7 @@ class ArrayEdgeModel:
 @dataclass
 class EntityBaseEdgeModel:
     edge_model: EdgeModel = field(repr=False)
-    entity: Union[wrap.entity, wrap.select_type, wrap.enumeration_type, wrap.type_declaration]
+    entity: Union[wrap.entity, wrap.select_type, wrap.enumeration_type, wrap.type_declaration] = field(repr=False)
 
     @property
     def name(self):
@@ -387,7 +394,7 @@ class EntityBaseEdgeModel:
 
 @dataclass
 class EntityEdgeModel(EntityBaseEdgeModel):
-    entity: wrap.entity
+    entity: wrap.entity = field(repr=False)
 
     simple_types: ClassVar[dict[wrap.simple_type, str]] = {
         "binary": "bytes",
@@ -398,7 +405,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         "boolean": "bool",
         "string": "str",
     }
-    _attributes: list[AttributeEdgeModel] = field(default=None)
+    _attributes: list[AttributeEdgeModel] = field(default=None, repr=False)
 
     def get_derive_map(self) -> dict[str, bool] | None:
         derived = self.entity.derived()
@@ -542,7 +549,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
 @dataclass
 class EnumEdgeModel(EntityBaseEdgeModel):
-    entity: wrap.enumeration_type
+    entity: wrap.enumeration_type = field(repr=False)
 
     def get_enum_items(self):
         return self.entity.enumeration_items()
@@ -571,7 +578,7 @@ class EnumEdgeModel(EntityBaseEdgeModel):
 
 @dataclass
 class TypeEdgeModel(EntityBaseEdgeModel):
-    entity: wrap.type_declaration
+    entity: wrap.type_declaration = field(repr=False)
 
     def is_aggregate(self):
         cur_decl = self.entity
@@ -621,7 +628,7 @@ class TypeEdgeModel(EntityBaseEdgeModel):
 
 @dataclass
 class SelectEdgeModel(EntityBaseEdgeModel):
-    entity: wrap.select_type
+    entity: wrap.select_type = field(repr=False)
 
     def get_select_entities(self, unwrap_all=False) -> list[EntityEdgeModel]:
         if unwrap_all is False:
@@ -649,7 +656,7 @@ class EdgeModel:
     modify_circular_deps: bool = False
     select_types_unwrap: bool = True
 
-    intermediate_classes: dict[str, IntermediateClass] = field(default_factory=dict)
+    intermediate_classes: dict[str, IntermediateClass] = field(default_factory=dict, repr=False)
 
     reserved_keys: ClassVar[dict] = dict(
         start="`Start`",
@@ -667,14 +674,6 @@ class EdgeModel:
         self.base_types = {x.name(): TypeEdgeModel(self, x) for x in decl if isinstance(x, wrap.type_declaration)}
         type_names = list(self.base_types.keys()) + list(self.select_types.keys()) + list(self.enum_types.keys())
         self.entities = {x.name(): EntityEdgeModel(self, x) for x in decl if x.name() not in type_names}
-
-        # Resolve all intermediary classes
-        self._resolve_intermediary_classes()
-
-    def _resolve_intermediary_classes(self):
-        for ent in self.entities.values():
-            for att in ent.get_attributes():
-                att.get_intermediate_array_class()
 
     def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree
@@ -805,7 +804,8 @@ class EdgeModel:
             res = entity_types.get(name)
             if res is not None:
                 return res
-
+        if name in self.intermediate_classes.keys():
+            return self.intermediate_classes.get(name)
         raise NotImplementedError(f'Unsupported Type "{res}"')
 
     def entity_to_edge_str(self, entity: str) -> str:

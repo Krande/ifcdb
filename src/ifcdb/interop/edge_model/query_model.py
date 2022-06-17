@@ -289,9 +289,17 @@ class EdgeIO(EdgeIOBase):
         else:
             ent_dict = {x: self.em.get_entity_by_name(x) for x in self.em.get_related_entities(entities)}
 
-        for key, item in self.em.intermediate_classes.items():
-            if item.written_to_file is True:
-                ent_dict[key] = item
+        to_be_added = dict()
+        for key, value in ent_dict.items():
+            if isinstance(value, EntityEdgeModel) is False:
+                continue
+            for att in value.get_attributes(True):
+                if att.needs_intermediate_class_str is False:
+                    continue
+                intermediate_class = att.get_intermediate_array_class()
+                to_be_added[intermediate_class.name] = intermediate_class
+
+        ent_dict.update(to_be_added)
 
         for entity_name, entity in ent_dict.items():
             if isinstance(entity, EnumEdgeModel):
@@ -303,11 +311,8 @@ class EdgeIO(EdgeIOBase):
                 select_str += 4 * " " + f"id,\n"
                 select_str += 4 * " " + f"`{entity.name}`"
             elif isinstance(entity, IntermediateClass):
-                all_atts = entity.attributes
                 select_str += 4 * " " + f"id,\n"
-                for i, (name, att) in enumerate(all_atts):
-                    select_str += 4 * " " + f"`{name}`"
-                    select_str += "" if i == len(all_atts) - 1 else ","
+                select_str += 4 * " " + f"`{entity.att_name}`"
             else:
                 all_atts = entity.get_attributes(True)
                 select_str += 4 * " " + f"id,\n"
@@ -329,8 +334,8 @@ class EdgeIO(EdgeIOBase):
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 
     # Exports
-    def export_ifc_elements_to_ifc_str(self, specific_ifc_classes: list[str] = None, limit_to_ifc_entities=True) -> str:
-        res = self.get_all(entities=specific_ifc_classes, limit_to_ifc_entities=limit_to_ifc_entities)
+    def to_ifcopenshell_object(self, specific_classes: list[str] = None, only_ifc_entities=True) -> ifcopenshell.file:
+        res = self.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities)
         obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
         ordered_results = resolve_order_of_result_entities(obj_set, self.em)
 
@@ -342,6 +347,8 @@ class EdgeIO(EdgeIOBase):
             ifc_class = instance_data.get("class")
             instance_props = instance_data.get("props")
             vid = instance_data.get("id")
+            if ifc_class is None:
+                print("sd")
             props = get_props(ifc_class, instance_props, id_map, self.em)
             if ifc_class in self.em.intermediate_classes.keys():
                 id_map[vid] = Node(ifc_class, vid, props, intermediate_class=self.em.intermediate_classes[ifc_class])
@@ -373,6 +380,10 @@ class EdgeIO(EdgeIOBase):
             id_map[vid] = Node(ifc_class, vid, props, ifc_id=ifc_id)
 
         print(f"Number of EdgeDB objects with content = {len(obj_set.keys())}")
+        return f
+
+    def to_ifc_str(self, specific_classes: list[str] = None, only_ifc_entities=True) -> str:
+        f = self.to_ifcopenshell_object(specific_classes, only_ifc_entities)
         return StringIO(f.wrapped_data.to_string()).read()
 
 
@@ -429,7 +440,14 @@ def resolve_order_of_result_entities(results: dict, em: EdgeModel) -> list:
             id_map[instance_id] = ids
 
     result = toposort_flatten(id_map, sort=True)
-    output = [key_map.get(x) for x in result]
+    output = []
+    for x in result:
+        key_res = key_map.get(x)
+        if key_res is not None:
+            output.append(key_res)
+        else:
+            raise ValueError(f'Unable to find related object uuid "{str(x)}"')
+
     if None in output:
         raise ValueError("Key Map contains 'None' elements. Likely missing object dependencies in export")
 
@@ -467,16 +485,15 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
 
         if isinstance(value, dict):
             props[key] = get_ref_id(value, id_map)
+        elif isinstance(entity, IntermediateClass):
+            # This is an Intermediate Class
+            output = []
+            for subr in value:
+                output.append(get_ref_id(subr, id_map))
+            value = output
+            props[key] = value
         elif isinstance(value, list) and len(value) > 0:
             att_type: AttributeEdgeModel = atts.get(key)
-            if att_type is None:
-                # This is an Intermediate Class
-                output = []
-                for subr in value:
-                    output.append(get_ref_id(subr, id_map))
-                value = output
-                props[key] = value
-                continue
             arr_ref = att_type.array_ref()
             par_type = arr_ref.parameter_type
             if par_type in ("float64", "float32"):
@@ -490,8 +507,7 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
                     ref_obj = get_ref_id(subr, id_map)
                     if isinstance(ref_obj, Node):
                         prop = ref_obj.props
-                        for att_name, entity_model in ref_obj.intermediate_class.attributes:
-                            output.append(prop[att_name])
+                        output.append(prop[ref_obj.intermediate_class.att_name])
                     else:
                         output.append(ref_obj)
                 value = output
