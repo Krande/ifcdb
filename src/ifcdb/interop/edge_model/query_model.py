@@ -158,7 +158,7 @@ class EdgeIOBase:
             print(f"Dropping database {self.database}")
             client.execute(f"DROP database {self.database}")
         except edgedb.errors.UnknownDatabaseError as e:
-            logging.error(e)
+            logging.debug(e)
 
         print(f"Creating database {self.database}")
         client.execute(f"CREATE DATABASE {self.database}")
@@ -347,8 +347,6 @@ class EdgeIO(EdgeIOBase):
             ifc_class = instance_data.get("class")
             instance_props = instance_data.get("props")
             vid = instance_data.get("id")
-            if ifc_class is None:
-                print("sd")
             props = get_props(ifc_class, instance_props, id_map, self.em)
             if ifc_class in self.em.intermediate_classes.keys():
                 id_map[vid] = Node(ifc_class, vid, props, intermediate_class=self.em.intermediate_classes[ifc_class])
@@ -369,6 +367,9 @@ class EdgeIO(EdgeIOBase):
                     ifc_id = f.create_entity(ifc_class, **props)
                 except TypeError as e:
                     raise TypeError(f"{ifc_class} insert error -> {e}")
+                except IndexError as e:
+                    raise IndexError(f"{ifc_class} insert error -> {e}")
+
             elif isinstance(props, (float, str, ifcopenshell.entity_instance)):
                 ifc_id = f.create_entity(ifc_class, props)
             else:

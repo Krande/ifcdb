@@ -4,6 +4,7 @@ import shutil
 import pytest
 
 from ifcdb import EdgeIO
+from ifcdb.interop.edge_model.query_utils import validate_ifc_content, validate_ifc_objects
 
 
 @pytest.mark.parametrize("ifc_file_name", ["tessellated-item.ifc", "cube-advanced-brep.ifc"])
@@ -23,18 +24,8 @@ def test_roundtrip_ifc_files_validation(ifc_files_dir, em_ifc4x1, ifc_file_name)
         # Insert IFC elements
         io.insert_ifc()
 
-        # Query Data (raw output)
-        result = io.get_all(limit_to_ifc_entities=True)
+        # Query & Validate Data
+        validate_ifc_content(io.ifc_io.ifc_obj, io.get_all(limit_to_ifc_entities=True))
 
-        # Query Data (raw output converted to ifcopenshell object)
-        new_ifc_object = io.to_ifcopenshell_object()
-
-        # Validate Data
-
-        # Alt 1: Compare original with new ifcopenshell objects
-        original_ifc_object = io.ifc_io.ifc_obj
-
-        # Alt 2: Compare using raw data, schema and old ifcopenshell data
-        obj_set = {key: value for key, value in result[0].items() if len(value) != 0}
-
-        # assert len(ifc_bld_proxy_elements) == len(result)
+        # Query & Validate Data using ifcopenshell objects only
+        # validate_ifc_objects(io.ifc_io.ifc_obj, io.to_ifcopenshell_object())

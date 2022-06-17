@@ -12,6 +12,7 @@ from ifcdb.interop.edge_model.edge_model_base import (
     EdgeModel,
     SelectEdgeModel,
 )
+from ifcdb.ifcdiff import IfcDiff
 from itertools import count
 
 _INSERT_COUNTER = count(start=1)
@@ -52,7 +53,7 @@ def get_att_str(
         and isinstance(res[0], ifcopenshell.entity_instance)
     ):
         value_str = "{"
-        value_str += ','.join([insert_ifc_entity(r, uuid_map, att_ref, with_map, em) for r in res])
+        value_str += ",".join([insert_ifc_entity(r, uuid_map, att_ref, with_map, em) for r in res])
         value_str += "}"
     elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
         levels = att_ref.get_levels()
@@ -130,3 +131,76 @@ def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
     unique_ref_name = f"ifc_{res_id}"
     with_map[unique_ref_name] = ref_str
     return unique_ref_name
+
+
+def validate_ifc_content(ofile: ifcopenshell.file, results: dict):
+    obj_set = {key: value for key, value in results[0].items() if len(value) != 0}
+
+    # Try to manually edit a single property to ensure that it fails if discrepancies are found
+    # obj_set["IfcCartesianPointList3D"][0]["CoordList"][0][1] = 200
+
+    for ifc_class, instances in obj_set.items():
+        for instance in instances:
+            original_instance_found = False
+            ifc_class_entities = list(ofile.by_type(ifc_class, True))
+            for original_instance in ifc_class_entities:
+                match_found = True
+                for prop_name, prop_value in instance.items():
+                    if prop_name == "id":
+                        continue
+                    if isinstance(prop_value, (list, tuple)) and len(prop_value) == 0:
+                        prop_value = None
+                    inst_value = getattr(original_instance, prop_name)
+                    if isinstance(inst_value, ifcopenshell.entity_instance):
+                        continue
+                    elif isinstance(inst_value, (list, tuple)) and isinstance(
+                        inst_value[0], ifcopenshell.entity_instance
+                    ):
+                        if len(inst_value) != len(prop_value):
+                            match_found = False
+                            break
+                    elif isinstance(inst_value, (list, tuple)) and isinstance(inst_value[0], float):
+                        for x, y in zip(inst_value, prop_value):
+                            if x != y:
+                                match_found = False
+                                break
+                    elif isinstance(inst_value, (list, tuple)) and isinstance(inst_value[0], (list, tuple)):
+                        for a1, a2 in zip(inst_value, prop_value):
+                            for x, y in zip(a1, a2):
+                                if x != y:
+                                    match_found = False
+                                    break
+                    else:
+                        if inst_value != prop_value:
+                            match_found = False
+                            break
+                if match_found is True:
+                    original_instance_found = True
+                    break
+
+            if len(ifc_class_entities) > 0 and original_instance_found is False:
+                entity_description = "[" + ",\n".join([str(x) for x in ifc_class_entities]) + "]"
+                raise ValueError(f'Instance "{instance}" not found among\n{entity_description}')
+
+    print("Successfully Validated IFC Content")
+
+
+def validate_ifc_objects(f1: ifcopenshell.file, f2: ifcopenshell.file):
+    get_info_props = dict(include_identifier=False, recursive=False, return_type=frozenset)
+    fingerprint = lambda file: frozenset(inst.get_info(**get_info_props) for inst in file)
+
+    for result in sorted(fingerprint(f1).symmetric_difference(fingerprint(f2)), key=lambda x: len(str(x))):
+        print(result)
+
+    assert fingerprint(f1) == fingerprint(f2)
+
+
+def validate_using_ifc_diff(
+    f1: ifcopenshell.file,
+    f2: ifcopenshell.file,
+    output_file: str,
+    inverse_classes: list[str] = None,
+):
+    ifc_diff = IfcDiff(f1, f2, output_file, inverse_classes)
+    ifc_diff.diff()
+    ifc_diff.export()
