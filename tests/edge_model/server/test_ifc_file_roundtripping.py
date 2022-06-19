@@ -24,8 +24,5 @@ def test_roundtrip_ifc_files_validation(ifc_files_dir, em_ifc4x1, ifc_file_name)
         # Insert IFC elements
         io.insert_ifc()
 
-        # Query & Validate Data
-        validate_ifc_content(io.ifc_io.ifc_obj, io.get_all(limit_to_ifc_entities=True))
-
         # Query & Validate Data using ifcopenshell objects only
-        # validate_ifc_objects(io.ifc_io.ifc_obj, io.to_ifcopenshell_object())
+        validate_ifc_objects(io.ifc_io.ifc_obj, io.to_ifcopenshell_object())

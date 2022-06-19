@@ -186,11 +186,8 @@ def validate_ifc_content(ofile: ifcopenshell.file, results: dict):
 
 
 def validate_ifc_objects(f1: ifcopenshell.file, f2: ifcopenshell.file):
-    get_info_props = dict(include_identifier=False, recursive=False, return_type=frozenset)
+    get_info_props = dict(include_identifier=False, recursive=True, return_type=frozenset)
     fingerprint = lambda file: frozenset(inst.get_info(**get_info_props) for inst in file)
-
-    for result in sorted(fingerprint(f1).symmetric_difference(fingerprint(f2)), key=lambda x: len(str(x))):
-        print(result)
 
     assert fingerprint(f1) == fingerprint(f2)
 
