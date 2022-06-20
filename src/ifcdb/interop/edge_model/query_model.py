@@ -254,24 +254,43 @@ class EdgeIO(EdgeIOBase):
     # READ
     def get_spatial_content(self, spatial_name) -> dict:
         """First export Spatial Hierarchy, filter in script and then do a single client query export"""
-        in_str = f"""SELECT IfcRelContainedInSpatialStructure {{
-    id,
-    RelatingStructure : {{ Name, id }},
-    RelatedElements : {{ Name, id }}
-}}"""
+        in_str = """SELECT {
+    spatial_stru := (
+        SELECT IfcRelContainedInSpatialStructure {
+            id,
+            RelatingStructure : { Name, id },
+            RelatedElements : { Name, id }
+        }
+    ),
+    rel_aggs := (
+        SELECT IfcRelAggregates {
+            id,
+            RelatingObject : { Name, id },
+            RelatedObjects : { Name, id }
+        }
+    ) 
+}"""
         result = json.loads(self.client.query_json(in_str))
         children = []
         parent = None
-        for r in result:
+
+        rel_aggs = result[0]["rel_aggs"]
+        for rel in rel_aggs:
+            print('sd')
+
+        # Traverse IfcRelContainedInSpatialStructure classes
+        spatial_stru = result[0]["spatial_stru"]
+        for r in spatial_stru:
             pobj = r["RelatingStructure"]
-            if pobj == spatial_name:
+            if pobj["Name"] == spatial_name:
                 children = r["RelatedElements"]
                 parent = pobj
                 break
+
         if parent is None:
             raise ValueError("Parent object is not found")
 
-        dmap = {parent["id"]: {"atts": parent, "children": dict()}}
+        dmap = {parent["id"]: {"atts": parent, "children": children}}
         curr_level = dmap[parent["id"]]
 
         return result
@@ -363,8 +382,19 @@ class EdgeIO(EdgeIOBase):
                         if props[x.name] is not None:
                             logging.debug(f"Removing insert of derived property ({x.name} = {props[x.name]})")
                             props.pop(x.name)
+                if ifc_class == 'IfcPropertySingleValue':
+                    fix_props = dict()
+                    for key, value in props.items():
+                        if isinstance(value, float):
+                            fix_props[key] = f.create_entity('IfcReal', value)
+                        elif isinstance(value, int) and value != 0:
+                            fix_props[key] = f.create_entity('IfcReal', value)
+                        else:
+                            fix_props[key] = value
+                else:
+                    fix_props = props
                 try:
-                    ifc_id = f.create_entity(ifc_class, **props)
+                    ifc_id = f.create_entity(ifc_class, **fix_props)
                 except TypeError as e:
                     raise TypeError(f"{ifc_class} insert error -> {e}")
                 except IndexError as e:
@@ -464,7 +494,11 @@ def get_ref_id(ref_id, id_map):
         return n
 
     if n.ifc_id is None:
+        if isinstance(n.props, (float, int)):
+            return n.props
+
         res = n.props.get(n.name)
+
         if res is None:
             raise ValueError(f'IFC refers to empty IFC id "{n.ifc_id}"')
         return res
@@ -518,10 +552,10 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
             props[key] = value
         elif isinstance(value, list) and len(value) == 0:
             props[key] = None
+        elif key == ifc_class:
+            props = value
+            break
         else:
-            if key == ifc_class:
-                props = value
-                break
             props[key] = value
 
     return props

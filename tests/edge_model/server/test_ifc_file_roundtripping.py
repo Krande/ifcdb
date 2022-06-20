@@ -7,7 +7,7 @@ from ifcdb import EdgeIO
 from ifcdb.interop.edge_model.query_utils import validate_ifc_content, validate_ifc_objects
 
 
-@pytest.mark.parametrize("ifc_file_name", ["tessellated-item.ifc", "cube-advanced-brep.ifc"])
+@pytest.mark.parametrize("ifc_file_name", ["tessellated-item.ifc", "cube-advanced-brep.ifc", "SpatialHierarchy1.ifc"])
 def test_roundtrip_ifc_files_validation(ifc_files_dir, em_ifc4x1, ifc_file_name):
     db_name = ifc_file_name.replace(".ifc", "").replace("-", "_")
     ifc_file = ifc_files_dir / ifc_file_name

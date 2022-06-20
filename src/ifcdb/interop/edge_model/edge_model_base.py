@@ -512,7 +512,6 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         all_atts = self.get_entity_atts(entity)
         newline = "" if len(all_atts) == 1 else "\n"
         insert_str = f"{indent}INSERT {self.name} {{{newline}  "
-
         for i, att in enumerate(all_atts):
             res = get_att_str(att, entity, self.edge_model, uuid_map=uuid_map, with_map=with_map)
             if res is None:
@@ -595,7 +594,12 @@ class TypeEdgeModel(EntityBaseEdgeModel):
         uuid_map: dict = None,
     ) -> str:
         # value = get_base_type_name(self.entity)
-        return f"INSERT {self.name} {{{self.name} := {entity.wrappedValue} }}"
+        wrap_value = entity.wrappedValue
+        if isinstance(wrap_value, str):
+            wrap_str = f"'{wrap_value}'"
+        else:
+            wrap_str = str(wrap_value)
+        return f"INSERT {self.name} {{{self.name} := {wrap_str} }}"
 
     def to_str(self):
         entity = None

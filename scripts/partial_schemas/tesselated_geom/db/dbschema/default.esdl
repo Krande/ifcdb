@@ -61,6 +61,18 @@ module default {
         link RefDirection -> IfcDirection;
     }
 
+    type IfcBeam extending IfcBuildingElement {
+        property PredefinedType -> str {
+            constraint one_of ('BEAM','HOLLOWCORE','JOIST','LINTEL','NOTDEFINED','SPANDREL','T_BEAM','USERDEFINED');
+        };
+    }
+
+    type IfcBeamType extending IfcBuildingElementType {
+        required property PredefinedType -> str {
+            constraint one_of ('BEAM','HOLLOWCORE','JOIST','LINTEL','NOTDEFINED','SPANDREL','T_BEAM','USERDEFINED');
+        };
+    }
+
     type IfcBinary {
         required property `IfcBinary` -> bytes;
     }
@@ -69,19 +81,17 @@ module default {
         required property `IfcBoolean` -> bool;
     }
 
-    type IfcBuilding extending IfcSpatialStructureElement {
-        property ElevationOfRefHeight -> float64;
-        property ElevationOfTerrain -> float64;
-        link BuildingAddress -> IfcPostalAddress;
+    abstract type IfcBoundedCurve extending IfcCurve {
     }
 
     abstract type IfcBuildingElement extending IfcElement {
     }
 
-    type IfcBuildingElementProxy extending IfcBuildingElement {
-        property PredefinedType -> str {
-            constraint one_of ('COMPLEX','ELEMENT','NOTDEFINED','PARTIAL','PROVISIONFORSPACE','PROVISIONFORVOID','USERDEFINED');
-        };
+    abstract type IfcBuildingElementType extending IfcElementType {
+    }
+
+    type IfcBuildingStorey extending IfcSpatialStructureElement {
+        property Elevation -> float64;
     }
 
     type IfcCartesianPoint extending IfcPoint {
@@ -90,18 +100,15 @@ module default {
         };
     }
 
-    abstract type IfcCartesianPointList extending IfcGeometricRepresentationItem {
-    }
-
-    type IfcCartesianPointList3D extending IfcCartesianPointList {
-        required property CoordList -> array<tuple<float64, float64, float64>>;
-        property TagList -> tuple<str>;
-    }
-
     type IfcComplexNumber {
         required property `IfcComplexNumber` -> array<float64>{
             constraint expression on (len(__subject__) = 1 or len(__subject__) = 2)
         };
+    }
+
+    type IfcCompositeProfileDef extending IfcProfileDef {
+        required multi link Profiles -> IfcProfileDef;
+        property Label -> str;
     }
 
     type IfcCompoundPlaneAngleMeasure {
@@ -135,12 +142,19 @@ module default {
         required property `IfcCurvatureMeasure` -> float64;
     }
 
+    abstract type IfcCurve extending IfcGeometricRepresentationItem {
+    }
+
     type IfcDate {
         required property `IfcDate` -> str;
     }
 
     type IfcDateTime {
         required property `IfcDateTime` -> str;
+    }
+
+    type IfcDefinitionSelect {
+        link IfcDefinitionSelect -> IfcObjectDefinition | IfcPropertyDefinition;
     }
 
     type IfcDerivedMeasureValue {
@@ -220,8 +234,23 @@ module default {
         property Tag -> str;
     }
 
+    abstract type IfcElementType extending IfcTypeProduct {
+        property ElementType -> str;
+    }
+
     type IfcEnergyMeasure {
         required property `IfcEnergyMeasure` -> float64;
+    }
+
+    abstract type IfcExtendedProperties extending IfcPropertyAbstraction {
+        property Name -> str;
+        property Description -> str;
+        required multi link Properties -> IfcProperty;
+    }
+
+    type IfcExtrudedAreaSolid extending IfcSweptAreaSolid {
+        required link ExtrudedDirection -> IfcDirection;
+        required property Depth -> float64;
     }
 
     type IfcForceMeasure {
@@ -242,21 +271,22 @@ module default {
     abstract type IfcGeometricRepresentationItem extending IfcRepresentationItem {
     }
 
-    type IfcGeometricRepresentationSubContext extending IfcGeometricRepresentationContext {
-        required link ParentContext -> IfcGeometricRepresentationContext;
-        property TargetScale -> float64;
-        required property TargetView -> str {
-            constraint one_of ('ELEVATION_VIEW','GRAPH_VIEW','MODEL_VIEW','NOTDEFINED','PLAN_VIEW','REFLECTED_PLAN_VIEW','SECTION_VIEW','SKETCH_VIEW','USERDEFINED');
-        };
-        property UserDefinedTargetView -> str;
-    }
-
     type IfcHeatFluxDensityMeasure {
         required property `IfcHeatFluxDensityMeasure` -> float64;
     }
 
     type IfcHeatingValueMeasure {
         required property `IfcHeatingValueMeasure` -> float64;
+    }
+
+    type IfcIShapeProfileDef extending IfcParameterizedProfileDef {
+        required property OverallWidth -> float64;
+        required property OverallDepth -> float64;
+        required property WebThickness -> float64;
+        required property FlangeThickness -> float64;
+        property FilletRadius -> float64;
+        property FlangeEdgeRadius -> float64;
+        property FlangeSlope -> float64;
     }
 
     type IfcIdentifier {
@@ -358,6 +388,52 @@ module default {
 
     type IfcMassPerLengthMeasure {
         required property `IfcMassPerLengthMeasure` -> float64;
+    }
+
+    type IfcMaterial extending IfcMaterialDefinition {
+        required property Name -> str;
+        property Description -> str;
+        property Category -> str;
+    }
+
+    abstract type IfcMaterialDefinition  {
+    }
+
+    type IfcMaterialList  {
+        required multi link Materials -> IfcMaterial;
+    }
+
+    type IfcMaterialProfile extending IfcMaterialDefinition {
+        property Name -> str;
+        property Description -> str;
+        link Material -> IfcMaterial;
+        required link Profile -> IfcProfileDef;
+        property Priority -> int64;
+        property Category -> str;
+    }
+
+    type IfcMaterialProfileSet extending IfcMaterialDefinition {
+        property Name -> str;
+        property Description -> str;
+        required multi link MaterialProfiles -> IfcMaterialProfile;
+        link CompositeProfile -> IfcCompositeProfileDef;
+    }
+
+    type IfcMaterialProfileSetUsage extending IfcMaterialUsageDefinition {
+        required link ForProfileSet -> IfcMaterialProfileSet;
+        property CardinalPoint -> int64;
+        property ReferenceExtent -> float64;
+    }
+
+    type IfcMaterialProperties extending IfcExtendedProperties {
+        required link Material -> IfcMaterialDefinition;
+    }
+
+    type IfcMaterialSelect {
+        link IfcMaterialSelect -> IfcMaterialDefinition | IfcMaterialList | IfcMaterialUsageDefinition;
+    }
+
+    abstract type IfcMaterialUsageDefinition  {
     }
 
     type IfcMeasureValue {
@@ -465,6 +541,10 @@ module default {
         required property `IfcParameterValue` -> float64;
     }
 
+    abstract type IfcParameterizedProfileDef extending IfcProfileDef {
+        link Position -> IfcAxis2Placement2D;
+    }
+
     type IfcPerson  {
         property Identification -> str;
         property FamilyName -> str;
@@ -495,6 +575,10 @@ module default {
     }
 
     abstract type IfcPoint extending IfcGeometricRepresentationItem {
+    }
+
+    type IfcPolyline extending IfcBoundedCurve {
+        required multi link Points -> IfcCartesianPoint;
     }
 
     type IfcPositiveInteger {
@@ -545,7 +629,45 @@ module default {
         required multi link Representations -> IfcRepresentation;
     }
 
+    type IfcProfileDef  {
+        required property ProfileType -> str {
+            constraint one_of ('AREA','CURVE');
+        };
+        property ProfileName -> str;
+    }
+
     type IfcProject extending IfcContext {
+    }
+
+    abstract type IfcProperty extending IfcPropertyAbstraction {
+        required property Name -> str;
+        property Description -> str;
+    }
+
+    abstract type IfcPropertyAbstraction  {
+    }
+
+    abstract type IfcPropertyDefinition extending IfcRoot {
+    }
+
+    type IfcPropertySet extending IfcPropertySetDefinition {
+        required multi link HasProperties -> IfcProperty;
+    }
+
+    abstract type IfcPropertySetDefinition extending IfcPropertyDefinition {
+    }
+
+    type IfcPropertySetDefinitionSelect {
+        link IfcPropertySetDefinitionSelect -> IfcPropertySetDefinition | IfcPropertySetDefinitionSet;
+    }
+
+    type IfcPropertySetDefinitionSet {
+        required multi link `IfcPropertySetDefinitionSet` -> IfcPropertySetDefinition;
+    }
+
+    type IfcPropertySingleValue extending IfcSimpleProperty {
+        link NominalValue -> IfcValue;
+        link Unit -> IfcUnit;
     }
 
     type IfcRadioActivityMeasure {
@@ -565,6 +687,14 @@ module default {
         required multi link RelatedObjects -> IfcObjectDefinition;
     }
 
+    abstract type IfcRelAssociates extending IfcRelationship {
+        required multi link RelatedObjects -> IfcDefinitionSelect;
+    }
+
+    type IfcRelAssociatesMaterial extending IfcRelAssociates {
+        required link RelatingMaterial -> IfcMaterialSelect;
+    }
+
     abstract type IfcRelConnects extending IfcRelationship {
     }
 
@@ -574,6 +704,19 @@ module default {
     }
 
     abstract type IfcRelDecomposes extending IfcRelationship {
+    }
+
+    abstract type IfcRelDefines extending IfcRelationship {
+    }
+
+    type IfcRelDefinesByProperties extending IfcRelDefines {
+        required multi link RelatedObjects -> IfcObjectDefinition;
+        required link RelatingPropertyDefinition -> IfcPropertySetDefinitionSelect;
+    }
+
+    type IfcRelDefinesByType extending IfcRelDefines {
+        required multi link RelatedObjects -> IfcObject;
+        required link RelatingType -> IfcTypeObject;
     }
 
     abstract type IfcRelationship extending IfcRoot {
@@ -592,6 +735,11 @@ module default {
     }
 
     abstract type IfcRepresentationItem  {
+    }
+
+    type IfcRepresentationMap  {
+        required link MappingOrigin -> IfcAxis2Placement;
+        required link MappedRepresentation -> IfcRepresentation;
     }
 
     abstract type IfcRoot  {
@@ -640,12 +788,26 @@ module default {
         required property `IfcShearModulusMeasure` -> float64;
     }
 
+    abstract type IfcSimpleProperty extending IfcProperty {
+    }
+
     type IfcSimpleValue {
         link IfcSimpleValue -> IfcBinary | IfcBoolean | IfcDate | IfcDateTime | IfcDuration | IfcIdentifier | IfcInteger | IfcLabel | IfcLogical | IfcPositiveInteger | IfcReal | IfcText | IfcTime | IfcTimeStamp;
     }
 
+    type IfcSite extending IfcSpatialStructureElement {
+        property RefLatitude -> int64;
+        property RefLongitude -> int64;
+        property RefElevation -> float64;
+        property LandTitleNumber -> str;
+        link SiteAddress -> IfcPostalAddress;
+    }
+
     type IfcSolidAngleMeasure {
         required property `IfcSolidAngleMeasure` -> float64;
+    }
+
+    abstract type IfcSolidModel extending IfcGeometricRepresentationItem {
     }
 
     type IfcSoundPowerLevelMeasure {
@@ -678,19 +840,17 @@ module default {
         required property `IfcSpecificHeatCapacityMeasure` -> float64;
     }
 
+    abstract type IfcSweptAreaSolid extending IfcSolidModel {
+        required link SweptArea -> IfcProfileDef;
+        link Position -> IfcAxis2Placement3D;
+    }
+
     type IfcTemperatureGradientMeasure {
         required property `IfcTemperatureGradientMeasure` -> float64;
     }
 
     type IfcTemperatureRateOfChangeMeasure {
         required property `IfcTemperatureRateOfChangeMeasure` -> float64;
-    }
-
-    abstract type IfcTessellatedFaceSet extending IfcTessellatedItem {
-        required link Coordinates -> IfcCartesianPointList3D;
-    }
-
-    abstract type IfcTessellatedItem extending IfcGeometricRepresentationItem {
     }
 
     type IfcText {
@@ -737,11 +897,14 @@ module default {
         required property `IfcTorqueMeasure` -> float64;
     }
 
-    type IfcTriangulatedFaceSet extending IfcTessellatedFaceSet {
-        property Normals -> array<tuple<float64, float64, float64>>;
-        property Closed -> bool;
-        required property CoordIndex -> array<tuple<int64, int64, int64>>;
-        property PnIndex -> tuple<int64>;
+    type IfcTypeObject extending IfcObjectDefinition {
+        property ApplicableOccurrence -> str;
+        multi link HasPropertySets -> IfcPropertySetDefinition;
+    }
+
+    type IfcTypeProduct extending IfcTypeObject {
+        multi link RepresentationMaps -> IfcRepresentationMap;
+        property Tag -> str;
     }
 
     type IfcUnit {
