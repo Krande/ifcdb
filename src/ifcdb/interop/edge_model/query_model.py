@@ -7,7 +7,7 @@ import pathlib
 import shutil
 import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from io import StringIO
 from multiprocessing.pool import ThreadPool
 from typing import ClassVar
@@ -270,28 +270,54 @@ class EdgeIO(EdgeIOBase):
         }
     ) 
 }"""
+        # TODO: Need to export all related classes also.
         result = json.loads(self.client.query_json(in_str))
-        children = []
-        parent = None
 
         rel_aggs = result[0]["rel_aggs"]
+        spatial_nodes: dict[str, SpatialNode] = dict()
         for rel in rel_aggs:
-            print('sd')
+            relo = rel['RelatingObject']
+            name = relo.get('Name')
+            o_id = relo.get('id')
+            sn = spatial_nodes.get(o_id)
+            if sn is None:
+                sn = SpatialNode(name, o_id)
+            spatial_nodes[o_id] = sn
+            for rel_object in rel['RelatedObjects']:
+                sub_name = rel_object.get('Name')
+                sub_id = rel_object.get('id')
+                sub_n = spatial_nodes.get(sub_id)
+                if sub_n is None:
+                    sub_n = SpatialNode(sub_name, sub_id, parent=sn)
+                sn.children.append(sub_n)
+                spatial_nodes[sub_id] = sub_n
+
+        print("sd")
 
         # Traverse IfcRelContainedInSpatialStructure classes
         spatial_stru = result[0]["spatial_stru"]
         for r in spatial_stru:
             pobj = r["RelatingStructure"]
-            if pobj["Name"] == spatial_name:
-                children = r["RelatedElements"]
-                parent = pobj
-                break
+            sn = spatial_nodes.get(pobj.get('id'))
+            for child in r["RelatedElements"]:
+                name = child.get('Name')
+                child_id = child.get('id')
+                sn.children.append(SpatialNode(name, child_id))
 
-        if parent is None:
-            raise ValueError("Parent object is not found")
+        name_map = {n.name: n for n in spatial_nodes.values()}
+        s_node: SpatialNode = name_map.get(spatial_name)
 
-        dmap = {parent["id"]: {"atts": parent, "children": children}}
-        curr_level = dmap[parent["id"]]
+        def walk_children(child_level, ulist: list[str]):
+            for p_obj in child_level.children:
+                uuid_list.append(p_obj.id)
+                walk_children(p_obj, ulist)
+
+        curr_level = s_node
+        uuid_list = [curr_level.id]
+        walk_children(curr_level, uuid_list)
+        in_str = """SELECT IfcProduct ()
+        """
+        result = json.loads(self.client.query_json(in_str))
 
         return result
 
@@ -359,7 +385,7 @@ class EdgeIO(EdgeIOBase):
         ordered_results = resolve_order_of_result_entities(obj_set, self.em)
 
         f = ifcopenshell.file(schema=self.ifc_schema)
-        id_map: dict[str, Node] = dict()
+        id_map: dict[str, IfcNode] = dict()
         for instance_data in ordered_results:
             if instance_data is None:
                 continue
@@ -368,7 +394,7 @@ class EdgeIO(EdgeIOBase):
             vid = instance_data.get("id")
             props = get_props(ifc_class, instance_props, id_map, self.em)
             if ifc_class in self.em.intermediate_classes.keys():
-                id_map[vid] = Node(ifc_class, vid, props, intermediate_class=self.em.intermediate_classes[ifc_class])
+                id_map[vid] = IfcNode(ifc_class, vid, props, intermediate_class=self.em.intermediate_classes[ifc_class])
                 continue
 
             if isinstance(props, dict) and ifc_class not in instance_props.keys():
@@ -382,13 +408,13 @@ class EdgeIO(EdgeIOBase):
                         if props[x.name] is not None:
                             logging.debug(f"Removing insert of derived property ({x.name} = {props[x.name]})")
                             props.pop(x.name)
-                if ifc_class == 'IfcPropertySingleValue':
+                if ifc_class == "IfcPropertySingleValue":
                     fix_props = dict()
                     for key, value in props.items():
                         if isinstance(value, float):
-                            fix_props[key] = f.create_entity('IfcReal', value)
+                            fix_props[key] = f.create_entity("IfcReal", value)
                         elif isinstance(value, int) and value != 0:
-                            fix_props[key] = f.create_entity('IfcReal', value)
+                            fix_props[key] = f.create_entity("IfcReal", value)
                         else:
                             fix_props[key] = value
                 else:
@@ -408,7 +434,7 @@ class EdgeIO(EdgeIOBase):
             if ifc_id is not None:
                 print(ifc_id)
 
-            id_map[vid] = Node(ifc_class, vid, props, ifc_id=ifc_id)
+            id_map[vid] = IfcNode(ifc_class, vid, props, ifc_id=ifc_id)
 
         print(f"Number of EdgeDB objects with content = {len(obj_set.keys())}")
         return f
@@ -419,12 +445,20 @@ class EdgeIO(EdgeIOBase):
 
 
 @dataclass
-class Node:
+class IfcNode:
     name: str
     id: str
     props: dict
     ifc_id: ifcopenshell.entity_instance = None
     intermediate_class: IntermediateClass = None
+
+
+@dataclass
+class SpatialNode:
+    name: str
+    id: str
+    children: list[SpatialNode] = field(default_factory=list)
+    parent: SpatialNode = None
 
 
 def get_ids(obj: dict, id_list):
@@ -486,7 +520,7 @@ def resolve_order_of_result_entities(results: dict, em: EdgeModel) -> list:
 
 
 def get_ref_id(ref_id, id_map):
-    n: Node = id_map.get(ref_id.get("id"))
+    n: IfcNode = id_map.get(ref_id.get("id"))
     if n is None:
         raise ValueError("missing " + ref_id.get("id"))
 
@@ -540,7 +574,7 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
                 output = []
                 for subr in value:
                     ref_obj = get_ref_id(subr, id_map)
-                    if isinstance(ref_obj, Node):
+                    if isinstance(ref_obj, IfcNode):
                         prop = ref_obj.props
                         output.append(prop[ref_obj.intermediate_class.att_name])
                     else:
