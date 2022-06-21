@@ -284,6 +284,9 @@ class EdgeIOBase:
             ) 
         }"""
 
+        def get_class_name(type_obj):
+            return type_obj["__type__"]["name"].replace("default::", "")
+
         result = json.loads(self.client.query_json(in_str))
 
         rel_aggs = result[0]["rel_aggs"]
@@ -292,7 +295,7 @@ class EdgeIOBase:
             relo = rel["RelatingObject"]
             name = relo.get("Name")
             o_id = relo.get("id")
-            class_name = relo["__type__"]["name"].replace("default::", "")
+            class_name = get_class_name(relo)
             sn = spatial_nodes.get(o_id)
             if sn is None:
                 sn = SpatialNode(name, o_id, class_name)
@@ -301,7 +304,7 @@ class EdgeIOBase:
                 sub_name = rel_object.get("Name")
                 sub_id = rel_object.get("id")
                 sub_n = spatial_nodes.get(sub_id)
-                class_name = rel_object["__type__"]["name"].replace("default::", "")
+                class_name = get_class_name(rel_object)
                 if sub_n is None:
                     sub_n = SpatialNode(sub_name, sub_id, class_name=class_name, parent=sn)
                 sn.children.append(sub_n)
@@ -315,12 +318,12 @@ class EdgeIOBase:
             for child in r["RelatedElements"]:
                 name = child.get("Name")
                 child_id = child.get("id")
-                class_name = child["__type__"]["name"].replace("default::", "")
+                class_name = get_class_name(child)
                 sub_n = SpatialNode(name, child_id, class_name)
                 sn.children.append(sub_n)
                 spatial_nodes[child_id] = sub_n
 
-        return {n.name: n for n in spatial_nodes.values()}
+        return spatial_nodes
 
 
 @dataclass
@@ -329,9 +332,15 @@ class EdgeIO(EdgeIOBase):
         """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
         from itertools import chain
 
-        name_map = self.get_spatial_hierarchy()
-        uuid_map: dict[str, SpatialNode] = {n.id: n for n in name_map.values()}
-
+        uuid_map = self.get_spatial_hierarchy()
+        name_map = {n.name: n for n in uuid_map.values()}
+        if len(uuid_map) != len(name_map):
+            names = [x.name for x in uuid_map.values()]
+            error_str = 'Unequal length of name and uuid maps. Due to\n\n'
+            for i, o in enumerate(names.count(x) for x in names):
+                if o > 1:
+                    error_str += f"{names[i]}: {o}"
+            raise ValueError(error_str)
         s_node = name_map.get(spatial_name)
 
         parent_uuids = s_node.traverse_parents()
@@ -350,7 +359,7 @@ class EdgeIO(EdgeIOBase):
                         continue
                     walk_entity_children(prop_entity_child, att_names, level=level + 1)
             if level > 100:
-                raise ValueError('Recursion depth is out of control')
+                raise ValueError("Recursion depth is out of control")
             for att in attributes:
                 att_type = att.get_type_ref()
                 if level == 0:
@@ -389,7 +398,7 @@ class EdgeIO(EdgeIOBase):
 
         return result_2
 
-    def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False) -> dict:
+    def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
         if limit_to_ifc_entities is True:
             if entities is None:
@@ -424,7 +433,8 @@ class EdgeIO(EdgeIOBase):
                     select_str += "" if i == len(all_atts) - 1 else ","
             select_str += "}),\n"
         select_str += "}"
-        return json.loads(self.client.query_json(select_str))
+        client = self.client if client is None else client
+        return json.loads(client.query_json(select_str))
 
     # WRITE
     def insert_ifc(self, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
@@ -437,8 +447,8 @@ class EdgeIO(EdgeIOBase):
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 
     # Exports
-    def to_ifcopenshell_object(self, specific_classes: list[str] = None, only_ifc_entities=True) -> ifcopenshell.file:
-        res = self.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities)
+    def to_ifcopenshell_object(self, specific_classes: list[str] = None, only_ifc_entities=True, client=None) -> ifcopenshell.file:
+        res = self.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities,client=client)
         obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
         ordered_results = resolve_order_of_result_entities(obj_set, self.em)
 
