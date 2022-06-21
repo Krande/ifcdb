@@ -18,6 +18,7 @@ from toposort import toposort, toposort_flatten
 
 from ifcdb.interop.edge_model.edge_model_base import (
     AttributeEdgeModel,
+    ArrayEdgeModel,
     EdgeModel,
     EntityEdgeModel,
     EnumEdgeModel,
@@ -102,16 +103,20 @@ class EdgeIOBase:
         else:
             return f"-I {self.instance_name}"
 
+    def create_client(self) -> edgedb.Client:
+        return edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
+
     def __enter__(self):
         if self.ifc_file is not None:
             self.ifc_io = IfcIO(ifc_file=self.ifc_file, edge_io=self)
 
-        self.client = edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
+        self.client = self.create_client()
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.client.close()
+        if self.client is not None:
+            self.client.close()
 
     # IFC utils
 
@@ -248,78 +253,141 @@ class EdgeIOBase:
             query_res = json.loads(tx.query_single_json(total_insert_str))
             uuid_map[item] = query_res["id"]
 
+    def _insert_intermediate_classes(self, ent_dict: dict):
+        to_be_added = dict()
+        for key, value in ent_dict.items():
+            if isinstance(value, EntityEdgeModel) is False:
+                continue
+            for att in value.get_attributes(True):
+                if att.needs_intermediate_class_str is False:
+                    continue
+                intermediate_class = att.get_intermediate_array_class()
+                to_be_added[intermediate_class.name] = intermediate_class
 
-@dataclass
-class EdgeIO(EdgeIOBase):
-    # READ
-    def get_spatial_content(self, spatial_name) -> dict:
-        """First export Spatial Hierarchy, filter in script and then do a single client query export"""
+        ent_dict.update(to_be_added)
+
+    def get_spatial_hierarchy(self) -> dict[str, SpatialNode]:
         in_str = """SELECT {
-    spatial_stru := (
-        SELECT IfcRelContainedInSpatialStructure {
-            id,
-            RelatingStructure : { Name, id },
-            RelatedElements : { Name, id }
-        }
-    ),
-    rel_aggs := (
-        SELECT IfcRelAggregates {
-            id,
-            RelatingObject : { Name, id },
-            RelatedObjects : { Name, id }
-        }
-    ) 
-}"""
-        # TODO: Need to export all related classes also.
+            spatial_stru := (
+                SELECT IfcRelContainedInSpatialStructure {
+                    id,
+                    RelatingStructure : { Name, id, __type__ : { name } },
+                    RelatedElements : { Name, id, __type__ : { name } }
+                }
+            ),
+            rel_aggs := (
+                SELECT IfcRelAggregates {
+                    id,
+                    RelatingObject : { Name, id, __type__ : { name } },
+                    RelatedObjects : { Name, id, __type__ : { name } }
+                }
+            ) 
+        }"""
+
         result = json.loads(self.client.query_json(in_str))
 
         rel_aggs = result[0]["rel_aggs"]
         spatial_nodes: dict[str, SpatialNode] = dict()
         for rel in rel_aggs:
-            relo = rel['RelatingObject']
-            name = relo.get('Name')
-            o_id = relo.get('id')
+            relo = rel["RelatingObject"]
+            name = relo.get("Name")
+            o_id = relo.get("id")
+            class_name = relo["__type__"]["name"].replace("default::", "")
             sn = spatial_nodes.get(o_id)
             if sn is None:
-                sn = SpatialNode(name, o_id)
+                sn = SpatialNode(name, o_id, class_name)
             spatial_nodes[o_id] = sn
-            for rel_object in rel['RelatedObjects']:
-                sub_name = rel_object.get('Name')
-                sub_id = rel_object.get('id')
+            for rel_object in rel["RelatedObjects"]:
+                sub_name = rel_object.get("Name")
+                sub_id = rel_object.get("id")
                 sub_n = spatial_nodes.get(sub_id)
+                class_name = rel_object["__type__"]["name"].replace("default::", "")
                 if sub_n is None:
-                    sub_n = SpatialNode(sub_name, sub_id, parent=sn)
+                    sub_n = SpatialNode(sub_name, sub_id, class_name=class_name, parent=sn)
                 sn.children.append(sub_n)
                 spatial_nodes[sub_id] = sub_n
-
-        print("sd")
 
         # Traverse IfcRelContainedInSpatialStructure classes
         spatial_stru = result[0]["spatial_stru"]
         for r in spatial_stru:
             pobj = r["RelatingStructure"]
-            sn = spatial_nodes.get(pobj.get('id'))
+            sn = spatial_nodes.get(pobj.get("id"))
             for child in r["RelatedElements"]:
-                name = child.get('Name')
-                child_id = child.get('id')
-                sn.children.append(SpatialNode(name, child_id))
+                name = child.get("Name")
+                child_id = child.get("id")
+                class_name = child["__type__"]["name"].replace("default::", "")
+                sub_n = SpatialNode(name, child_id, class_name)
+                sn.children.append(sub_n)
+                spatial_nodes[child_id] = sub_n
 
-        name_map = {n.name: n for n in spatial_nodes.values()}
-        s_node: SpatialNode = name_map.get(spatial_name)
+        return {n.name: n for n in spatial_nodes.values()}
 
-        def walk_children(child_level, ulist: list[str]):
-            for p_obj in child_level.children:
-                uuid_list.append(p_obj.id)
-                walk_children(p_obj, ulist)
 
-        curr_level = s_node
-        uuid_list = [curr_level.id]
-        walk_children(curr_level, uuid_list)
-        in_str = """SELECT IfcProduct ()
-        """
-        result = json.loads(self.client.query_json(in_str))
+@dataclass
+class EdgeIO(EdgeIOBase):
+    def get_spatial_content(self, spatial_name) -> dict:
+        """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
+        from itertools import chain
 
-        return result
+        name_map = self.get_spatial_hierarchy()
+        uuid_map: dict[str, SpatialNode] = {n.id: n for n in name_map.values()}
+
+        s_node = name_map.get(spatial_name)
+
+        parent_uuids = s_node.traverse_parents()
+        uuid_list = s_node.traverse_children() + parent_uuids
+
+        # Get all subelements
+        def walk_entity_children(curr_child: EntityEdgeModel, att_names: list, level: int) -> str:
+            output_str = ""
+            if isinstance(curr_child, (EnumEdgeModel, SelectEdgeModel)):
+                return ""
+
+            attributes = curr_child.get_attributes()
+            if len(attributes) == 0 and curr_child.entity.is_abstract():
+                for prop_entity_child in curr_child.get_children():
+                    if prop_entity_child.entity.is_abstract():
+                        continue
+                    walk_entity_children(prop_entity_child, att_names, level=level + 1)
+            if level > 100:
+                raise ValueError('Recursion depth is out of control')
+            for att in attributes:
+                att_type = att.get_type_ref()
+                if level == 0:
+                    if att.name in att_names:
+                        continue
+                    att_names.append(att.name)
+
+                if isinstance(att_type, ArrayEdgeModel):
+                    att_type = att_type.parameter_type
+                if isinstance(att_type, EntityEdgeModel):
+                    insert_str = walk_entity_children(att_type, att_names, level + 1)
+                    output_str += f"[is {curr_child.name}].{att.name} : {{ {insert_str} }},\n"
+                elif isinstance(att_type, (str, EnumEdgeModel)):
+                    output_str += f"[is {curr_child.name}].{att.name},\n"
+                elif isinstance(att_type, SelectEdgeModel):
+                    output_str += f"[is {curr_child.name}].{att.name},\n"
+                else:
+                    raise NotImplementedError(f'Entity type "{att_type}" is not yet added')
+            return output_str
+
+        # for child_uuid in s_node.traverse_children()
+        all_classes = list(set([uuid_map.get(cn).class_name for cn in uuid_list]))
+        entities = [self.em.get_entity_by_name(cn) for cn in all_classes]
+        ancestors = set([x.name for x in chain.from_iterable([e.get_ancestors() for e in entities])])
+        all_entities = entities + [self.em.get_entity_by_name(cn) for cn in ancestors]
+
+        fin_select_str = "SELECT IfcProduct { __type__ : {name},"
+        atn = []
+        for child in all_entities:
+            fin_select_str += walk_entity_children(child, atn, 0)
+
+        uuid_list_str = ",".join([f"'{x}'" for x in uuid_list])
+        fin_select_str += f"}} filter .id = <uuid>{{ {uuid_list_str} }}"
+
+        result_2 = json.loads(self.client.query_json(fin_select_str))
+
+        return result_2
 
     def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
@@ -334,17 +402,7 @@ class EdgeIO(EdgeIOBase):
         else:
             ent_dict = {x: self.em.get_entity_by_name(x) for x in self.em.get_related_entities(entities)}
 
-        to_be_added = dict()
-        for key, value in ent_dict.items():
-            if isinstance(value, EntityEdgeModel) is False:
-                continue
-            for att in value.get_attributes(True):
-                if att.needs_intermediate_class_str is False:
-                    continue
-                intermediate_class = att.get_intermediate_array_class()
-                to_be_added[intermediate_class.name] = intermediate_class
-
-        ent_dict.update(to_be_added)
+        self._insert_intermediate_classes(ent_dict)
 
         for entity_name, entity in ent_dict.items():
             if isinstance(entity, EnumEdgeModel):
@@ -408,6 +466,7 @@ class EdgeIO(EdgeIOBase):
                         if props[x.name] is not None:
                             logging.debug(f"Removing insert of derived property ({x.name} = {props[x.name]})")
                             props.pop(x.name)
+
                 if ifc_class == "IfcPropertySingleValue":
                     fix_props = dict()
                     for key, value in props.items():
@@ -457,8 +516,31 @@ class IfcNode:
 class SpatialNode:
     name: str
     id: str
+    class_name: str
     children: list[SpatialNode] = field(default_factory=list)
     parent: SpatialNode = None
+
+    def traverse_children(self, current_level=None, ulist: list[str] = None) -> list[str]:
+        """Returns a list of uuid of all child elements (including self)"""
+        ulist = [self.id] if ulist is None else ulist
+        current_level = self if current_level is None else current_level
+
+        for p_obj in current_level.children:
+            ulist.append(p_obj.id)
+            self.traverse_children(p_obj, ulist)
+
+        return ulist
+
+    def traverse_parents(self, current_level=None, ulist: list[str] = None) -> list[str]:
+        """Returns a list of uuid of all parent elements"""
+        ulist = [] if ulist is None else ulist
+        current_level = self if current_level is None else current_level
+        if current_level.parent is None:
+            return ulist
+        ulist.append(current_level.parent.id)
+
+        self.traverse_parents(current_level.parent, ulist)
+        return ulist
 
 
 def get_ids(obj: dict, id_list):

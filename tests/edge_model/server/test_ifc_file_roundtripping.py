@@ -18,6 +18,7 @@ def test_roundtrip_ifc_files_validation(ifc_files_dir, em_ifc4x1, ifc_file_name)
 
     with EdgeIO(ifc_file, em=em_ifc4x1, db_schema_dir=db_schema_dir, database=db_name) as io:
         # Set up Schema & Database
+        io.create_client()
         io.create_schema_from_ifc_file()
         io.setup_database(delete_existing_migrations=True)
 

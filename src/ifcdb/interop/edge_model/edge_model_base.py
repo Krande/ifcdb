@@ -406,6 +406,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         "string": "str",
     }
     _attributes: list[AttributeEdgeModel] = field(default=None, repr=False)
+    _name: str = None
 
     def get_derive_map(self) -> dict[str, bool] | None:
         derived = self.entity.derived()
@@ -482,6 +483,12 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         return should_skip
 
     @property
+    def name(self):
+        if self._name is None:
+            self._name = self.entity.name()
+        return self._name
+
+    @property
     def ancestor_str(self):
         ancestor_str = ""
         if self.entity.supertype() is not None:
@@ -545,6 +552,8 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 {att_str}    }}
 """
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.name})"
 
 @dataclass
 class EnumEdgeModel(EntityBaseEdgeModel):
