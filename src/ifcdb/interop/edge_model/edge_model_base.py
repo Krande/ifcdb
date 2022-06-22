@@ -12,6 +12,13 @@ from toposort import toposort_flatten
 wrap = ifcopenshell.ifcopenshell_wrapper
 
 
+@dataclass
+class WithNode:
+    name: str
+    class_name: str
+    query_str: str
+
+
 def get_aggregation_type(agg_entity: wrap.aggregation_type):
     shape_len = agg_entity.type_of_aggregation()
     aggregate_types = [agg_entity]
@@ -507,6 +514,40 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     def get_entity_atts(self, entity: ifcopenshell.entity_instance):
         return [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
 
+    def to_select_str(self, with_map: dict[str, WithNode] = None) -> str:
+        from ifcdb.utils import change_case
+
+        select_str = "{"
+        all_atts = self.get_attributes(True)
+
+        def add_entity_ref(ref_type):
+            if with_map is None:
+                ref_str = ref_type.to_select_str(with_map=with_map)
+            else:
+                ref_str = change_case(att.name)
+                query_str = ref_type.to_select_str(with_map=with_map)
+                with_map[ref_str] = WithNode(ref_str, att.name, query_str)
+            return ref_str
+
+        for i, att in enumerate(all_atts):
+            type_ref = att.get_type_ref()
+            if isinstance(type_ref, ArrayEdgeModel):
+                type_ref = type_ref.parameter_type
+            select_str += f"{att.name}"
+            if isinstance(type_ref, EntityEdgeModel):
+                select_ref = add_entity_ref(type_ref)
+                select_str += f" : {select_ref}"
+            elif isinstance(type_ref, (str, EnumEdgeModel)):
+                pass
+            elif isinstance(type_ref, SelectEdgeModel):
+                print("sd")
+            else:
+                raise ValueError(f'Unknown type ref "{type_ref}"')
+
+            select_str += "" if i == len(all_atts) - 1 else ","
+        select_str += "}"
+        return select_str
+
     def to_insert_str(
         self,
         entity: ifcopenshell.entity_instance,
@@ -514,21 +555,17 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         uuid_map: dict = None,
         with_map: dict[str, str] = None,
     ):
-        from ifcdb.interop.edge_model.query_utils import get_att_str
+        from ifcdb.interop.edge_model.query_utils import get_att_insert_str
 
         all_atts = self.get_entity_atts(entity)
         newline = "" if len(all_atts) == 1 else "\n"
         insert_str = f"{indent}INSERT {self.name} {{{newline}  "
         for i, att in enumerate(all_atts):
-            res = get_att_str(att, entity, self.edge_model, uuid_map=uuid_map, with_map=with_map)
+            res = get_att_insert_str(att, entity, self.edge_model, uuid_map=uuid_map, with_map=with_map)
             if res is None:
                 continue
 
-            if i == len(all_atts) - 1:
-                comma_str = ""
-            else:
-                comma_str = ","
-
+            comma_str = "" if i == len(all_atts) - 1 else ","
             insert_str += res + comma_str
 
         return insert_str + f"}}{newline}"
@@ -554,6 +591,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name})"
+
 
 @dataclass
 class EnumEdgeModel(EntityBaseEdgeModel):

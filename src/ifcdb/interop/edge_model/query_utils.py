@@ -28,7 +28,7 @@ def create_local_instance(server_name):
     subprocess.run(f"{edgedb_exe} instance create {server_name}", shell=True)
 
 
-def get_att_str(
+def get_att_insert_str(
     att: AttributeEdgeModel,
     entity: ifcopenshell.entity_instance,
     em: EdgeModel,

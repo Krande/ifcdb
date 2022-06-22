@@ -220,7 +220,7 @@ class EdgeIOBase:
         self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
 
     def _insert_items_sequentially(self, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
-        from .query_utils import get_att_str
+        from .query_utils import get_att_insert_str
 
         ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
         uuid_map = dict()
@@ -235,7 +235,7 @@ class EdgeIOBase:
             with_map = dict()
             insert_str = f"SELECT (INSERT {entity.name} {{\n    "
             for j, att in enumerate(all_atts):
-                att_str = get_att_str(att, item, self.em, uuid_map=uuid_map, with_map=with_map)
+                att_str = get_att_insert_str(att, item, self.em, uuid_map=uuid_map, with_map=with_map)
                 if j == len(all_atts) - 1:
                     comma_str = ""
                 else:
@@ -330,71 +330,38 @@ class EdgeIOBase:
 class EdgeIO(EdgeIOBase):
     def get_spatial_content(self, spatial_name) -> dict:
         """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
-        from itertools import chain
+        from ifcdb.interop.edge_model.edge_model_base import WithNode
 
         uuid_map = self.get_spatial_hierarchy()
         name_map = {n.name: n for n in uuid_map.values()}
         if len(uuid_map) != len(name_map):
             names = [x.name for x in uuid_map.values()]
-            error_str = 'Unequal length of name and uuid maps. Due to\n\n'
+            error_str = "Unequal length of name and uuid maps. Due to\n\n"
             for i, o in enumerate(names.count(x) for x in names):
                 if o > 1:
                     error_str += f"{names[i]}: {o}"
             raise ValueError(error_str)
-        s_node = name_map.get(spatial_name)
 
+        s_node = name_map.get(spatial_name)
         parent_uuids = s_node.traverse_parents()
         uuid_list = s_node.traverse_children() + parent_uuids
+        uuid_map_slice = {key: uuid_map.get(key) for key in uuid_list}
 
-        # Get all subelements
-        def walk_entity_children(curr_child: EntityEdgeModel, att_names: list, level: int) -> str:
-            output_str = ""
-            if isinstance(curr_child, (EnumEdgeModel, SelectEdgeModel)):
-                return ""
+        with_map: dict[str, WithNode] = dict()
+        fin_select_str = "SELECT ( "
+        for i, (key, value) in enumerate(uuid_map_slice.items()):
+            class_name = value.class_name
+            entity_class = self.em.get_entity_by_name(class_name)
+            select_str = entity_class.to_select_str(with_map)
+            fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
+        fin_select_str += ")\n"
 
-            attributes = curr_child.get_attributes()
-            if len(attributes) == 0 and curr_child.entity.is_abstract():
-                for prop_entity_child in curr_child.get_children():
-                    if prop_entity_child.entity.is_abstract():
-                        continue
-                    walk_entity_children(prop_entity_child, att_names, level=level + 1)
-            if level > 100:
-                raise ValueError("Recursion depth is out of control")
-            for att in attributes:
-                att_type = att.get_type_ref()
-                if level == 0:
-                    if att.name in att_names:
-                        continue
-                    att_names.append(att.name)
+        with_str = "WITH\n" if len(with_map.keys()) > 0 else ""
+        for key, value in with_map.items():
+            with_str += 4 * " " + f"{key} := (SELECT {value.class_name} {value.query_str}),\n"
 
-                if isinstance(att_type, ArrayEdgeModel):
-                    att_type = att_type.parameter_type
-                if isinstance(att_type, EntityEdgeModel):
-                    insert_str = walk_entity_children(att_type, att_names, level + 1)
-                    output_str += f"[is {curr_child.name}].{att.name} : {{ {insert_str} }},\n"
-                elif isinstance(att_type, (str, EnumEdgeModel)):
-                    output_str += f"[is {curr_child.name}].{att.name},\n"
-                elif isinstance(att_type, SelectEdgeModel):
-                    output_str += f"[is {curr_child.name}].{att.name},\n"
-                else:
-                    raise NotImplementedError(f'Entity type "{att_type}" is not yet added')
-            return output_str
-
-        # for child_uuid in s_node.traverse_children()
-        all_classes = list(set([uuid_map.get(cn).class_name for cn in uuid_list]))
-        entities = [self.em.get_entity_by_name(cn) for cn in all_classes]
-        ancestors = set([x.name for x in chain.from_iterable([e.get_ancestors() for e in entities])])
-        all_entities = entities + [self.em.get_entity_by_name(cn) for cn in ancestors]
-
-        fin_select_str = "SELECT IfcProduct { __type__ : {name},"
-        atn = []
-        for child in all_entities:
-            fin_select_str += walk_entity_children(child, atn, 0)
-
-        uuid_list_str = ",".join([f"'{x}'" for x in uuid_list])
-        fin_select_str += f"}} filter .id = <uuid>{{ {uuid_list_str} }}"
-
-        result_2 = json.loads(self.client.query_json(fin_select_str))
+        query_str = with_str + fin_select_str
+        result_2 = json.loads(self.client.query_json(query_str))
 
         return result_2
 
@@ -447,8 +414,10 @@ class EdgeIO(EdgeIOBase):
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 
     # Exports
-    def to_ifcopenshell_object(self, specific_classes: list[str] = None, only_ifc_entities=True, client=None) -> ifcopenshell.file:
-        res = self.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities,client=client)
+    def to_ifcopenshell_object(
+        self, specific_classes: list[str] = None, only_ifc_entities=True, client=None
+    ) -> ifcopenshell.file:
+        res = self.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities, client=client)
         obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
         ordered_results = resolve_order_of_result_entities(obj_set, self.em)
 
@@ -511,6 +480,9 @@ class EdgeIO(EdgeIOBase):
     def to_ifc_str(self, specific_classes: list[str] = None, only_ifc_entities=True) -> str:
         f = self.to_ifcopenshell_object(specific_classes, only_ifc_entities)
         return StringIO(f.wrapped_data.to_string()).read()
+
+
+
 
 
 @dataclass
