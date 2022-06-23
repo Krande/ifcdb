@@ -15,7 +15,7 @@ def main():
         # io.create_schema(from_ifc_file=True)
         # io.setup_database(delete_existing_migrations=True)
         # io.insert_ifc(specific_ifc_ids=[37])
-        io.insert_ifc()
+        # io.insert_ifc()
 
         # Validate Data
         # validate_using_ifc_diff(io.ifc_io.ifc_obj, io.to_ifcopenshell_object(), "temp/export.json")
