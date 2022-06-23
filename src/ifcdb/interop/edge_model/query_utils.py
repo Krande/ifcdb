@@ -221,10 +221,10 @@ def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: i
         ifc_class = m_a['type']
         for key, value in m_a.items():
             other_val = m_b[key]
-            # if isinstance(value, frozenset):
-            #     continue
-            # if isinstance(value, tuple) and isinstance(value[0], frozenset):
-            #     continue
+            if isinstance(value, frozenset):
+                continue
+            if isinstance(value, tuple) and isinstance(value[0], frozenset):
+                continue
             if other_val != value:
                 logging.error(f'Diff in Ifc Class "{ifc_class}" property: {key} := "{value}" != "{other_val}"')
 

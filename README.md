@@ -1,13 +1,33 @@
 # IFC as a database
 Various experiments of IFC as a database
 
-## Plan
-* First get familiar with the EXPRESS syntax and how the schema is defined.
-* Work towards extracting a minimum number of classes in order to represent a minimum IFC sample.
-* Before attempting to convert to database, it would help to first convert the IFC classes to python 
-  dataclasses. This would help uncover simple mistakes in linking of data. And a strongly typed dataclass 
-  representation of IFC could perhaps have some use cases?
-* Export to ESDL schema to test IFC schema in a EdgeDB database.
+## EdgeDB (EdgeIO)
+
+The following pattern for EdgeDB allows you to roundtrip your IFC file
+
+````python
+import os
+import pathlib
+from ifcdb import EdgeIO
+
+
+ifc_path = pathlib.Path("files/tessellated-item.ifc")
+
+with EdgeIO(ifc_file=ifc_path, db_schema_dir="db/dbschema", ifc_schema="IFC4x1", database="testdb") as io:
+    # Use `from_ifc_file=True` if you want to limit number of IFC schema elements to what's contained in your IFC file    
+    io.create_schema(from_ifc_file=True)
+    io.setup_database(delete_existing_migrations=True)
+    io.insert_ifc()
+    # Do all kinds of query experiments here
+    
+    # Or just read the entire EdgeDB IFC content into an IFC file str using ifcopenshell like this
+    res = io.to_ifc_str()
+
+os.makedirs("temp", exist_ok=True)
+with open(f"temp/{ifc_path.stem}-roundtripped.ifc", "w") as f:
+    f.write(res)
+````
+
 
 ## Resources
 

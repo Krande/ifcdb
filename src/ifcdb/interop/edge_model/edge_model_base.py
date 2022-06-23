@@ -845,7 +845,9 @@ class EdgeModel:
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
 
-    def get_entity_by_name(self, name: str) -> Union[EntityEdgeModel, EnumEdgeModel, TypeEdgeModel, SelectEdgeModel]:
+    def get_entity_by_name(
+        self, name: str
+    ) -> Union[EntityEdgeModel, EnumEdgeModel, TypeEdgeModel, SelectEdgeModel, IntermediateClass]:
         for entity_types in [
             self.select_types,
             self.base_types,

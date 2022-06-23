@@ -120,7 +120,7 @@ class EdgeIOBase:
 
     # IFC utils
 
-    def create_schema_from_ifc_file(self, dbschema_dir=None, should_copy_server_files=False):
+    def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=False, copy_helper_files=False):
         from ifcdb.interop.edge_model.utils import copy_server_files
 
         if dbschema_dir is not None:
@@ -128,9 +128,15 @@ class EdgeIOBase:
         else:
             dbschema_dir = self.db_schema_dir
 
-        self.write_ifc_entities_to_esdl_file(dbschema_dir / "default.esdl")
+        esdl_file_path = dbschema_dir / "default.esdl"
+        if from_ifc_file:
+            unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
+        else:
+            unique_entities = self.em.get_all_entities()
 
-        if should_copy_server_files:
+        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
+
+        if copy_helper_files:
             copy_server_files(dbschema_dir.parent)
 
         if len(self.em.intermediate_classes) > 0:
