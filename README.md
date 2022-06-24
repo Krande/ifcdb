@@ -28,6 +28,8 @@ with open(f"temp/{ifc_path.stem}-roundtripped.ifc", "w") as f:
     f.write(res)
 ````
 
+See [use_cases.md](dbs/use_cases.md) for more in-depth explanation of various query use cases and how the EdgeDB
+schema currently is being used.
 
 ## Resources
 

@@ -9,9 +9,11 @@ spatial hierarchy and create a new IFC file from it.
 ![Spatial Query Example in Blender](spatial_query_example_blender.png)
 
 
-As of now I do the spatial query in 2 separate queries to the EdgeDB database (which maybe isn't that bad all things considered ) 
+As of now I do the spatial query in 2 separate queries to the EdgeDB database 
+(which maybe isn't that bad all things considered ) 
 
-With the following query, I get the entire spatial hierarchy where it returns all the elements with their respective name (Name), EdgeDB uuid (id) and class name (__type__ : { name }).
+With the following query, I get the entire spatial hierarchy where it returns all the elements with 
+their respective name (Name), EdgeDB uuid (id) and class name (__type__ : { name }).
 
 ```
 SELECT {
@@ -96,3 +98,79 @@ This is so that I have "anchored" the sublevel in the total spatial tree.
 For the next query I have all the EdgeDB object references (uuid's) and their respective class types.
 Which I can use together with the baked in IfcOpenShell schema to find all the related classes hiding in the nested 
 chain of properties on the different IFC object types. 
+
+
+Relevant Schema References
+
+```
+type IfcRelContainedInSpatialStructure extending IfcRelConnects {
+    required multi link RelatedElements -> IfcProduct;
+    required link RelatingStructure -> IfcSpatialElement;
+}
+
+type IfcRelAggregates extending IfcRelDecomposes {
+    required link RelatingObject -> IfcObjectDefinition;
+    required multi link RelatedObjects -> IfcObjectDefinition;
+}
+
+abstract type IfcRelConnects extending IfcRelationship {
+}
+
+abstract type IfcRelationship extending IfcRoot {
+}
+
+
+type IfcBuildingStorey extending IfcSpatialStructureElement {
+    property Elevation -> float64;
+}
+
+type IfcSite extending IfcSpatialStructureElement {
+    property RefLatitude -> int64;
+    property RefLongitude -> int64;
+    property RefElevation -> float64;
+    property LandTitleNumber -> str;
+    link SiteAddress -> IfcPostalAddress;
+}
+
+abstract type IfcSpatialElement extending IfcProduct {
+    property LongName -> str;
+}
+
+
+type IfcBeam extending IfcBuildingElement {
+    property PredefinedType -> str {
+        constraint one_of ('BEAM','HOLLOWCORE','JOIST','LINTEL','NOTDEFINED','SPANDREL','T_BEAM','USERDEFINED');
+    };
+}
+
+abstract type IfcBuildingElement extending IfcElement {
+}
+
+abstract type IfcElement extending IfcProduct {
+    property Tag -> str;
+}
+
+# General Base classes
+
+abstract type IfcObjectDefinition extending IfcRoot {
+}
+
+abstract type IfcProduct extending IfcObject {
+    link ObjectPlacement -> IfcObjectPlacement;
+    link Representation -> IfcProductRepresentation;
+}
+
+abstract type IfcObject extending IfcObjectDefinition {
+    property ObjectType -> str;
+}
+
+abstract type IfcRoot  {
+    required property GlobalId -> str;
+    link OwnerHistory -> IfcOwnerHistory;
+    property Name -> str;
+    property Description -> str;
+}
+
+type IfcProject extending IfcContext {
+}
+```

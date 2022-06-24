@@ -488,9 +488,6 @@ class EdgeIO(EdgeIOBase):
         return StringIO(f.wrapped_data.to_string()).read()
 
 
-
-
-
 @dataclass
 class IfcNode:
     name: str
