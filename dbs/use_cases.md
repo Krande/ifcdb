@@ -1,7 +1,7 @@
 # IFC database scenarios 
 
-[spatial_query.md](docs/spatial_query.md)
-
+* [Spatial Query](docs/spatial_query.md)
+* [Large Queries](docs/large_queries.md)
 
 ## Query by element name(s)/GlobalId(s)
 

@@ -146,11 +146,11 @@ def get_array_str(levels):
         b1 = level.bound1()
         b2 = level.bound2()
         if len(levels) > 1 and i == 0:
-            array_str = "array<"
+            array_str = "tuple<"
         else:
             array_str = "array<" if b2 == 1 else "tuple<"
 
-        if b1 != b2 and b2 != -1:
+        if b1 != b2 and b2 != -1 and len(levels) == 1:
             array_str = "array<"
             g = 3 * indent
             g2 = 2 * indent
@@ -514,29 +514,46 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     def get_entity_atts(self, entity: ifcopenshell.entity_instance):
         return [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
 
-    def to_select_str(self, with_map: dict[str, WithNode] = None) -> str:
-        from ifcdb.utils import change_case
-
-        select_str = "{"
+    def to_select_str(
+        self, with_map: dict[str, WithNode] = None, include_type_ref=False, include_id_ref=False, skip_properties=False
+    ) -> str | None:
         all_atts = self.get_attributes(True)
 
-        def add_entity_ref(ref_type):
-            if with_map is None:
-                ref_str = ref_type.to_select_str(with_map=with_map)
-            else:
-                ref_str = change_case(att.name)
-                query_str = ref_type.to_select_str(with_map=with_map)
-                with_map[ref_str] = WithNode(ref_str, att.name, query_str)
-            return ref_str
+        if len(all_atts) == 0:
+            return None
+
+        select_str = "{"
+        if include_id_ref:
+            select_str += "id,"
+        if include_type_ref:
+            select_str += "__type__ : { name },"
 
         for i, att in enumerate(all_atts):
             type_ref = att.get_type_ref()
             if isinstance(type_ref, ArrayEdgeModel):
                 type_ref = type_ref.parameter_type
-            select_str += f"{att.name}"
+
+            if skip_properties is True and isinstance(type_ref, EntityEdgeModel) is False:
+                print(f'skipping "{att.name}"')
+                continue
+            att_select_str = f"{att.name}"
             if isinstance(type_ref, EntityEdgeModel):
-                select_ref = add_entity_ref(type_ref)
-                select_str += f" : {select_ref}"
+                select_ref = add_entity_ref(
+                    att=att,
+                    ref_type=type_ref,
+                    with_map=with_map,
+                    include_type_ref=include_type_ref,
+                    include_id_ref=include_id_ref,
+                    skip_properties=skip_properties,
+                )
+                if skip_properties is True and select_ref == '{}':
+                    att_select_str += " : {id, __type__ : { name }}"
+                    print(f'skipping "{att.name}"')
+                    continue
+                if select_ref is None:
+                    att_select_str += " : {id, __type__ : { name }}"
+                else:
+                    att_select_str += f" : {select_ref}"
             elif isinstance(type_ref, (str, EnumEdgeModel)):
                 pass
             elif isinstance(type_ref, SelectEdgeModel):
@@ -544,6 +561,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             else:
                 raise ValueError(f'Unknown type ref "{type_ref}"')
 
+            select_str += att_select_str
             select_str += "" if i == len(all_atts) - 1 else ","
         select_str += "}"
         return select_str
@@ -591,6 +609,25 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name})"
+
+
+def add_entity_ref(att, ref_type, with_map, include_type_ref=False, include_id_ref=False, skip_properties=False):
+    from ifcdb.utils import change_case
+
+    props = dict(
+        with_map=with_map,
+        include_type_ref=include_type_ref,
+        skip_properties=skip_properties,
+        include_id_ref=include_id_ref,
+    )
+
+    if with_map is None:
+        ref_str = ref_type.to_select_str(**props)
+    else:
+        ref_str = change_case(att.name)
+        query_str = ref_type.to_select_str(**props)
+        with_map[ref_str] = WithNode(ref_str, att.name, query_str)
+    return ref_str
 
 
 @dataclass

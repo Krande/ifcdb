@@ -120,9 +120,7 @@ class EdgeIOBase:
 
     # IFC utils
 
-    def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=False, copy_helper_files=False):
-        from ifcdb.interop.edge_model.utils import copy_server_files
-
+    def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=False, specific_entities=None):
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
         else:
@@ -134,10 +132,10 @@ class EdgeIOBase:
         else:
             unique_entities = self.em.get_all_entities()
 
-        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
+        if specific_entities is not None:
+            unique_entities = specific_entities
 
-        if copy_helper_files:
-            copy_server_files(dbschema_dir.parent)
+        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
 
         if len(self.em.intermediate_classes) > 0:
             print("The following intermediate classes was created to enable nested entity relationships")
@@ -339,6 +337,7 @@ class EdgeIO(EdgeIOBase):
         from ifcdb.interop.edge_model.edge_model_base import WithNode
 
         uuid_map = self.get_spatial_hierarchy()
+
         name_map = {n.name: n for n in uuid_map.values()}
         if len(uuid_map) != len(name_map):
             names = [x.name for x in uuid_map.values()]
@@ -358,7 +357,7 @@ class EdgeIO(EdgeIOBase):
         for i, (key, value) in enumerate(uuid_map_slice.items()):
             class_name = value.class_name
             entity_class = self.em.get_entity_by_name(class_name)
-            select_str = entity_class.to_select_str(with_map)
+            select_str = entity_class.to_select_str()
             fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
         fin_select_str += ")\n"
 
@@ -367,6 +366,39 @@ class EdgeIO(EdgeIOBase):
             with_str += 4 * " " + f"{key} := (SELECT {value.class_name} {value.query_str}),\n"
 
         query_str = with_str + fin_select_str
+        result_2 = json.loads(self.client.query_json(query_str))
+
+        return result_2
+
+    def get_spatial_content_b(self, spatial_name) -> dict:
+        """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
+        from ifcdb.interop.edge_model.edge_model_base import WithNode
+
+        uuid_map = self.get_spatial_hierarchy()
+
+        name_map = {n.name: n for n in uuid_map.values()}
+        if len(uuid_map) != len(name_map):
+            names = [x.name for x in uuid_map.values()]
+            error_str = "Unequal length of name and uuid maps. Due to\n\n"
+            for i, o in enumerate(names.count(x) for x in names):
+                if o > 1:
+                    error_str += f"{names[i]}: {o}"
+            raise ValueError(error_str)
+
+        s_node = name_map.get(spatial_name)
+        parent_uuids = s_node.traverse_parents()
+        uuid_list = s_node.traverse_children() + parent_uuids
+        uuid_map_slice = {key: uuid_map.get(key) for key in uuid_list}
+
+        fin_select_str = "SELECT ( "
+        for i, (key, value) in enumerate(uuid_map_slice.items()):
+            class_name = value.class_name
+            entity_class = self.em.get_entity_by_name(class_name)
+            select_str = entity_class.to_select_str(skip_properties=True)
+            fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
+        fin_select_str += ")\n"
+
+        query_str = fin_select_str
         result_2 = json.loads(self.client.query_json(query_str))
 
         return result_2

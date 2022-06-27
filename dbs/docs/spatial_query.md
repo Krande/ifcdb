@@ -1,19 +1,50 @@
 ## Spatial Query
 
+For reference, here is [the ESDL schema](default.esdl) for this Spatial Query 
+investigation.
 
-I made an arbitrary IFC file of some IfcBeam elements and a spatial hierarchy and insert it into an EdgeDB instance. 
+### Motivation & Goal
+`Motivation:` Large IFC models contain spatial hierarchies that can hold
+thousands of geometry elements underneath each top level. 
+Each top-level can contain elements arranged in many spatial layers each branching down into separate sublayers. 
+Needless to say, having the ability to slice through the spatial hierarchy to extract only the data
+you want is necessary in order to prevent data-size bottlenecks.
 
-`The goal:` I want to return all elements below the specific spatial element named `Sublevel_1_a` in the 
-spatial hierarchy and create a new IFC file from it. 
+`The goal:` The ability to return all elements below a specific spatial element.
+
+### Scenario
+
+In this scenario the aim is to find all sub-elements of the spatial element named `Sublevel_1_a` in the 
+spatial hierarchy and create a new IFC file from it. For this purpose a test IFC file `SpatialHierarchy1.ifc` is created.
+
+The IFC model contains 8 `IfcBeam` elements, 6 `IfcBuildingStorey` elements, 1 `IfcSite` and 1 `IfcProject`.
+The model is shown in the figure below taken from Blender using the addon BlenderBIM  
+
 
 ![Spatial Query Example in Blender](spatial_query_example_blender.png)
 
+The spatial query should return in addition to the spatial `IfcBuildingStorey` element `Sublevel_1_a`, 
+4 `IfcBeam` elements; `bm_1_1`, `bm_2_1` ,`bm_1_2`, `bm_2_2` and the 
+sublevels `IfcBuildingStorey` elements `Sublevel_1a_2a` & `Sublevel_1a_2b`. 
 
-As of now I do the spatial query in 2 separate queries to the EdgeDB database 
-(which maybe isn't that bad all things considered ) 
+To be able to find and merge this spatial element at the correct level at a later stage, 
+the parent `IfcSite` element `SpatialHierarchy1` & 
+`IfcProject` element `AdaProject` should also be included in the element export. 
 
-With the following query, I get the entire spatial hierarchy where it returns all the elements with 
-their respective name (Name), EdgeDB uuid (id) and class name (__type__ : { name }).
+![Desired Spatial elements](spatial_query_results.png)
+
+### Query Overview
+
+The overall strategy is to first get the entire spatial hierarchy where it returns all the elements with 
+their respective name (`Name`), EdgeDB uuid (`id`) and ESDL/IFC class name (``__type__ : { name }``). 
+
+Upon receiving the returned data, python is used on the client side to slice through the spatial hierarchy and 
+build additional queries to extract all relevant objects and properties within the specified spatial hierarchy. 
+
+### Query 1 -> Get the entire spatial hierarchy
+
+To get all the necessary classes for describing the spatial hierarchy and their elements, 
+the following query is performed:
 
 ```
 SELECT {
@@ -34,7 +65,10 @@ SELECT {
 }
 ```
 
-which returns the following (fyi: I shortened the results json for the sake of compactness):
+which returns the following:
+
+(fyi -> the resulting json is shortened for the sake of readability in this document.
+See [result.json](result.json) for the entire output.
 
 ```
 {
@@ -89,88 +123,212 @@ which returns the following (fyi: I shortened the results json for the sake of c
 ...
 ```
 
-Then I just use regular python to find parent/children relationships of the spatial hierarchy and slice out all 
-sub-elements of the `Sublevel_1_a` element. 
+### Query 2 -> Getting all relevant data associated to the returned list of classes
 
-I also include the parent elements to "form a straight line of to the top level". 
-This is so that I have "anchored" the sublevel in the total spatial tree. 
+With the exported [results.json](results.json) python is used to find parent/children relationships of 
+the spatial hierarchy and slice out all sub-elements and related parent elements of the `Sublevel_1_a` spatial element. 
 
-For the next query I have all the EdgeDB object references (uuid's) and their respective class types.
-Which I can use together with the baked in IfcOpenShell schema to find all the related classes hiding in the nested 
+#### Alternative "A" -> Loop over the returned spatial classes and build nested select queries. 
+
+Alternative "A" is to Loop over each element and construct a nested query specifying all nested sub-objects and their 
+properties. The IfcOpenShell schema is used to find all related classes hiding in the nested 
 chain of properties on the different IFC object types. 
 
+However, it will be shown that these queries quickly becomes very large and complex. 
+Also there is the issue when it comes to properties that links to abstract object supertypes with many subtypes which
+will further increase size and complexity of the query string. Lastly this approach will not consider duplication of
+objects found within the nested chain of object properties. 
 
-Relevant Schema References
+An example of a nested query is shown for a single `IfcBuildingStorey` class to illustrate just how many nested object 
+link relations there can be in a typical IFC class.
 
 ```
-type IfcRelContainedInSpatialStructure extending IfcRelConnects {
-    required multi link RelatedElements -> IfcProduct;
-    required link RelatingStructure -> IfcSpatialElement;
-}
-
-type IfcRelAggregates extending IfcRelDecomposes {
-    required link RelatingObject -> IfcObjectDefinition;
-    required multi link RelatedObjects -> IfcObjectDefinition;
-}
-
-abstract type IfcRelConnects extending IfcRelationship {
-}
-
-abstract type IfcRelationship extending IfcRoot {
-}
-
-
-type IfcBuildingStorey extending IfcSpatialStructureElement {
-    property Elevation -> float64;
-}
-
-type IfcSite extending IfcSpatialStructureElement {
-    property RefLatitude -> int64;
-    property RefLongitude -> int64;
-    property RefElevation -> float64;
-    property LandTitleNumber -> str;
-    link SiteAddress -> IfcPostalAddress;
-}
-
-abstract type IfcSpatialElement extending IfcProduct {
-    property LongName -> str;
-}
-
-
-type IfcBeam extending IfcBuildingElement {
-    property PredefinedType -> str {
-        constraint one_of ('BEAM','HOLLOWCORE','JOIST','LINTEL','NOTDEFINED','SPANDREL','T_BEAM','USERDEFINED');
-    };
-}
-
-abstract type IfcBuildingElement extending IfcElement {
-}
-
-abstract type IfcElement extending IfcProduct {
-    property Tag -> str;
-}
-
-# General Base classes
-
-abstract type IfcObjectDefinition extending IfcRoot {
-}
-
-abstract type IfcProduct extending IfcObject {
-    link ObjectPlacement -> IfcObjectPlacement;
-    link Representation -> IfcProductRepresentation;
-}
-
-abstract type IfcObject extending IfcObjectDefinition {
-    property ObjectType -> str;
-}
-
-abstract type IfcRoot  {
-    required property GlobalId -> str;
-    link OwnerHistory -> IfcOwnerHistory;
-    property Name -> str;
-    property Description -> str;
-}
-
-type IfcProject extending IfcContext {
-}
+SELECT ( 
+    (
+        SELECT IfcBuildingStorey {
+            GlobalId,
+            OwnerHistory : {
+                OwningUser : {
+                    ThePerson : {
+                        Identification,
+                        FamilyName,
+                        GivenName,
+                        MiddleNames,
+                        PrefixTitles,
+                        SuffixTitles,
+                        Roles : {
+                            Role,
+                            UserDefinedRole,
+                            Description
+                        },
+                        Addresses : {
+                            Purpose,
+                            Description,
+                            UserDefinedPurpose
+                        }
+                    },
+                TheOrganization : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Roles : {
+                    Role,
+                    UserDefinedRole,
+                    Description
+                }
+            },
+            OwningApplication : {
+                ApplicationDeveloper : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Version,
+                ApplicationFullName,
+                ApplicationIdentifier
+            },
+            State,
+            ChangeAction,
+            LastModifiedDate,
+            LastModifyingUser : {
+                ThePerson : {
+                    Identification,
+                    FamilyName,
+                    GivenName,
+                    MiddleNames,
+                    PrefixTitles,
+                    SuffixTitles,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                TheOrganization : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Roles : {
+                    Role,
+                    UserDefinedRole,
+                    Description
+                }
+            },
+            LastModifyingApplication : {
+                ApplicationDeveloper : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Version,
+                ApplicationFullName,
+                ApplicationIdentifier
+            },
+            CreationDate
+        },
+        Name,
+        Description,
+        ObjectType,
+        ObjectPlacement : {id, __type__ : { name }},
+        Representation : {
+            Name,
+            Description,
+            Representations : {
+                ContextOfItems : {
+                    ContextIdentifier,
+                    ContextType
+                },
+                RepresentationIdentifier,
+                RepresentationType,
+                Items : {id, __type__ : { name }}
+            }
+        },
+        LongName,
+        CompositionType,
+        Elevation
+    } filter .id = <uuid>'fe0e2222-f601-11ec-9720-ffa48bb2d7b1'),
+    ...
 ```
+
+By close inspection it is observed in the above query that certain elements only refer to the related object's `id` and
+`__type__ : { name }` (IFC class name). There are in fact 2 properties where this occurs:
+
+* `Items : {id, __type__ : { name }}`
+* `ObjectPlacement : {id, __type__ : { name }}`
+
+
+`Items` is a property on the `IfcRepresentation` class that links to multiple `IfcRepresentationItem` elements.
+The `IfcRepresentationItem` class is an abstract class with __153 subtypes__ whereas 126 of these are not abstract 
+classes. 
+
+In order to specify the properties of a subclass it is possible to use EdgeDB's concept of 
+[polymorphic query](https://www.edgedb.com/docs/edgeql/select#polymorphic-fields) and use a 
+`[is subclass].subtype_parameter` operator to extract subtype properties _if_ they exist. However, when the total
+number of subtypes > 100, the sheer number of these operators suddenly become impractical and makes the total insert
+string difficult to read.
+
+
+Note! At the time of writing `"splats"` in shapes are not yet supported 
+(ref https://github.com/edgedb/edgedb/issues/180). 
+What that means that the user has to know all property types of all 
+objects and objects found in the chains of nested object properties and create rather complex queries.
+
+
+#### Alternative "B" -> Loop over the returned spatial classes and return all related uuid's before doing a 3rd query
+
+As observed in Alternative "A" the sheer size of the insert string became impractical when attempting to insert all
+the nested object properties in a single statement.
+
+To alleviate this complexity, the 2nd query focuses on finding all related objects and returns only object id `uuid` and 
+class type `__type__ : { name }`.
+
+With this approach you do have to add a 3rd query, but you will be able to define only 1st level properties, thus
+reducing the overall complexity of the query. It also provides the added bonus of doing some processing in python on 
+the client side to remove any duplicate object references, so the final query is as efficient as possible. 
