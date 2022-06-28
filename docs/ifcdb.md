@@ -4,7 +4,9 @@ A document describing the exploration of IFC as a Database.
 
 ## Queries
 
-Various query strategies are explored
+* [Query Building](queries/query_building.md)
+
+Various query scenarios are explored
 
 * [Spatial Queries](queries/spatial_query.md)
 * [Large Queries](queries/large_queries.md)

@@ -26,6 +26,7 @@ from ifcdb.interop.edge_model.edge_model_base import (
     TypeEdgeModel,
     IntermediateClass,
 )
+from ifcdb.interop.edge_model.query_builder import EQBuilder
 
 
 class INSERTS:
@@ -79,6 +80,7 @@ class EdgeIOBase:
     database: str = None
     port: int | None = 5656
     instance_name: str = None
+    eq_builder: EQBuilder = None
 
     def __post_init__(self):
         self.wrap = ifcopenshell.ifcopenshell_wrapper
@@ -104,7 +106,9 @@ class EdgeIOBase:
             return f"-I {self.instance_name}"
 
     def create_client(self) -> edgedb.Client:
-        return edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
+        client = edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
+        self.eq_builder = EQBuilder(client)
+        return client
 
     def __enter__(self):
         if self.ifc_file is not None:
@@ -194,6 +198,7 @@ class EdgeIOBase:
                 client.execute(migration_body)
         client.close()
         print("Migration complete")
+        self.eq_builder = EQBuilder(self.client)
 
     def upload_ifc_w_threading(self):
         proxy_elements = list(self.ifc_io.ifc_obj.by_type("IFCBuildingElementProxy"))
@@ -275,15 +280,15 @@ class EdgeIOBase:
             spatial_stru := (
                 SELECT IfcRelContainedInSpatialStructure {
                     id,
-                    RelatingStructure : { Name, id, __type__ : { name } },
-                    RelatedElements : { Name, id, __type__ : { name } }
+                    RelatingStructure : { Name, id, __type__ : { name }, OwnerHistory },
+                    RelatedElements : { Name, id, __type__ : { name }, OwnerHistory }
                 }
             ),
             rel_aggs := (
                 SELECT IfcRelAggregates {
                     id,
-                    RelatingObject : { Name, id, __type__ : { name } },
-                    RelatedObjects : { Name, id, __type__ : { name } }
+                    RelatingObject : { Name, id, __type__ : { name }, OwnerHistory },
+                    RelatedObjects : { Name, id, __type__ : { name }, OwnerHistory }
                 }
             ) 
         }"""
@@ -292,17 +297,18 @@ class EdgeIOBase:
             return type_obj["__type__"]["name"].replace("default::", "")
 
         result = json.loads(self.client.query_json(in_str))
-
+        # out_str = json.dumps(result, indent=4)
         rel_aggs = result[0]["rel_aggs"]
         spatial_nodes: dict[str, SpatialNode] = dict()
         for rel in rel_aggs:
             relo = rel["RelatingObject"]
             name = relo.get("Name")
             o_id = relo.get("id")
+            owner_hist = relo.get("OwnerHistory")
             class_name = get_class_name(relo)
             sn = spatial_nodes.get(o_id)
             if sn is None:
-                sn = SpatialNode(name, o_id, class_name)
+                sn = SpatialNode(name, o_id, class_name, owner_history_id=owner_hist)
             spatial_nodes[o_id] = sn
             for rel_object in rel["RelatedObjects"]:
                 sub_name = rel_object.get("Name")
@@ -322,8 +328,9 @@ class EdgeIOBase:
             for child in r["RelatedElements"]:
                 name = child.get("Name")
                 child_id = child.get("id")
+                owner_hist = child.get("OwnerHistory")
                 class_name = get_class_name(child)
-                sub_n = SpatialNode(name, child_id, class_name)
+                sub_n = SpatialNode(name, child_id, class_name, owner_history_id=owner_hist)
                 sn.children.append(sub_n)
                 spatial_nodes[child_id] = sub_n
 
@@ -332,10 +339,28 @@ class EdgeIOBase:
 
 @dataclass
 class EdgeIO(EdgeIOBase):
-    def get_spatial_content(self, spatial_name) -> dict:
-        """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
-        from ifcdb.interop.edge_model.edge_model_base import WithNode
+    # Queries
+    def _get_by_simple_filter(self, identifier: str, value: str, base_object="IfcRoot"):
+        query_str = f"""SELECT {base_object} {{ id, __type__ : {{ name }} }} filter .{identifier} = '{value}'"""
+        result = json.loads(self.client.query_json(query_str))
+        if len(result) != 1:
+            raise ValueError
+        return result
 
+    def get_by_global_id(self, global_id: str):
+        result = self._get_by_simple_filter("GlobalId", global_id)
+        class_name = result["__type__"]["name"]
+        select_str_a = self.eq_builder.select_object_str(class_name)
+        print(result)
+        return result
+
+    def get_by_name(self, name: str):
+        query_str = f"""SELECT IfcRoot {{ id, __type__ : {{ name }} }} filter .Name = '{name}'"""
+        result = json.loads(self.client.query_json(query_str))
+        print(result)
+        return result
+
+    def get_slice_in_spatial_hierarchy(self, spatial_name: str):
         uuid_map = self.get_spatial_hierarchy()
 
         name_map = {n.name: n for n in uuid_map.values()}
@@ -351,6 +376,13 @@ class EdgeIO(EdgeIOBase):
         parent_uuids = s_node.traverse_parents()
         uuid_list = s_node.traverse_children() + parent_uuids
         uuid_map_slice = {key: uuid_map.get(key) for key in uuid_list}
+        return uuid_map_slice
+
+    def get_spatial_content_a(self, spatial_name: str) -> dict:
+        """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
+        from ifcdb.interop.edge_model.edge_model_base import WithNode
+
+        uuid_map_slice = self.get_slice_in_spatial_hierarchy(spatial_name)
 
         with_map: dict[str, WithNode] = dict()
         fin_select_str = "SELECT ( "
@@ -366,42 +398,32 @@ class EdgeIO(EdgeIOBase):
             with_str += 4 * " " + f"{key} := (SELECT {value.class_name} {value.query_str}),\n"
 
         query_str = with_str + fin_select_str
-        result_2 = json.loads(self.client.query_json(query_str))
+        result = json.loads(self.client.query_json(query_str))
 
-        return result_2
+        return result
 
     def get_spatial_content_b(self, spatial_name) -> dict:
         """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
-        from ifcdb.interop.edge_model.edge_model_base import WithNode
-
-        uuid_map = self.get_spatial_hierarchy()
-
-        name_map = {n.name: n for n in uuid_map.values()}
-        if len(uuid_map) != len(name_map):
-            names = [x.name for x in uuid_map.values()]
-            error_str = "Unequal length of name and uuid maps. Due to\n\n"
-            for i, o in enumerate(names.count(x) for x in names):
-                if o > 1:
-                    error_str += f"{names[i]}: {o}"
-            raise ValueError(error_str)
-
-        s_node = name_map.get(spatial_name)
-        parent_uuids = s_node.traverse_parents()
-        uuid_list = s_node.traverse_children() + parent_uuids
-        uuid_map_slice = {key: uuid_map.get(key) for key in uuid_list}
+        uuid_map_slice = self.get_slice_in_spatial_hierarchy(spatial_name)
 
         fin_select_str = "SELECT ( "
         for i, (key, value) in enumerate(uuid_map_slice.items()):
             class_name = value.class_name
-            entity_class = self.em.get_entity_by_name(class_name)
-            select_str = entity_class.to_select_str(skip_properties=True)
-            fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
+
+            # Query Builder using EdgeDB introspection
+            select_str_a = self.eq_builder.select_object_str(class_name)
+            fin_select_str += f"(SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{key}'),\n"
+
+            # Query Builder using IfcOpenShell
+            # entity_class = self.em.get_entity_by_name(class_name)
+            # select_str = entity_class.to_select_str(skip_properties=True)
+            # fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
         fin_select_str += ")\n"
 
         query_str = fin_select_str
-        result_2 = json.loads(self.client.query_json(query_str))
-
-        return result_2
+        result = json.loads(self.client.query_json(query_str))
+        # out_str = json.dumps(result_2, indent=4)
+        return result
 
     def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
@@ -441,7 +463,7 @@ class EdgeIO(EdgeIOBase):
         client = self.client if client is None else client
         return json.loads(client.query_json(select_str))
 
-    # WRITE
+    # Insertions
     def insert_ifc(self, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
         """Upload all IFC elements to EdgeDB instance"""
         for tx in self.client.transaction():
@@ -536,6 +558,7 @@ class SpatialNode:
     class_name: str
     children: list[SpatialNode] = field(default_factory=list)
     parent: SpatialNode = None
+    owner_history_id: str = None
 
     def traverse_children(self, current_level=None, ulist: list[str] = None) -> list[str]:
         """Returns a list of uuid of all child elements (including self)"""

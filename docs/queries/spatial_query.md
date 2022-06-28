@@ -131,8 +131,9 @@ the spatial hierarchy and slice out all sub-elements and related parent elements
 #### Alternative "A" -> Loop over the returned spatial classes and build nested select queries. 
 
 Alternative "A" is to Loop over each element and construct a nested query specifying all nested sub-objects and their 
-properties. The IfcOpenShell schema is used to find all related classes hiding in the nested 
-chain of properties on the different IFC object types. 
+properties. 
+
+
 
 However, it will be shown that these queries quickly becomes very large and complex. 
 Also there is the issue when it comes to properties that links to abstract object supertypes with many subtypes which
