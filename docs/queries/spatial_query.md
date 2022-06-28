@@ -1,6 +1,6 @@
 ## Spatial Query
 
-For reference, here is [the ESDL schema](default.esdl) for this Spatial Query 
+For reference, here is [the ESDL schema](resources/default.esdl) for this Spatial Query 
 investigation.
 
 ### Motivation & Goal
@@ -21,7 +21,7 @@ The IFC model contains 8 `IfcBeam` elements, 6 `IfcBuildingStorey` elements, 1 `
 The model is shown in the figure below taken from Blender using the addon BlenderBIM  
 
 
-![Spatial Query Example in Blender](spatial_query_example_blender.png)
+![Spatial Query Example in Blender](resources/spatial_query_example_blender.png)
 
 The spatial query should return in addition to the spatial `IfcBuildingStorey` element `Sublevel_1_a`, 
 4 `IfcBeam` elements; `bm_1_1`, `bm_2_1` ,`bm_1_2`, `bm_2_2` and the 
@@ -31,9 +31,9 @@ To be able to find and merge this spatial element at the correct level at a late
 the parent `IfcSite` element `SpatialHierarchy1` & 
 `IfcProject` element `AdaProject` should also be included in the element export. 
 
-![Desired Spatial elements](spatial_query_results.png)
+![Desired Spatial elements](resources/spatial_query_results.png)
 
-### Query Overview
+### Query Strategy
 
 The overall strategy is to first get the entire spatial hierarchy where it returns all the elements with 
 their respective name (`Name`), EdgeDB uuid (`id`) and ESDL/IFC class name (``__type__ : { name }``). 
@@ -68,7 +68,7 @@ SELECT {
 which returns the following:
 
 (fyi -> the resulting json is shortened for the sake of readability in this document.
-See [result.json](result.json) for the entire output.
+See [result.json](resources/result.json) for the entire output.
 
 ```
 {
@@ -125,7 +125,7 @@ See [result.json](result.json) for the entire output.
 
 ### Query 2 -> Getting all relevant data associated to the returned list of classes
 
-With the exported [results.json](results.json) python is used to find parent/children relationships of 
+With the exported [results.json](resources/results.json) python is used to find parent/children relationships of 
 the spatial hierarchy and slice out all sub-elements and related parent elements of the `Sublevel_1_a` spatial element. 
 
 #### Alternative "A" -> Loop over the returned spatial classes and build nested select queries. 

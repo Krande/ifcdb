@@ -1,0 +1,2 @@
+# Unittesting EdgeDB schemas
+

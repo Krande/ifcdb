@@ -40,6 +40,18 @@ with open(f"temp/{ifc_path.stem}-roundtripped.ifc", "w") as f:
 
 ## Pro's and Con's
 
+### Pro's
+
+* The Object-oriented schema of EdgeDB makes it very easy to port the IFC schema
+* The flexibility of the constraints and computed properties makes EdgeDB a good fit with the IFC schema
+
+### Con's
+
+* Traversing and returning objects and properties from a nested chain of properties needs explicitly defining all 
+objects and property names in the query itself. This makes the query very verbose.
 
 ## Resources
 
+* https://github.com/edgedb/edgedb
+* https://www.edgedb.com/
+* 
