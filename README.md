@@ -1,6 +1,8 @@
 # IFC as a database
 Various experiments of IFC as a database
 
+See [ifcdb.md](docs/ifcdb.md) for a more in-depth exploration of how the EdgeDB schema currently is being used.
+
 ## EdgeDB (EdgeIO)
 
 The following pattern for EdgeDB allows you to roundtrip your IFC file
@@ -28,8 +30,7 @@ with open(f"temp/{ifc_path.stem}-roundtripped.ifc", "w") as f:
     f.write(res)
 ````
 
-See [use_cases.md](dbs/use_cases.md) for more in-depth explanation of various query use cases and how the EdgeDB
-schema currently is being used.
+
 
 ## Resources
 

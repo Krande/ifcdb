@@ -315,7 +315,8 @@ number of subtypes > 100, the sheer number of these operators suddenly become im
 string difficult to read.
 
 
-Note! At the time of writing `"splats"` in shapes are not yet supported 
+Note! A possible solution to simplifying these large queries might be solved with what is referred to as `"splats"`. 
+However, at the time of writing `"splats"` in shapes are not yet supported 
 (ref https://github.com/edgedb/edgedb/issues/180). 
 What that means that the user has to know all property types of all 
 objects and objects found in the chains of nested object properties and create rather complex queries.

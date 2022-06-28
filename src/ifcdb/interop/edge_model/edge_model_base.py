@@ -146,7 +146,7 @@ def get_array_str(levels):
         b1 = level.bound1()
         b2 = level.bound2()
         if len(levels) > 1 and i == 0:
-            array_str = "tuple<"
+            array_str = "array<"
         else:
             array_str = "array<" if b2 == 1 else "tuple<"
 

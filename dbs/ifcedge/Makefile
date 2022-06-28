@@ -23,7 +23,7 @@ migrate:
 	edgedb $(conopt) migrate
 
 cli-update:
-	edgedb cli upgrade
+	edgedb cli upgrade --to-nightly
 
 types:
 	edgedb $(conopt) list types
