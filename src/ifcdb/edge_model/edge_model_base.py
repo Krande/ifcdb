@@ -546,7 +546,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
                     include_id_ref=include_id_ref,
                     skip_properties=skip_properties,
                 )
-                if skip_properties is True and select_ref == '{}':
+                if skip_properties is True and select_ref == "{}":
                     att_select_str += " : {id, __type__ : { name }}"
                     print(f'skipping "{att.name}"')
                     continue
@@ -573,7 +573,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         uuid_map: dict = None,
         with_map: dict[str, str] = None,
     ):
-        from ifcdb.interop.edge_model.query_utils import get_att_insert_str
+        from ifcdb.edge_model.query_utils import get_att_insert_str
 
         all_atts = self.get_entity_atts(entity)
         newline = "" if len(all_atts) == 1 else "\n"
@@ -638,13 +638,6 @@ class EnumEdgeModel(EntityBaseEdgeModel):
         return self.entity.enumeration_items()
 
     def to_str(self) -> str:
-        # def name_check(name):
-        #     res = EdgeModel.reserved_keys.get(name.lower())
-        #     if res is not None:
-        #         return res
-        #     return f"`{name}`"
-        #
-        # enum_str = ", ".join(name_check(x) for x in self.get_enum_items())
         items_str = ",".join(f"'{x}'" for x in self.get_enum_items())
         name = self.entity.name()
         if name != "IfcNullStyle":
@@ -915,7 +908,7 @@ class EdgeModel:
     def write_entities_to_esdl_file(
         self, entities: list[str], esdl_file_path, module_name="default", include_server_files=False
     ):
-        from ifcdb.interop.edge_model.utils import copy_server_files
+        from ifcdb.edge_model.utils import copy_server_files
 
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)

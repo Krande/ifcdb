@@ -5,8 +5,8 @@ import pathlib
 from dataclasses import dataclass
 from typing import List, Union
 
-from ifcdb.att_types import Array
-from ifcdb.entities import Entity
+from ifcdb.pymodel.att_types import Array
+from ifcdb.pymodel.entities import Entity
 
 from .base import BaseModel
 

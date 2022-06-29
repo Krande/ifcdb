@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
+import logging
+from dataclasses import dataclass, field
 
 import edgedb
+
+from ifcdb.edge_model.utils import clean_name
 
 
 def introspect_schema(client, module_name):
@@ -33,12 +36,9 @@ select ObjectType {{
 
     edge_objects: dict[str, EdgeObject] = dict()
 
-    def clean_name(n):
-        return n["name"].replace(f"{module_name}::", "")
-
     def append_to_obj_refs(result_list, ref_list):
         for x in result_list:
-            ref_name = clean_name(x)
+            ref_name = clean_name(x, module_name)
             existing_aeo = edge_objects.get(ref_name)
             if existing_aeo is None:
                 edge_objects[ref_name] = EdgeObject(ref_name)
@@ -48,7 +48,7 @@ select ObjectType {{
     output = json.loads(client.query_json(query_str))
 
     for r in output:
-        name = clean_name(r)
+        name = clean_name(r, module_name)
         if "|" in name:
             continue
         abstract = r["abstract"]
@@ -117,6 +117,39 @@ class EdgeObject:
 
         return all_props
 
+    def get_links_from_subtypes(self) -> dict[str, EdgeObject]:
+        link_list = dict()
+        for subtype in self.subtypes:
+            if subtype.name in link_list.keys():
+                continue
+            for key, st_link in subtype.links.items():
+                if key in link_list:
+                    continue
+                link_list[key] = st_link
+        return link_list
+
+    def get_all_link_references(self, link_list: list[EdgeObject] = None):
+        link_list = [] if link_list is None else link_list
+
+        for link in self.links.values():
+            if isinstance(link, list):
+                for sublink in link:
+                    if sublink not in link_list:
+                        link_list.append(sublink)
+                        sublink.get_all_link_references(link_list)
+            else:
+                if link not in link_list:
+                    link_list.append(link)
+                    link.get_all_link_references(link_list)
+
+        if self.abstract is True and len(self.links) == 0:
+            for slink in self.get_links_from_subtypes().values():
+                if slink not in link_list:
+                    link_list.append(slink)
+                    slink.get_all_link_references(link_list)
+
+        return link_list
+
 
 @dataclass
 class EQBuilder:
@@ -127,10 +160,61 @@ class EQBuilder:
     def __post_init__(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
-    def select_object_str(self, class_name: str, include_all_nested_objects=True, level=0, include_select_str=False) -> str:
+    def select_linked_objects_query_str(self, class_name, level=0, ref_classes: list[str] = None):
+        from itertools import chain
+
+        if ref_classes is None:
+            ref_classes = []
+
         eobj = self.edgedb_objects[class_name]
-        indent = 4*(level+1)*" "
+        if eobj in ref_classes:
+            logging.debug("cyclic pointing class")
+            return ""
+
+        ref_classes.append(eobj)
+
+        indent = 4 * (level + 1) * " "
+        props_str = ""
+        if level != 0:
+            props_str += f"{indent}id, __type__: {{name}},\n"
+
+        subtype_links = eobj.get_links_from_subtypes()
+        all_related_links = dict()
+        all_related_links.update(eobj.links)
+        # if len(eobj.links) == 0:
+        #     all_related_links.update(subtype_links)
+
+        for prop_name, link in all_related_links.items():
+            key = prop_name
+            # res = subtype_links.get(key)
+            # if res is not None:
+            #     key = f"[is {res.name}].{key}"
+            if isinstance(link, list):
+                all_link_references = len(list(list(chain.from_iterable([l.get_all_link_references() for l in link]))))
+                if all_link_references > 0:
+                    props_str += f"{indent}{key} : {{ id,  __type__: {{ name }},}}\n"
+            else:
+                if len(link.get_all_link_references()) > 0:
+                    subselect_str = self.select_linked_objects_query_str(
+                        link.name, level=level + 1, ref_classes=ref_classes
+                    )
+                    props_str += f"{indent}{key} : {{\n{subselect_str}{indent}}},\n"
+
+        return props_str
+
+    def select_object_str(
+        self,
+        class_name: str,
+        include_all_nested_objects=True,
+        level=0,
+        include_select_str=False,
+        include_linked_objects=True,
+    ) -> str:
+        eobj = self.edgedb_objects[class_name]
+        indent = 4 * (level + 1) * " "
         props_str = ",\n".join([f"{indent}{x}" for x in eobj.all_properties])
+        if include_linked_objects is False:
+            return props_str
 
         if props_str != "":
             props_str += f",\n"
@@ -149,11 +233,13 @@ class EQBuilder:
                 if len(link.links) == 0:
                     props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
                 else:
-                    props_str += f"{indent}{key} : {{\n{self.select_object_str(link.name, level=level + 1)}{indent}}},\n"
+                    props_str += (
+                        f"{indent}{key} : {{\n{self.select_object_str(link.name, level=level + 1)}{indent}}},\n"
+                    )
             else:
                 props_str += f"{indent}{key} : {{\n{self.select_object_str(link.name, level=level+1)}{indent}}},\n"
 
         if include_select_str:
             return f"SELECT {class_name} {{\n{props_str}\n}}"
         else:
-            return props_str+"\n"
+            return props_str + "\n"

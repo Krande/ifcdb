@@ -20,12 +20,13 @@
 
 # This can be packaged with `pyinstaller --onefile --clean --icon=icon.ico ifcdiff.py`
 
-import ifcopenshell
-from deepdiff import DeepDiff
-import time
-import json
 import argparse
 import decimal
+import json
+import time
+
+import ifcopenshell
+from deepdiff import DeepDiff
 
 
 class IfcDiff:

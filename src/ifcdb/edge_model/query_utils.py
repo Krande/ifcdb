@@ -3,17 +3,17 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
+from itertools import count
 
 import ifcopenshell
 
-from ifcdb.interop.edge_model.edge_model_base import (
+from ifcdb.edge_model.edge_model_base import (
     ArrayEdgeModel,
     AttributeEdgeModel,
     EdgeModel,
     SelectEdgeModel,
 )
 from ifcdb.ifcdiff import IfcDiff
-from itertools import count
 
 _INSERT_COUNTER = count(start=1)
 
@@ -218,7 +218,7 @@ def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: i
     for a, b in matches:
         m_a = {key: value for key, value in results[a]}
         m_b = {key: value for key, value in results[b]}
-        ifc_class = m_a['type']
+        ifc_class = m_a["type"]
         for key, value in m_a.items():
             other_val = m_b[key]
             if isinstance(value, frozenset):

@@ -16,17 +16,18 @@ import edgedb
 import ifcopenshell
 from toposort import toposort, toposort_flatten
 
-from ifcdb.interop.edge_model.edge_model_base import (
+from ifcdb.edge_model.edge_model_base import (
     AttributeEdgeModel,
-    ArrayEdgeModel,
     EdgeModel,
     EntityEdgeModel,
     EnumEdgeModel,
+    IntermediateClass,
     SelectEdgeModel,
     TypeEdgeModel,
-    IntermediateClass,
+    WithNode,
 )
-from ifcdb.interop.edge_model.query_builder import EQBuilder
+from ifcdb.edge_model.query_builder import EQBuilder
+from ifcdb.edge_model.utils import clean_name, walk_edge_results_and_make_uuid_map
 
 
 class INSERTS:
@@ -107,7 +108,11 @@ class EdgeIOBase:
 
     def create_client(self) -> edgedb.Client:
         client = edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
-        self.eq_builder = EQBuilder(client)
+        try:
+            self.eq_builder = EQBuilder(client)
+        except edgedb.errors.UnknownDatabaseError as e:
+            logging.debug(e)
+
         return client
 
     def __enter__(self):
@@ -340,25 +345,27 @@ class EdgeIOBase:
 @dataclass
 class EdgeIO(EdgeIOBase):
     # Queries
-    def _get_by_simple_filter(self, identifier: str, value: str, base_object="IfcRoot"):
+    def _get_id_class_name_from_simple_filter(self, identifier: str, value: str, base_object="IfcRoot"):
         query_str = f"""SELECT {base_object} {{ id, __type__ : {{ name }} }} filter .{identifier} = '{value}'"""
         result = json.loads(self.client.query_json(query_str))
         if len(result) != 1:
             raise ValueError
-        return result
+        return result[0]
 
-    def get_by_global_id(self, global_id: str):
-        result = self._get_by_simple_filter("GlobalId", global_id)
-        class_name = result["__type__"]["name"]
+    def _get_by_uuid_and_class_name(self, uuid, class_name):
         select_str_a = self.eq_builder.select_object_str(class_name)
-        print(result)
-        return result
+        query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
+        return json.loads(self.client.query_json(query_str))
+
+    def get_by_global_id(self, global_id: str, class_name: str = None):
+        result = self._get_id_class_name_from_simple_filter("GlobalId", global_id)
+        final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
+        return final_result
 
     def get_by_name(self, name: str):
-        query_str = f"""SELECT IfcRoot {{ id, __type__ : {{ name }} }} filter .Name = '{name}'"""
-        result = json.loads(self.client.query_json(query_str))
-        print(result)
-        return result
+        result = self._get_id_class_name_from_simple_filter("Name", name)
+        final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
+        return final_result
 
     def get_slice_in_spatial_hierarchy(self, spatial_name: str):
         uuid_map = self.get_spatial_hierarchy()
@@ -380,7 +387,6 @@ class EdgeIO(EdgeIOBase):
 
     def get_spatial_content_a(self, spatial_name: str) -> dict:
         """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
-        from ifcdb.interop.edge_model.edge_model_base import WithNode
 
         uuid_map_slice = self.get_slice_in_spatial_hierarchy(spatial_name)
 
@@ -405,24 +411,32 @@ class EdgeIO(EdgeIOBase):
     def get_spatial_content_b(self, spatial_name) -> dict:
         """Slice in the Spatial Hierarchy using the name of a specific spatial node and return its sub elements"""
         uuid_map_slice = self.get_slice_in_spatial_hierarchy(spatial_name)
+        slice_values: list[SpatialNode] = list(uuid_map_slice.items())
 
-        fin_select_str = "SELECT ( "
-        for i, (key, value) in enumerate(uuid_map_slice.items()):
+        # Build Query to select all objects and related linked objects
+        select_linked_objects_str = "SELECT (\n"
+        for i, (key, value) in enumerate(slice_values):
             class_name = value.class_name
+            select_str = self.eq_builder.select_linked_objects_query_str(class_name)
+            select_linked_objects_str += f"(SELECT {class_name} {{\n{select_str}\n}} filter .id = <uuid>'{key}'),\n"
+        select_linked_objects_str += ")\n"
 
-            # Query Builder using EdgeDB introspection
-            select_str_a = self.eq_builder.select_object_str(class_name)
-            fin_select_str += f"(SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{key}'),\n"
+        result = json.loads(self.client.query_json(select_linked_objects_str))
+        result_str = json.dumps(result, indent=4)
+        uuid_map_final = walk_edge_results_and_make_uuid_map(result)
 
-            # Query Builder using IfcOpenShell
-            # entity_class = self.em.get_entity_by_name(class_name)
-            # select_str = entity_class.to_select_str(skip_properties=True)
-            # fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
-        fin_select_str += ")\n"
+        # Perform final query all related objects and their properties (excluding
+        final_query_str = "SELECT {\n"
+        for class_name, uuids in uuid_map_final.items():
+            uuids_str = ",".join([f"'{x}'" for x in uuids])
+            select_str = self.eq_builder.select_object_str(class_name, include_all_nested_objects=False)
+            final_query_str += f"{class_name} := "
+            final_query_str += f"(SELECT {class_name} {{\n{select_str}\n}} filter .id = <uuid>{{{uuids_str}}}),\n"
+        final_query_str += "}"
 
-        query_str = fin_select_str
-        result = json.loads(self.client.query_json(query_str))
-        # out_str = json.dumps(result_2, indent=4)
+        final_result = json.loads(self.client.query_json(final_query_str))
+        final_result_str = json.dumps(final_result, indent=4)
+
         return result
 
     def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:

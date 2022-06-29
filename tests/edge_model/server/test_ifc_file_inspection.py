@@ -1,10 +1,7 @@
 import pathlib
 import shutil
 
-import pytest
-
 from ifcdb import EdgeIO
-from ifcdb.interop.edge_model.query_utils import validate_ifc_objects
 
 
 def test_roundtrip_ifc_files_validation(ifc_files_dir, em_ifc4x1):
@@ -21,4 +18,7 @@ def test_roundtrip_ifc_files_validation(ifc_files_dir, em_ifc4x1):
         io.setup_database(delete_existing_migrations=True)
         io.insert_ifc()
 
-        io.qu
+        result_by_id = io.get_by_global_id("3qzoyCPy1CtfV237Rle9$t")
+        result_by_name = io.get_by_name("Grasshopper Building")
+
+        assert result_by_id == result_by_name

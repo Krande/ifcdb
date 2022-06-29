@@ -1,7 +1,11 @@
 import os
 
 from ifcdb import EdgeIO
-from ifcdb.interop.edge_model.query_utils import validate_ifc_content, validate_ifc_objects, validate_using_ifc_diff
+from ifcdb.edge_model.query_utils import (
+    validate_ifc_content,
+    validate_ifc_objects,
+    validate_using_ifc_diff,
+)
 from ifcdb.utils import top_dir
 
 

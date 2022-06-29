@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
-    from ifcdb.entities import Entity
-    from ifcdb.exp_reader import ExpReader
+    from ifcdb.pymodel.entities import Entity
+    from ifcdb.pymodel.exp_reader import ExpReader
 
 
 class ExpressBaseTypes:

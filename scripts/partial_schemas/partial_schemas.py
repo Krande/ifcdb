@@ -1,9 +1,13 @@
 import os
+import time
 
 from ifcdb import EdgeIO
-from ifcdb.interop.edge_model.query_utils import validate_ifc_content, validate_ifc_objects, validate_using_ifc_diff
+from ifcdb.edge_model.query_utils import (
+    validate_ifc_content,
+    validate_ifc_objects,
+    validate_using_ifc_diff,
+)
 from ifcdb.utils import top_dir
-import time
 
 
 def main(ifc_file, validate_data=False, create_ifc_str=False):
@@ -34,10 +38,10 @@ def main(ifc_file, validate_data=False, create_ifc_str=False):
         # diff2 = time.time() - start
 
         # Get "Sublevel_1_a" by GlobalId
-        res_id = io.get_by_global_id("1dGALjyLuHxAG601fzsd4G")
+        # res_id = io.get_by_global_id("1dGALjyLuHxAG601fzsd4G")
 
         # Get "Sublevel_1_a" by GlobalId
-        res_name = io.get_by_name("Sublevel_1_a")
+        # res_name = io.get_by_name("Sublevel_1_a")
 
         start = time.time()
         result_b = io.get_spatial_content_b("Sublevel_1_a")

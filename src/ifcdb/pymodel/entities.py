@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Dict, List, Union
 
 if TYPE_CHECKING:
-    from ifcdb.att_types import Attribute
-    from ifcdb.exp_reader import ExpReader
+    from ifcdb.pymodel.att_types import Attribute
+    from ifcdb.pymodel.exp_reader import ExpReader
 
 re_flags = re.DOTALL | re.MULTILINE | re.IGNORECASE
 
