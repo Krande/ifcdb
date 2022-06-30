@@ -1,4 +1,4 @@
-from rdflib import RDF, Graph
+from rdflib import Graph
 
 
 def main():
@@ -23,6 +23,7 @@ def main():
 
     # Print out the entire Graph in the RDF Turtle format
     serialized_data = g.serialize(format="turtle")
+    print(serialized_data)
     print(g.serialize(format="turtle"))
 
 

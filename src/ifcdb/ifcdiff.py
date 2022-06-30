@@ -18,11 +18,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with IfcDiff.  If not, see <http://www.gnu.org/licenses/>.
 
-# This can be packaged with `pyinstaller --onefile --clean --icon=icon.ico ifcdiff.py`
-
 import argparse
 import decimal
 import json
+
+# This can be packaged with `pyinstaller --onefile --clean --icon=icon.ico ifcdiff.py`
+import logging
 import time
 
 import ifcopenshell
@@ -112,7 +113,8 @@ class IfcDiff:
             if exponent < 0:
                 return abs(exponent)
             return 0
-        except:
+        except ValueError as e:
+            logging.info(e)
             return 2
 
     def diff_element(self, old_element, new_element):
@@ -202,7 +204,8 @@ class IfcDiff:
                 ignore_numeric_type_changes=True,
                 exclude_regex_paths=r"root.*id$",
             )
-        except:
+        except ValueError as e:
+            logging.info(e)
             if new_element.GlobalId:
                 return self.change_register.setdefault(new_element.GlobalId, {}).update({"has_geometry_change": True})
 
@@ -225,7 +228,8 @@ class DiffEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
             return json.JSONEncoder.default(self, obj)
-        except:
+        except ValueError as e:
+            logging.info(e)
             return str(obj)
 
 

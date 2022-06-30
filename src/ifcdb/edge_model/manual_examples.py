@@ -53,22 +53,22 @@ def insert_ifc_building_element_proxies(client: edgedb.Client, ifc_bld_proxies: 
 INSERT IfcGeometricRepresentationContext {
     CoordinateSpaceDimension := <int64>bld_prox['csysdim'],
     WorldCoordinateSystem := (
-        INSERT IfcAxis2Placement3D { 
+        INSERT IfcAxis2Placement3D {
             Location := (
-                INSERT IfcCartesianPoint { 
-                    Coordinates := <tuple<float64, float64, float64>>bld_prox['coords'] 
+                INSERT IfcCartesianPoint {
+                    Coordinates := <tuple<float64, float64, float64>>bld_prox['coords']
                 }
-            ), 
+            ),
             Axis:= (
-                INSERT IfcDirection { 
-                    DirectionRatios := <tuple<float64, float64, float64>>bld_prox['axis'] 
+                INSERT IfcDirection {
+                    DirectionRatios := <tuple<float64, float64, float64>>bld_prox['axis']
                 }
-            ), 
+            ),
             RefDirection:= (
-                INSERT IfcDirection { 
+                INSERT IfcDirection {
                     DirectionRatios := <tuple<float64, float64, float64>>bld_prox['refdir']
                 }
-            ) 
+            )
         }
     ),
 }
@@ -78,7 +78,7 @@ FOR geom IN json_array_unpack(bld_prox['repr_items']) UNION (
     INSERT IfcTriangulatedFaceSet {
             Coordinates := (
                 INSERT IfcCartesianPointList3D {
-                    CoordList := <array<tuple<float64, float64, float64>>>geom['coords'] 
+                    CoordList := <array<tuple<float64, float64, float64>>>geom['coords']
                 }
             ),
             Closed := <bool>geom['closed'],
@@ -89,7 +89,7 @@ FOR geom IN json_array_unpack(bld_prox['repr_items']) UNION (
 """
 
     query_str = f"""
-WITH 
+WITH
     bld_proxies := <json>$bld_proxies_json
 FOR bld_prox IN json_array_unpack(bld_proxies) UNION (
     INSERT IfcBuildingElementProxy {{
@@ -100,7 +100,7 @@ FOR bld_prox IN json_array_unpack(bld_proxies) UNION (
             INSERT IfcProductDefinitionShape {{
                 Representations:=(
                     INSERT IfcShapeRepresentation {{
-                        ContextOfItems := ({context_items_insert}), 
+                        ContextOfItems := ({context_items_insert}),
                         Items := ({items_str_insert}),
                     }}
                 )
@@ -118,7 +118,7 @@ def get_all_proxy_elements(client: edgedb.Client):
     user_set = client.query_json(
         """
         SELECT IfcBuildingElementProxy {
-            Name, 
+            Name,
             GlobalId,
             Representation: {
                 Representations: {
@@ -130,7 +130,6 @@ def get_all_proxy_elements(client: edgedb.Client):
                     }
                 },
             }
-
         """,
     )
     return json.loads(user_set)
@@ -140,8 +139,8 @@ def get_geometry_by_guid(client: edgedb.Client, guid):
     user_set = client.query_json(
         """
         SELECT IfcBuildingElementProxy {
-            Name, 
-            GlobalId, 
+            Name,
+            GlobalId,
             Representation: {
                 Representations: {
                         Items: {

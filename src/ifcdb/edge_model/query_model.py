@@ -182,7 +182,7 @@ class EdgeIOBase:
         client.execute(f"CREATE DATABASE {self.database}")
         client.close()
 
-        print(f"Migrating schema to fresh database")
+        print("Migrating schema to fresh database")
         client = edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
         migrations_dir = pathlib.Path(dbschema_dir / "migrations")
         if delete_existing_migrations is True and migrations_dir.exists():
@@ -295,7 +295,7 @@ class EdgeIOBase:
                     RelatingObject : { Name, id, __type__ : { name }, OwnerHistory },
                     RelatedObjects : { Name, id, __type__ : { name }, OwnerHistory }
                 }
-            ) 
+            )
         }"""
 
         def get_class_name(type_obj):
@@ -353,6 +353,8 @@ class EdgeIO(EdgeIOBase):
         return result[0]
 
     def _get_by_uuid_and_class_name(self, uuid, class_name):
+        res = self.eq_builder.build_object_property_tree(class_name)
+        out_str = json.dumps(res, indent=4)
         select_str_a = self.eq_builder.select_object_str(class_name)
         query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
         return json.loads(self.client.query_json(query_str))
@@ -365,6 +367,7 @@ class EdgeIO(EdgeIOBase):
     def get_by_name(self, name: str):
         result = self._get_id_class_name_from_simple_filter("Name", name)
         final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
+        fstr = json.dumps(final_result, indent=4)
         return final_result
 
     def get_slice_in_spatial_hierarchy(self, spatial_name: str):
@@ -461,14 +464,14 @@ class EdgeIO(EdgeIOBase):
                 continue
             select_str += f"{entity_name} := (SELECT {entity_name} {{"
             if isinstance(entity, (SelectEdgeModel, TypeEdgeModel)):
-                select_str += 4 * " " + f"id,\n"
+                select_str += 4 * " " + "id,\n"
                 select_str += 4 * " " + f"`{entity.name}`"
             elif isinstance(entity, IntermediateClass):
-                select_str += 4 * " " + f"id,\n"
+                select_str += 4 * " " + "id,\n"
                 select_str += 4 * " " + f"`{entity.att_name}`"
             else:
                 all_atts = entity.get_attributes(True)
-                select_str += 4 * " " + f"id,\n"
+                select_str += 4 * " " + "id,\n"
                 for i, att in enumerate(all_atts):
                     select_str += 4 * " " + f"`{att.name}`"
                     select_str += "" if i == len(all_atts) - 1 else ","

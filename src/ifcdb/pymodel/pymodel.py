@@ -27,7 +27,7 @@ def build_test_str():
         ),
         CreationDate=11122645,
     )
-    
+
     product = IfcBuildingElementProxy(
         GlobalId="thisisaguid",
         OwnerHistory=owner_history,
@@ -43,7 +43,7 @@ def build_test_str():
     )
 
     bldg = IfcBuilding(GlobalId='yetanotherguid', OwnerHistory=owner_history)
-    
+
     rel_space = IfcRelContainedInSpatialStructure(
         GlobalId='thisisanotherguid', OwnerHistory=owner_history,
         RelatedElements=[product],
@@ -151,12 +151,12 @@ def array_to_str(array: Array) -> str:
             entity_str = ",".join([f"{entity_str}" for x in range(int(float(b)))])
 
         if multilevel is False:
-            array_str += f"List["
+            array_str += "List["
         else:
             if i == 0:
-                array_str += f"List["
+                array_str += "List["
             else:
-                array_str += f"Tuple["
+                array_str += "Tuple["
 
     return array_str + f"{entity_str}{end_fix}"
 
@@ -181,5 +181,5 @@ class PyModel(BaseModel):
 
         os.makedirs(self.output_dir, exist_ok=True)
         app_str = main_str if main_str is not None else ""
-        with open(self.output_dir / f"ifc_py_model.py", "w") as f:
+        with open(self.output_dir / "ifc_py_model.py", "w") as f:
             f.write(header_str + data_model_str + app_str)

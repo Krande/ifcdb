@@ -160,6 +160,48 @@ class EQBuilder:
     def __post_init__(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
+    def build_object_property_tree(self, class_name, referring_classes: list[str] = None) -> dict | None:
+        if referring_classes is None:
+            referring_classes = []
+        eobj = self.edgedb_objects[class_name]
+
+        if eobj.name in referring_classes:
+            logging.warning(f'"{eobj.name}" was skipped as it would lead to recursion issues')
+            return None
+
+        referring_classes.append(eobj.name)
+        property_dict = {eobj.name: {x: None for x in eobj.all_properties}}
+
+        for key, top_link in eobj.links.items():
+            if isinstance(top_link, list) is False:
+                links = [top_link]
+            else:
+                links = top_link
+
+            for link in links:
+                new_entry = self.build_object_property_tree(link.name, referring_classes)
+                if key in property_dict[eobj.name].keys() or new_entry is None:
+                    continue
+                property_dict[eobj.name][key] = new_entry
+
+        if len(eobj.links) == 0 and eobj.abstract is False:
+            return property_dict
+
+        if len(eobj.links) == 0:
+            for key, top_link in eobj.get_links_from_subtypes().items():
+                if isinstance(top_link, list) is False:
+                    links = [top_link]
+                else:
+                    links = top_link
+
+                for link in links:
+                    new_entry = self.build_object_property_tree(link.name, referring_classes)
+                    if key in property_dict[eobj.name].keys() or new_entry is None:
+                        continue
+                    property_dict[eobj.name][key] = new_entry
+
+        return property_dict
+
     def select_linked_objects_query_str(self, class_name, level=0, ref_classes: list[str] = None):
         from itertools import chain
 
@@ -178,7 +220,7 @@ class EQBuilder:
         if level != 0:
             props_str += f"{indent}id, __type__: {{name}},\n"
 
-        subtype_links = eobj.get_links_from_subtypes()
+        # subtype_links = eobj.get_links_from_subtypes()
         all_related_links = dict()
         all_related_links.update(eobj.links)
         # if len(eobj.links) == 0:
@@ -209,6 +251,7 @@ class EQBuilder:
         level=0,
         include_select_str=False,
         include_linked_objects=True,
+        include_is_a_prefix=False,
     ) -> str:
         eobj = self.edgedb_objects[class_name]
         indent = 4 * (level + 1) * " "
@@ -217,7 +260,7 @@ class EQBuilder:
             return props_str
 
         if props_str != "":
-            props_str += f",\n"
+            props_str += ",\n"
 
         for prop_name, link in eobj.links.items():
             key = prop_name
@@ -226,18 +269,26 @@ class EQBuilder:
 
             if include_all_nested_objects is False:
                 props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
+                continue
 
-            elif isinstance(link, list):
+            if isinstance(link, list):
                 props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
-            elif link.abstract is True:
-                if len(link.links) == 0:
-                    props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
+                continue
+
+            if include_is_a_prefix is True:
+                key = f"[is {link.name}].{key}"
+
+            if len(link.links) == 0:
+                res = link.get_all_link_references()
+                if len(res) > 0:
+                    for r in res:
+                        ref_link_str = self.select_object_str(r.name, level=level + 1, include_is_a_prefix=True)
+                        props_str += f"{indent}{key} : {{\n{ref_link_str}{indent}}},\n"
                 else:
-                    props_str += (
-                        f"{indent}{key} : {{\n{self.select_object_str(link.name, level=level + 1)}{indent}}},\n"
-                    )
+                    props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
             else:
-                props_str += f"{indent}{key} : {{\n{self.select_object_str(link.name, level=level+1)}{indent}}},\n"
+                ref_link_str = self.select_object_str(link.name, level=level + 1)
+                props_str += f"{indent}{key} : {{\n{ref_link_str}{indent}}},\n"
 
         if include_select_str:
             return f"SELECT {class_name} {{\n{props_str}\n}}"

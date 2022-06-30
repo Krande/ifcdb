@@ -1,4 +1,4 @@
-from ifcdb.exp_reader import ExpReader
+from ifcdb.pymodel.exp_reader import ExpReader
 
 
 def test_ifc_buildingelementproxy(ifc_4x1_exp_file):

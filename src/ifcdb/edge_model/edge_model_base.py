@@ -842,6 +842,7 @@ class EdgeModel:
             "IfcStyleAssignmentSelect": {"IfcPresentationStyleAssignment"},
             "IfcStyledItem": {"IfcStyleAssignmentSelect"},
         }
+        logging.info(circular_deps)
 
     def get_all_entities(self):
         entity_dep_map = dict()

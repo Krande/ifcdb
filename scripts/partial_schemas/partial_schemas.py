@@ -10,15 +10,15 @@ from ifcdb.edge_model.query_utils import (
 from ifcdb.utils import top_dir
 
 
-def main(ifc_file, validate_data=False, create_ifc_str=False):
+def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
     db_name = ifc_file.replace(".ifc", "").replace("-", "_")
     ifc_path = top_dir() / "files" / ifc_file
 
     with EdgeIO(ifc_file=ifc_path, db_schema_dir=f"db/{db_name}/dbschema", ifc_schema="IFC4x1", database=db_name) as io:
-
-        # io.create_schema(from_ifc_file=True)
-        # io.setup_database(delete_existing_migrations=True)
-        # io.insert_ifc()
+        if refresh_db:
+            io.create_schema(from_ifc_file=True)
+            io.setup_database(delete_existing_migrations=True)
+            io.insert_ifc()
 
         # Validate Data
         if validate_data:
@@ -41,10 +41,11 @@ def main(ifc_file, validate_data=False, create_ifc_str=False):
         # res_id = io.get_by_global_id("1dGALjyLuHxAG601fzsd4G")
 
         # Get "Sublevel_1_a" by GlobalId
-        # res_name = io.get_by_name("Sublevel_1_a")
+
+        res_name = io.get_by_name("MyBeam")
 
         start = time.time()
-        result_b = io.get_spatial_content_b("Sublevel_1_a")
+        result_b = io.get_spatial_content_b("MyPart")
         diff3 = time.time() - start
 
         # print(f"time 1: {diff1}, time 2: {diff2}, time 3: {diff3}")
@@ -57,5 +58,6 @@ def main(ifc_file, validate_data=False, create_ifc_str=False):
 
 if __name__ == "__main__":
     # main("cube-advanced-brep.ifc")
-    main("SpatialHierarchy1.ifc")
+    # main("SpatialHierarchy1.ifc", refresh_db=False)
+    main("MyBeam.ifc", refresh_db=False)
     # main("tessellated-item.ifc")
