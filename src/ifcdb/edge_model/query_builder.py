@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 from dataclasses import dataclass, field
@@ -163,7 +164,10 @@ class EQBuilder:
     def build_object_property_tree(self, class_name, referring_classes: list[str] = None) -> dict | None:
         if referring_classes is None:
             referring_classes = []
+
         eobj = self.edgedb_objects[class_name]
+        if class_name == 'IfcRepresentationItem':
+            print('ds')
 
         if eobj.name in referring_classes:
             logging.warning(f'"{eobj.name}" was skipped as it would lead to recursion issues')
@@ -177,28 +181,32 @@ class EQBuilder:
                 links = [top_link]
             else:
                 links = top_link
-
+            if key == "SweptArea":
+                print('sd')
             for link in links:
-                new_entry = self.build_object_property_tree(link.name, referring_classes)
-                if key in property_dict[eobj.name].keys() or new_entry is None:
+                copy_ref = copy.copy(referring_classes)
+                new_entry = self.build_object_property_tree(link.name, copy_ref)
+                if new_entry is None:
                     continue
-                property_dict[eobj.name][key] = new_entry
+                if key not in property_dict[eobj.name].keys():
+                    property_dict[eobj.name][key] = []
 
-        if len(eobj.links) == 0 and eobj.abstract is False:
-            return property_dict
+                property_dict[eobj.name][key].append(new_entry)
 
-        if len(eobj.links) == 0:
-            for key, top_link in eobj.get_links_from_subtypes().items():
-                if isinstance(top_link, list) is False:
-                    links = [top_link]
-                else:
-                    links = top_link
+        property_dict[eobj.name]["subtypes"] = dict()
+        subtype_dict = property_dict[eobj.name]["subtypes"]
+        subtypes = eobj.subtypes
+        for stype in subtypes:
+            if stype.abstract is True:
+                continue
+            key = stype.name
+            new_entry = self.build_object_property_tree(key, copy.copy(referring_classes))
+            if new_entry is None:
+                continue
+            if key not in subtype_dict.keys():
+                subtype_dict[key] = []
 
-                for link in links:
-                    new_entry = self.build_object_property_tree(link.name, referring_classes)
-                    if key in property_dict[eobj.name].keys() or new_entry is None:
-                        continue
-                    property_dict[eobj.name][key] = new_entry
+            subtype_dict[key].append(new_entry)
 
         return property_dict
 
