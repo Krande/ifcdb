@@ -98,6 +98,12 @@ select ObjectType {{
 
 
 @dataclass
+class EdgeProp:
+    name: str
+    is_inherited: bool
+
+
+@dataclass
 class EdgeObject:
     name: str
     abstract: bool = None
@@ -161,54 +167,56 @@ class EQBuilder:
     def __post_init__(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
-    def build_object_property_tree(self, class_name, referring_classes: list[str] = None) -> dict | None:
+    def build_object_property_tree(
+        self, class_name, swriter: SelectWriter = None, referring_classes: list[str] = None, level=0
+    ) -> dict:
         if referring_classes is None:
             referring_classes = []
 
-        eobj = self.edgedb_objects[class_name]
-        if class_name == 'IfcRepresentationItem':
-            print('ds')
+        if swriter is None:
+            swriter = SelectWriter()
+            swriter.add_initial_select_str(class_name)
 
+        swriter.current_level = level + 1
+        eobj = self.edgedb_objects[class_name]
         if eobj.name in referring_classes:
-            logging.warning(f'"{eobj.name}" was skipped as it would lead to recursion issues')
-            return None
+            logging.warning(f'"{eobj.name}" was skipped as it would lead to recursion issues -> "{referring_classes}"')
+            return {eobj.name: {x: None for x in eobj.all_properties}}
 
         referring_classes.append(eobj.name)
-        property_dict = {eobj.name: {x: None for x in eobj.all_properties}}
+        if eobj.abstract is True:
+            property_dict = {eobj.name: {"is_abstract": True}}
+        else:
+            property_dict = {eobj.name: {x: None for x in eobj.all_properties}}
+            swriter.add_properties(eobj.all_properties)
+            for key, top_link in eobj.links.items():
+                if isinstance(top_link, list) is False:
+                    links = [top_link]
+                else:
+                    links = top_link
+                for link in links:
+                    copy_ref = copy.copy(referring_classes)
+                    swriter.select_str += f"{swriter.indent_str}{key}: {{\n"
+                    new_entry = self.build_object_property_tree(link.name, swriter, copy_ref, level=level + 1)
+                    if key not in property_dict[eobj.name].keys():
+                        property_dict[eobj.name][key] = []
+                    swriter.select_str += f"{swriter.indent_str}}}"
+                    property_dict[eobj.name][key].append(new_entry)
 
-        for key, top_link in eobj.links.items():
-            if isinstance(top_link, list) is False:
-                links = [top_link]
-            else:
-                links = top_link
-            if key == "SweptArea":
-                print('sd')
-            for link in links:
-                copy_ref = copy.copy(referring_classes)
-                new_entry = self.build_object_property_tree(link.name, copy_ref)
-                if new_entry is None:
-                    continue
-                if key not in property_dict[eobj.name].keys():
-                    property_dict[eobj.name][key] = []
-
-                property_dict[eobj.name][key].append(new_entry)
-
-        property_dict[eobj.name]["subtypes"] = dict()
-        subtype_dict = property_dict[eobj.name]["subtypes"]
+        property_dict[eobj.name]["subtypes"] = []
+        subtype_list = property_dict[eobj.name]["subtypes"]
         subtypes = eobj.subtypes
         for stype in subtypes:
             if stype.abstract is True:
                 continue
             key = stype.name
-            new_entry = self.build_object_property_tree(key, copy.copy(referring_classes))
-            if new_entry is None:
-                continue
-            if key not in subtype_dict.keys():
-                subtype_dict[key] = []
+            swriter.add_abstract_classes(stype.name, stype.all_properties)
+            new_entry = self.build_object_property_tree(key, swriter, copy.copy(referring_classes), level=level + 1)
+            subtype_list.append(new_entry)
 
-            subtype_dict[key].append(new_entry)
-
-        return property_dict
+        # if level == 0:
+        #     res = WalkPropTreeSelect(property_dict)
+        return swriter
 
     def select_linked_objects_query_str(self, class_name, level=0, ref_classes: list[str] = None):
         from itertools import chain
@@ -302,3 +310,60 @@ class EQBuilder:
             return f"SELECT {class_name} {{\n{props_str}\n}}"
         else:
             return props_str + "\n"
+
+
+@dataclass
+class SelectWriter:
+    select_str: str = ""
+    current_level: int = 0
+
+    def add_initial_select_str(self, class_name):
+        self.select_str += f"SELECT {class_name} {{\n"
+
+    def add_properties(self, properties: list[str]):
+        self.select_str += "".join([f"{self.indent_str}{x},\n" for x in properties])
+
+    def add_abstract_classes(self, class_name: str, properties: list[str]):
+        for prop in properties:
+            self.select_str += f"{self.indent_str}[is {class_name}].{prop},\n"
+
+    @property
+    def indent_str(self) -> str:
+        return self.current_level * 4 * " "
+
+
+def WalkPropTreeSelect(prop_tree):
+    select_str = ""
+
+    def walk_tree(obj, level=0):
+        nonlocal select_str
+        if isinstance(obj, dict):
+            if level == 0:
+                class_name = list(obj.keys())[0]
+                select_str += f"select {class_name} {{"
+                walk_tree(list(obj.values())[0], level + 1)
+            else:
+                subtypes = obj.get("subtypes")
+                is_abstract = obj.get("is_abstract")
+                if is_abstract is True:
+                    walk_tree(subtypes, level + 1)
+
+                select_str += ",".join([key for key, value in obj.items() if value is None])
+                select_str += ","
+                for key, value in obj.items():
+                    if isinstance(value, (list, dict)) is False:
+                        continue
+                    prefix = key[:3]
+                    if prefix == "Ifc":
+                        continue
+                    select_str += f"{key} : {{"
+                    walk_tree(value, level + 1)
+                    select_str += "},\n"
+        elif isinstance(obj, list):
+            for o in obj:
+                walk_tree(o, level + 1)
+        else:
+            raise NotImplementedError(f"Unknown type {type(obj)}")
+
+    walk_tree(prop_tree)
+    return select_str

@@ -354,7 +354,7 @@ class EdgeIO(EdgeIOBase):
 
     def _get_by_uuid_and_class_name(self, uuid, class_name):
         res = self.eq_builder.build_object_property_tree(class_name)
-        out_str = json.dumps(res, indent=4)
+        out_str = json.dumps(res.select_str, indent=4)
         select_str_a = self.eq_builder.select_object_str(class_name)
         query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
         return json.loads(self.client.query_json(query_str))
