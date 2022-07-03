@@ -1,5 +1,7 @@
 ## Spatial Query
 
+[Back to Main Page](../ifcdb.md)
+
 For reference, here is [the ESDL schema](resources/default.esdl) for this Spatial Query 
 investigation.
 
