@@ -1,0 +1,605 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Large queries" href="large_queries.html" /><link rel="prev" title="Query Building" href="query_building.html" />
+
+    <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
+        <title>Spatial Query - IFC as a Database</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">IFC as a Database</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  
+  <span class="sidebar-brand-text">IFC as a Database</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Queries</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="query_building.html">Query Building</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Spatial Query</a></li>
+<li class="toctree-l1"><a class="reference internal" href="large_queries.html">Large queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="by_id.html">Query by element name(s)/GlobalId(s)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Updating</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../updating/diffing.html">Updating elements</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="spatial-query">
+<h1>Spatial Query<a class="headerlink" href="#spatial-query" title="Permalink to this heading">#</a></h1>
+<p><a class="reference internal" href="../index.html"><span class="doc std std-doc">Back to Main Page</span></a></p>
+<p>For reference, here is <a class="reference download internal" download="" href="../_downloads/47d7403afa5609164a9dcccfd7e512a2/default.esdl"><span class="xref download myst">the ESDL schema</span></a> for this Spatial Query
+investigation.</p>
+<section id="motivation-goal">
+<h2>Motivation &amp; Goal<a class="headerlink" href="#motivation-goal" title="Permalink to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Motivation:</span></code> Large IFC models contain spatial hierarchies that can hold
+thousands of geometry elements underneath each top level.
+Each top-level can contain elements arranged in many spatial layers each branching down into separate sublayers.
+Needless to say, having the ability to slice through the spatial hierarchy to extract only the data
+you want is necessary in order to prevent data-size bottlenecks.</p>
+<p><code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">goal:</span></code> The ability to return all elements below a specific spatial element.</p>
+</section>
+<section id="scenario">
+<h2>Scenario<a class="headerlink" href="#scenario" title="Permalink to this heading">#</a></h2>
+<p>In this scenario the aim is to find all sub-elements of the spatial element named <code class="docutils literal notranslate"><span class="pre">Sublevel_1_a</span></code> in the
+spatial hierarchy and create a new IFC file from it. For this purpose a test IFC file <code class="docutils literal notranslate"><span class="pre">SpatialHierarchy1.ifc</span></code> is created.</p>
+<p>The IFC model contains 8 <code class="docutils literal notranslate"><span class="pre">IfcBeam</span></code> elements, 6 <code class="docutils literal notranslate"><span class="pre">IfcBuildingStorey</span></code> elements, 1 <code class="docutils literal notranslate"><span class="pre">IfcSite</span></code> and 1 <code class="docutils literal notranslate"><span class="pre">IfcProject</span></code>.
+The model is shown in the figure below taken from Blender using the addon BlenderBIM</p>
+<p><img alt="Spatial Query Example in Blender" src="../_images/spatial_query_example_blender.png" /></p>
+<p>The spatial query should return in addition to the spatial <code class="docutils literal notranslate"><span class="pre">IfcBuildingStorey</span></code> element <code class="docutils literal notranslate"><span class="pre">Sublevel_1_a</span></code>,
+4 <code class="docutils literal notranslate"><span class="pre">IfcBeam</span></code> elements; <code class="docutils literal notranslate"><span class="pre">bm_1_1</span></code>, <code class="docutils literal notranslate"><span class="pre">bm_2_1</span></code> ,<code class="docutils literal notranslate"><span class="pre">bm_1_2</span></code>, <code class="docutils literal notranslate"><span class="pre">bm_2_2</span></code> and the
+sublevels <code class="docutils literal notranslate"><span class="pre">IfcBuildingStorey</span></code> elements <code class="docutils literal notranslate"><span class="pre">Sublevel_1a_2a</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">Sublevel_1a_2b</span></code>.</p>
+<p>To be able to find and merge this spatial element at the correct level at a later stage,
+the parent <code class="docutils literal notranslate"><span class="pre">IfcSite</span></code> element <code class="docutils literal notranslate"><span class="pre">SpatialHierarchy1</span></code> &amp;
+<code class="docutils literal notranslate"><span class="pre">IfcProject</span></code> element <code class="docutils literal notranslate"><span class="pre">AdaProject</span></code> should also be included in the element export.</p>
+<p><img alt="Desired Spatial elements" src="../_images/spatial_query_results.png" /></p>
+</section>
+<section id="query-strategy">
+<h2>Query Strategy<a class="headerlink" href="#query-strategy" title="Permalink to this heading">#</a></h2>
+<p>The overall strategy is to first get the entire spatial hierarchy where it returns all the elements with
+their respective name (<code class="docutils literal notranslate"><span class="pre">Name</span></code>), EdgeDB uuid (<code class="docutils literal notranslate"><span class="pre">id</span></code>) and ESDL/IFC class name (<code class="docutils literal notranslate"><span class="pre">__type__</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">name</span> <span class="pre">}</span></code>).</p>
+<p>Upon receiving the returned data, python is used on the client side to slice through the spatial hierarchy and
+build additional queries to extract all relevant objects and properties within the specified spatial hierarchy.</p>
+</section>
+<section id="query-1-get-the-entire-spatial-hierarchy">
+<h2>Query 1 -&gt; Get the entire spatial hierarchy<a class="headerlink" href="#query-1-get-the-entire-spatial-hierarchy" title="Permalink to this heading">#</a></h2>
+<p>To get all the necessary classes for describing the spatial hierarchy and their elements,
+the following query is performed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="p">{</span>
+    <span class="n">spatial_stru</span> <span class="o">:=</span> <span class="p">(</span>
+        <span class="n">SELECT</span> <span class="n">IfcRelContainedInSpatialStructure</span> <span class="p">{</span>
+            <span class="nb">id</span><span class="p">,</span>
+            <span class="n">RelatingStructure</span> <span class="p">:</span> <span class="p">{</span> <span class="n">Name</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}</span> <span class="p">},</span>
+            <span class="n">RelatedElements</span> <span class="p">:</span> <span class="p">{</span> <span class="n">Name</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}</span> <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="n">rel_aggs</span> <span class="o">:=</span> <span class="p">(</span>
+        <span class="n">SELECT</span> <span class="n">IfcRelAggregates</span> <span class="p">{</span>
+            <span class="nb">id</span><span class="p">,</span>
+            <span class="n">RelatingObject</span> <span class="p">:</span> <span class="p">{</span> <span class="n">Name</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}</span> <span class="p">},</span>
+            <span class="n">RelatedObjects</span> <span class="p">:</span> <span class="p">{</span> <span class="n">Name</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}</span> <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">)</span> 
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>which returns the following:</p>
+<p>(fyi -&gt; the resulting json is shortened for the sake of readability in this document.
+See <a class="reference download internal" download="" href="../_downloads/71aec5b4adc6fe85db09d66902ba8f90/result.json"><span class="xref download myst">result.json</span></a> for the entire output.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s1">&#39;spatial_stru&#39;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;fb6d6d2a-f2be-11ec-ac74-23608326f6e7&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;RelatingStructure&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;Sublevel_1a_2a&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;f6980fd0-f2be-11ec-ac74-abe5fe6aa302&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;__type__&#39;</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;default::IfcBuildingStorey&#39;</span>
+        <span class="p">}</span>
+      <span class="p">},</span>
+      <span class="s1">&#39;RelatedElements&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;bm1_1&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;f96474a6-f2be-11ec-ac74-e796fcfa53d3&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;__type__&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;default::IfcBeam&#39;</span>
+          <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;bm2_1&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;f9835114-f2be-11ec-ac74-d7a2757c5f6b&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;__type__&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;default::IfcBeam&#39;</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">},</span>
+<span class="o">...</span> 
+<span class="s1">&#39;rel_aggs&#39;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;f64d4aea-f2be-11ec-ac74-4bd25461394f&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;RelatingObject&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;AdaProject&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;f2ef5848-f2be-11ec-ac74-d764e1155ac1&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;__type__&#39;</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;default::IfcProject&#39;</span>
+        <span class="p">}</span>
+      <span class="p">},</span>
+      <span class="s1">&#39;RelatedObjects&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;SpatialHierarchy1&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;eebd84e8-f2be-11ec-ac74-e7851f987412&#39;</span><span class="p">,</span>
+          <span class="s1">&#39;__type__&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;default::IfcSite&#39;</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">},</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="query-2-getting-all-relevant-data-associated-to-the-returned-list-of-classes">
+<h2>Query 2 -&gt; Getting all relevant data associated to the returned list of classes<a class="headerlink" href="#query-2-getting-all-relevant-data-associated-to-the-returned-list-of-classes" title="Permalink to this heading">#</a></h2>
+<p>With the exported <span class="xref myst">results.json</span> python is used to find parent/children relationships of
+the spatial hierarchy and slice out all sub-elements and related parent elements of the <code class="docutils literal notranslate"><span class="pre">Sublevel_1_a</span></code> spatial element.</p>
+<section id="alternative-a-loop-over-the-returned-spatial-classes-and-build-nested-select-queries">
+<h3>Alternative “A” -&gt; Loop over the returned spatial classes and build nested select queries.<a class="headerlink" href="#alternative-a-loop-over-the-returned-spatial-classes-and-build-nested-select-queries" title="Permalink to this heading">#</a></h3>
+<p>Alternative “A” is to Loop over each element and construct a nested query specifying all nested sub-objects and their
+properties.</p>
+<p>However, it will be shown that these queries quickly becomes very large and complex.
+Also there is the issue when it comes to properties that links to abstract object supertypes with many subtypes which
+will further increase size and complexity of the query string. Lastly this approach will not consider duplication of
+objects found within the nested chain of object properties.</p>
+<p>An example of a nested query is shown for a single <code class="docutils literal notranslate"><span class="pre">IfcBuildingStorey</span></code> class to illustrate just how many nested object
+link relations there can be in a typical IFC class.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="p">(</span> 
+    <span class="p">(</span>
+        <span class="n">SELECT</span> <span class="n">IfcBuildingStorey</span> <span class="p">{</span>
+            <span class="n">GlobalId</span><span class="p">,</span>
+            <span class="n">OwnerHistory</span> <span class="p">:</span> <span class="p">{</span>
+                <span class="n">OwningUser</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">ThePerson</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Identification</span><span class="p">,</span>
+                        <span class="n">FamilyName</span><span class="p">,</span>
+                        <span class="n">GivenName</span><span class="p">,</span>
+                        <span class="n">MiddleNames</span><span class="p">,</span>
+                        <span class="n">PrefixTitles</span><span class="p">,</span>
+                        <span class="n">SuffixTitles</span><span class="p">,</span>
+                        <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                            <span class="n">Role</span><span class="p">,</span>
+                            <span class="n">UserDefinedRole</span><span class="p">,</span>
+                            <span class="n">Description</span>
+                        <span class="p">},</span>
+                        <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
+                            <span class="n">Purpose</span><span class="p">,</span>
+                            <span class="n">Description</span><span class="p">,</span>
+                            <span class="n">UserDefinedPurpose</span>
+                        <span class="p">}</span>
+                    <span class="p">},</span>
+                <span class="n">TheOrganization</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">Identification</span><span class="p">,</span>
+                    <span class="n">Name</span><span class="p">,</span>
+                    <span class="n">Description</span><span class="p">,</span>
+                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Role</span><span class="p">,</span>
+                        <span class="n">UserDefinedRole</span><span class="p">,</span>
+                        <span class="n">Description</span>
+                    <span class="p">},</span>
+                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Purpose</span><span class="p">,</span>
+                        <span class="n">Description</span><span class="p">,</span>
+                        <span class="n">UserDefinedPurpose</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">Role</span><span class="p">,</span>
+                    <span class="n">UserDefinedRole</span><span class="p">,</span>
+                    <span class="n">Description</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="n">OwningApplication</span> <span class="p">:</span> <span class="p">{</span>
+                <span class="n">ApplicationDeveloper</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">Identification</span><span class="p">,</span>
+                    <span class="n">Name</span><span class="p">,</span>
+                    <span class="n">Description</span><span class="p">,</span>
+                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Role</span><span class="p">,</span>
+                        <span class="n">UserDefinedRole</span><span class="p">,</span>
+                        <span class="n">Description</span>
+                    <span class="p">},</span>
+                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Purpose</span><span class="p">,</span>
+                        <span class="n">Description</span><span class="p">,</span>
+                        <span class="n">UserDefinedPurpose</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="n">Version</span><span class="p">,</span>
+                <span class="n">ApplicationFullName</span><span class="p">,</span>
+                <span class="n">ApplicationIdentifier</span>
+            <span class="p">},</span>
+            <span class="n">State</span><span class="p">,</span>
+            <span class="n">ChangeAction</span><span class="p">,</span>
+            <span class="n">LastModifiedDate</span><span class="p">,</span>
+            <span class="n">LastModifyingUser</span> <span class="p">:</span> <span class="p">{</span>
+                <span class="n">ThePerson</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">Identification</span><span class="p">,</span>
+                    <span class="n">FamilyName</span><span class="p">,</span>
+                    <span class="n">GivenName</span><span class="p">,</span>
+                    <span class="n">MiddleNames</span><span class="p">,</span>
+                    <span class="n">PrefixTitles</span><span class="p">,</span>
+                    <span class="n">SuffixTitles</span><span class="p">,</span>
+                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Role</span><span class="p">,</span>
+                        <span class="n">UserDefinedRole</span><span class="p">,</span>
+                        <span class="n">Description</span>
+                    <span class="p">},</span>
+                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Purpose</span><span class="p">,</span>
+                        <span class="n">Description</span><span class="p">,</span>
+                        <span class="n">UserDefinedPurpose</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="n">TheOrganization</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">Identification</span><span class="p">,</span>
+                    <span class="n">Name</span><span class="p">,</span>
+                    <span class="n">Description</span><span class="p">,</span>
+                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Role</span><span class="p">,</span>
+                        <span class="n">UserDefinedRole</span><span class="p">,</span>
+                        <span class="n">Description</span>
+                    <span class="p">},</span>
+                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Purpose</span><span class="p">,</span>
+                        <span class="n">Description</span><span class="p">,</span>
+                        <span class="n">UserDefinedPurpose</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">Role</span><span class="p">,</span>
+                    <span class="n">UserDefinedRole</span><span class="p">,</span>
+                    <span class="n">Description</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="n">LastModifyingApplication</span> <span class="p">:</span> <span class="p">{</span>
+                <span class="n">ApplicationDeveloper</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">Identification</span><span class="p">,</span>
+                    <span class="n">Name</span><span class="p">,</span>
+                    <span class="n">Description</span><span class="p">,</span>
+                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Role</span><span class="p">,</span>
+                        <span class="n">UserDefinedRole</span><span class="p">,</span>
+                        <span class="n">Description</span>
+                    <span class="p">},</span>
+                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="n">Purpose</span><span class="p">,</span>
+                        <span class="n">Description</span><span class="p">,</span>
+                        <span class="n">UserDefinedPurpose</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+                <span class="n">Version</span><span class="p">,</span>
+                <span class="n">ApplicationFullName</span><span class="p">,</span>
+                <span class="n">ApplicationIdentifier</span>
+            <span class="p">},</span>
+            <span class="n">CreationDate</span>
+        <span class="p">},</span>
+        <span class="n">Name</span><span class="p">,</span>
+        <span class="n">Description</span><span class="p">,</span>
+        <span class="n">ObjectType</span><span class="p">,</span>
+        <span class="n">ObjectPlacement</span> <span class="p">:</span> <span class="p">{</span><span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}},</span>
+        <span class="n">Representation</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="n">Name</span><span class="p">,</span>
+            <span class="n">Description</span><span class="p">,</span>
+            <span class="n">Representations</span> <span class="p">:</span> <span class="p">{</span>
+                <span class="n">ContextOfItems</span> <span class="p">:</span> <span class="p">{</span>
+                    <span class="n">ContextIdentifier</span><span class="p">,</span>
+                    <span class="n">ContextType</span>
+                <span class="p">},</span>
+                <span class="n">RepresentationIdentifier</span><span class="p">,</span>
+                <span class="n">RepresentationType</span><span class="p">,</span>
+                <span class="n">Items</span> <span class="p">:</span> <span class="p">{</span><span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}}</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="n">LongName</span><span class="p">,</span>
+        <span class="n">CompositionType</span><span class="p">,</span>
+        <span class="n">Elevation</span>
+    <span class="p">}</span> <span class="nb">filter</span> <span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">uuid</span><span class="o">&gt;</span><span class="s1">&#39;fe0e2222-f601-11ec-9720-ffa48bb2d7b1&#39;</span><span class="p">),</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>By close inspection it is observed in the above query that certain elements only refer to the related object’s <code class="docutils literal notranslate"><span class="pre">id</span></code> and
+<code class="docutils literal notranslate"><span class="pre">__type__</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">name</span> <span class="pre">}</span></code> (IFC class name). There are in fact 2 properties where this occurs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Items</span> <span class="pre">:</span> <span class="pre">{id,</span> <span class="pre">__type__</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">name</span> <span class="pre">}}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ObjectPlacement</span> <span class="pre">:</span> <span class="pre">{id,</span> <span class="pre">__type__</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">name</span> <span class="pre">}}</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">Items</span></code> is a property on the <code class="docutils literal notranslate"><span class="pre">IfcRepresentation</span></code> class that links to multiple <code class="docutils literal notranslate"><span class="pre">IfcRepresentationItem</span></code> elements.
+The <code class="docutils literal notranslate"><span class="pre">IfcRepresentationItem</span></code> class is an abstract class with <strong>153 subtypes</strong> whereas 126 of these are not abstract
+classes.</p>
+<p>In order to specify the properties of a subclass it is possible to use EdgeDB’s concept of
+<a class="reference external" href="https://www.edgedb.com/docs/edgeql/select#polymorphic-fields">polymorphic query</a> and use a
+<code class="docutils literal notranslate"><span class="pre">[is</span> <span class="pre">subclass].subtype_parameter</span></code> operator to extract subtype properties <em>if</em> they exist. However, when the total
+number of subtypes &gt; 100, the sheer number of these operators suddenly become impractical and makes the total insert
+string difficult to read.</p>
+<p>Note! A possible solution to simplifying these large queries might be solved with what is referred to as <code class="docutils literal notranslate"><span class="pre">&quot;splats&quot;</span></code>.
+However, at the time of writing <code class="docutils literal notranslate"><span class="pre">&quot;splats&quot;</span></code> in shapes are not yet supported
+(ref https://github.com/edgedb/edgedb/issues/180).
+What that means that the user has to know all property types of all
+objects and objects found in the chains of nested object properties and create rather complex queries.</p>
+</section>
+<section id="alternative-b-loop-over-the-returned-spatial-classes-and-return-all-related-uuid-s-before-doing-a-3rd-query">
+<h3>Alternative “B” -&gt; Loop over the returned spatial classes and return all related uuid’s before doing a 3rd query<a class="headerlink" href="#alternative-b-loop-over-the-returned-spatial-classes-and-return-all-related-uuid-s-before-doing-a-3rd-query" title="Permalink to this heading">#</a></h3>
+<p>As observed in Alternative “A” the sheer size of the insert string became impractical when attempting to insert all
+the nested object properties in a single statement.</p>
+<p>To alleviate this complexity, the 2nd query focuses on finding all related objects and returns only object id <code class="docutils literal notranslate"><span class="pre">uuid</span></code> and
+class type <code class="docutils literal notranslate"><span class="pre">__type__</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">name</span> <span class="pre">}</span></code>.</p>
+<p>With this approach you do have to add a 3rd query, but you will be able to define only 1st level properties, thus
+reducing the overall complexity of the query. It also provides the added bonus of doing some processing in python on
+the client side to remove any duplicate object references, so the final query is as efficient as possible.</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="large_queries.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Large queries</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="query_building.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Query Building</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2022, Kristoffer H. Andersen
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Spatial Query</a><ul>
+<li><a class="reference internal" href="#motivation-goal">Motivation &amp; Goal</a></li>
+<li><a class="reference internal" href="#scenario">Scenario</a></li>
+<li><a class="reference internal" href="#query-strategy">Query Strategy</a></li>
+<li><a class="reference internal" href="#query-1-get-the-entire-spatial-hierarchy">Query 1 -&gt; Get the entire spatial hierarchy</a></li>
+<li><a class="reference internal" href="#query-2-getting-all-relevant-data-associated-to-the-returned-list-of-classes">Query 2 -&gt; Getting all relevant data associated to the returned list of classes</a><ul>
+<li><a class="reference internal" href="#alternative-a-loop-over-the-returned-spatial-classes-and-build-nested-select-queries">Alternative “A” -&gt; Loop over the returned spatial classes and build nested select queries.</a></li>
+<li><a class="reference internal" href="#alternative-b-loop-over-the-returned-spatial-classes-and-return-all-related-uuid-s-before-doing-a-3rd-query">Alternative “B” -&gt; Loop over the returned spatial classes and return all related uuid’s before doing a 3rd query</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/scripts/furo.js"></script>
+    </body>
+</html>
