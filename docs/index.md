@@ -2,6 +2,10 @@
 
 A document describing the exploration of IFC as a Database.
 
+## Inserts
+
+* [Basic Inserts](inserts/basic_insert.md)
+
 ## Queries
 
 * [Query Building](queries/query_building.md)
@@ -23,6 +27,15 @@ Different update strategies are considered here
 Work on continuous integration is covered in this section
 
 * [CI/CD](ci/unittesting.md)
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:glob:
+:caption: Inserts
+
+inserts/basic_insertion
+```
 
 ```{toctree}
 :hidden:

@@ -1,7 +1,8 @@
 # IFC as a database
 Various experiments of IFC as a database
 
-See [ifcdb.md](docs/index.md) for a more in-depth exploration of how the EdgeDB schema currently is being used.
+See the [docs](https://krande.github.io/ifcdb) for a more in-depth exploration of how 
+the EdgeDB schema currently is being used.
 
 ## EdgeDB (EdgeIO)
 

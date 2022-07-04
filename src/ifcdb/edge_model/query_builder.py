@@ -170,11 +170,11 @@ class EQBuilder:
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
     def build_object_property_tree(self, class_name, swriter: SelectWriter = None, level=0, is_subtype=False) -> dict:
-        if swriter is None:
-            swriter = SelectWriter()
-            swriter.add_initial_select_str(class_name)
-
         eobj = self.edgedb_objects[class_name]
+        if swriter is None:
+            swriter = SelectWriter(eobj)
+            swriter.add_initial_select_str()
+
         swriter.current_level = level + 1
 
         if eobj.name in swriter.referring_classes:
