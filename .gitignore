@@ -2,3 +2,4 @@
 temp/
 migrations/
 __pycache__/
+_build/
