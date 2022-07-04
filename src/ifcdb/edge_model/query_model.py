@@ -280,29 +280,38 @@ class EdgeIOBase:
 
         ent_dict.update(to_be_added)
 
-    def get_spatial_hierarchy(self) -> dict[str, SpatialNode]:
-        in_str = """SELECT {
-            spatial_stru := (
-                SELECT IfcRelContainedInSpatialStructure {
-                    id,
-                    RelatingStructure : { Name, id, __type__ : { name }, OwnerHistory },
-                    RelatedElements : { Name, id, __type__ : { name }, OwnerHistory }
-                }
-            ),
-            rel_aggs := (
-                SELECT IfcRelAggregates {
-                    id,
-                    RelatingObject : { Name, id, __type__ : { name }, OwnerHistory },
-                    RelatedObjects : { Name, id, __type__ : { name }, OwnerHistory }
-                }
-            )
-        }"""
+    def get_spatial_hierarchy(self, filter_by_name: str = None) -> dict[str, SpatialNode]:
+        if filter_by_name is not None:
+            filter_str_stru = f" filter .RelatingStructure.Name = '{filter_by_name}'"
+            filter_str_rel = f" filter .RelatingObject.Name = '{filter_by_name}'"
+        else:
+            filter_str_stru = ""
+            filter_str_rel = ""
+
+        in_str = f"""SELECT {{
+    spatial_stru := (
+        SELECT IfcRelContainedInSpatialStructure {{
+            id,
+            RelatingStructure : {{ Name, id, __type__ : {{ name }}, OwnerHistory }},
+            RelatedElements : {{ Name, id, __type__ : {{ name }}, OwnerHistory }}
+        }}{filter_str_stru}
+    ),
+    rel_aggs := (
+        SELECT IfcRelAggregates {{
+            id,
+            RelatingObject : {{ Name, id, __type__ : {{ name }}, OwnerHistory }},
+            RelatedObjects : {{ Name, id, __type__ : {{ name }}, OwnerHistory }}
+        }}{filter_str_rel}
+    )
+}}"""
+        print(in_str)
 
         def get_class_name(type_obj):
             return type_obj["__type__"]["name"].replace("default::", "")
 
         result = json.loads(self.client.query_json(in_str))
-        # out_str = json.dumps(result, indent=4)
+        out_str = json.dumps(result, indent=4)
+        print(out_str)
         rel_aggs = result[0]["rel_aggs"]
         spatial_nodes: dict[str, SpatialNode] = dict()
         for rel in rel_aggs:
@@ -355,6 +364,7 @@ class EdgeIO(EdgeIOBase):
     def _get_by_uuid_and_class_name(self, uuid, class_name):
         res = self.eq_builder.build_object_property_tree(class_name)
         out_str = json.dumps(res.select_str, indent=4)
+        print(out_str)
         select_str_a = self.eq_builder.select_object_str(class_name)
         query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
         return json.loads(self.client.query_json(query_str))
@@ -367,7 +377,7 @@ class EdgeIO(EdgeIOBase):
     def get_by_name(self, name: str):
         result = self._get_id_class_name_from_simple_filter("Name", name)
         final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
-        fstr = json.dumps(final_result, indent=4)
+        # fstr = json.dumps(final_result, indent=4)
         return final_result
 
     def get_slice_in_spatial_hierarchy(self, spatial_name: str):
@@ -425,7 +435,7 @@ class EdgeIO(EdgeIOBase):
         select_linked_objects_str += ")\n"
 
         result = json.loads(self.client.query_json(select_linked_objects_str))
-        result_str = json.dumps(result, indent=4)
+        # result_str = json.dumps(result, indent=4)
         uuid_map_final = walk_edge_results_and_make_uuid_map(result)
 
         # Perform final query all related objects and their properties (excluding
@@ -439,7 +449,7 @@ class EdgeIO(EdgeIOBase):
 
         final_result = json.loads(self.client.query_json(final_query_str))
         final_result_str = json.dumps(final_result, indent=4)
-
+        print(final_result_str)
         return result
 
     def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:

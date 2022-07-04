@@ -24,4 +24,33 @@ Work on continuous integration is covered in this section
 
 * [CI/CD](ci/unittesting.md)
 
- 
+```{toctree}
+:hidden:
+:maxdepth: 2
+:glob:
+:caption: Queries
+
+queries/query_building
+queries/spatial_query
+queries/large_queries
+queries/by_id
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:glob:
+:caption: Updating
+
+updating/diffing
+```
+
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:glob:
+:caption: CI/CD
+
+ci/unittesting
+```

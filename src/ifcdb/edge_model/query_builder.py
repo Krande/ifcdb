@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import json
 import logging
 from dataclasses import dataclass, field
@@ -112,6 +111,9 @@ class EdgeObject:
     properties: list[str] = None
     subtypes: list[EdgeObject] = field(default_factory=list, repr=False)
 
+    links_instances: dict[str, EdgeObject] = field(default_factory=dict)
+    property_instances: dict[str, EdgeProp] = field(default_factory=dict)
+
     @property
     def all_properties(self):
         all_props = self.properties if self.properties is not None else []
@@ -167,41 +169,47 @@ class EQBuilder:
     def __post_init__(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
-    def build_object_property_tree(
-        self, class_name, swriter: SelectWriter = None, referring_classes: list[str] = None, level=0
-    ) -> dict:
-        if referring_classes is None:
-            referring_classes = []
-
+    def build_object_property_tree(self, class_name, swriter: SelectWriter = None, level=0, is_subtype=False) -> dict:
         if swriter is None:
             swriter = SelectWriter()
             swriter.add_initial_select_str(class_name)
 
-        swriter.current_level = level + 1
         eobj = self.edgedb_objects[class_name]
-        if eobj.name in referring_classes:
-            logging.warning(f'"{eobj.name}" was skipped as it would lead to recursion issues -> "{referring_classes}"')
+        swriter.current_level = level + 1
+
+        if eobj.name in swriter.referring_classes:
+            logging.warning(
+                f'"{eobj.name}" was skipped as it would lead to ' f'recursion issues -> "{swriter.referring_classes}"'
+            )
             return {eobj.name: {x: None for x in eobj.all_properties}}
 
-        referring_classes.append(eobj.name)
+        swriter.referring_classes.append(eobj.name)
+        swriter.current_class = eobj
+
         if eobj.abstract is True:
             property_dict = {eobj.name: {"is_abstract": True}}
         else:
-            property_dict = {eobj.name: {x: None for x in eobj.all_properties}}
-            swriter.add_properties(eobj.all_properties)
+            all_props = eobj.all_properties
+            property_dict = {eobj.name: {x: None for x in all_props}}
+            if is_subtype:
+                swriter.add_as_subtype_properties(eobj.name, all_props)
+            else:
+                swriter.add_properties(all_props)
             for key, top_link in eobj.links.items():
                 if isinstance(top_link, list) is False:
                     links = [top_link]
                 else:
                     links = top_link
                 for link in links:
-                    copy_ref = copy.copy(referring_classes)
                     swriter.select_str += f"{swriter.indent_str}{key}: {{\n"
-                    new_entry = self.build_object_property_tree(link.name, swriter, copy_ref, level=level + 1)
+                    new_entry = self.build_object_property_tree(link.name, swriter, level=level + 1)
                     if key not in property_dict[eobj.name].keys():
                         property_dict[eobj.name][key] = []
                     swriter.select_str += f"{swriter.indent_str}}}"
                     property_dict[eobj.name][key].append(new_entry)
+
+        skip_these = ["is_abstract"]
+        swriter.written_props = [x for x in property_dict[eobj.name].keys() if x not in skip_these]
 
         property_dict[eobj.name]["subtypes"] = []
         subtype_list = property_dict[eobj.name]["subtypes"]
@@ -210,8 +218,7 @@ class EQBuilder:
             if stype.abstract is True:
                 continue
             key = stype.name
-            swriter.add_abstract_classes(stype.name, stype.all_properties)
-            new_entry = self.build_object_property_tree(key, swriter, copy.copy(referring_classes), level=level + 1)
+            new_entry = self.build_object_property_tree(key, swriter, level=level + 1, is_subtype=True)
             subtype_list.append(new_entry)
 
         # if level == 0:
@@ -314,16 +321,19 @@ class EQBuilder:
 
 @dataclass
 class SelectWriter:
+    select_class: EdgeObject
     select_str: str = ""
     current_level: int = 0
+    current_class: EdgeObject = None
+    referring_classes: list[str] = field(default_factory=list)
 
-    def add_initial_select_str(self, class_name):
-        self.select_str += f"SELECT {class_name} {{\n"
+    def add_initial_select_str(self):
+        self.select_str += f"SELECT {self.select_class.name} {{\n"
 
     def add_properties(self, properties: list[str]):
         self.select_str += "".join([f"{self.indent_str}{x},\n" for x in properties])
 
-    def add_abstract_classes(self, class_name: str, properties: list[str]):
+    def add_as_subtype_properties(self, class_name: str, properties: list[str] = None):
         for prop in properties:
             self.select_str += f"{self.indent_str}[is {class_name}].{prop},\n"
 

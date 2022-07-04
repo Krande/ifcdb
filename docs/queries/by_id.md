@@ -1,6 +1,6 @@
 ## Query by element name(s)/GlobalId(s)
 
-[Back to Main Page](../ifcdb.md)
+[Back to Main Page](../index.md)
 
 Query by element name(s)/GlobalId(s) and get back list of elements with all nested/related properties
 

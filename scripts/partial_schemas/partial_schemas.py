@@ -42,11 +42,11 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
 
         # Get "Sublevel_1_a" by GlobalId
 
-        res_name = io.get_by_name("MyBeam")
+        _ = io.get_by_name("MyBeam")
 
         start = time.time()
-        result_b = io.get_spatial_content_b("MyPart")
-        diff3 = time.time() - start
+        _ = io.get_spatial_content_b("Sublevel_1_a")
+        _ = time.time() - start
 
         # print(f"time 1: {diff1}, time 2: {diff2}, time 3: {diff3}")
         if create_ifc_str:

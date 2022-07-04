@@ -1,6 +1,6 @@
 # Large queries
 
-[Back to Main Page](../ifcdb.md)
+[Back to Main Page](../index.md)
 
 A typical use case is for users to download the entire content of the IFC database and work locally on that content. 
 
