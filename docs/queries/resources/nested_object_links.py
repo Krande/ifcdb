@@ -15,7 +15,7 @@ def main(ifc_file, refresh_db=False):
             io.insert_ifc(ifc_path)
 
         # Queries
-        for qref in ["q1", "q2"]:
+        for qref in ["q1", "q2", "q3"]:
             q1_res = json.loads(io.client.query_json(open(f"{qref}.esdl", "r").read()))
             with open(f"{qref}_output.json", "w", encoding="utf-8") as f:
                 json.dump(q1_res, f, indent=4)

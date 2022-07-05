@@ -17,11 +17,11 @@ inserts/basic_insert
 :glob:
 :caption: Queries
 
-queries/nested_object_links.md
 queries/query_building
+queries/by_id
+queries/nested_object_links.md
 queries/spatial_query
 queries/large_queries
-queries/by_id
 ```
 
 ```{toctree}

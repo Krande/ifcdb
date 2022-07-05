@@ -1,0 +1,214 @@
+[
+    {
+        "GlobalId": "3PXsnq_3qHxBd2w2f4ZOUQ",
+        "Description": "IPE400",
+        "Name": "MyBeam",
+        "ObjectType": "Beam",
+        "Tag": "MyBeam",
+        "PredefinedType": null,
+        "OwnerHistory": {
+            "LastModifiedDate": 1656570506,
+            "CreationDate": 1656570506,
+            "OwningUser": {
+                "ThePerson": {
+                    "Identification": "AdaUser",
+                    "FamilyName": null,
+                    "GivenName": null,
+                    "MiddleNames": null,
+                    "PrefixTitles": null,
+                    "SuffixTitles": null,
+                    "Roles": [],
+                    "Addresses": []
+                },
+                "TheOrganization": {
+                    "Identification": "ADA",
+                    "Name": "Assembly For Design and Analysis",
+                    "Description": null,
+                    "Roles": [],
+                    "Addresses": [],
+                    "_e_type": "default::IfcOrganization"
+                },
+                "Roles": []
+            },
+            "OwningApplication": {
+                "ApplicationDeveloper": {
+                    "Identification": "ADA",
+                    "Name": "Assembly For Design and Analysis",
+                    "Description": null,
+                    "Roles": [],
+                    "Addresses": [],
+                    "_e_type": "default::IfcOrganization"
+                },
+                "Version": "XXX",
+                "ApplicationFullName": "ADA",
+                "ApplicationIdentifier": "ADA",
+                "_e_type": "default::IfcApplication"
+            },
+            "State": "READWRITE",
+            "ChangeAction": null,
+            "LastModifyingUser": {
+                "ThePerson": {
+                    "Identification": "AdaUser",
+                    "FamilyName": null,
+                    "GivenName": null,
+                    "MiddleNames": null,
+                    "PrefixTitles": null,
+                    "SuffixTitles": null,
+                    "Roles": [],
+                    "Addresses": [],
+                    "_e_type": "default::IfcPerson"
+                },
+                "TheOrganization": {
+                    "Identification": "ADA",
+                    "Name": "Assembly For Design and Analysis",
+                    "Description": null,
+                    "Roles": [],
+                    "Addresses": [],
+                    "_e_type": "default::IfcOrganization"
+                },
+                "Roles": [],
+                "_e_type": "default::IfcPersonAndOrganization"
+            },
+            "LastModifyingApplication": {
+                "ApplicationDeveloper": {
+                    "Identification": "ADA",
+                    "Name": "Assembly For Design and Analysis",
+                    "Description": null,
+                    "Roles": [],
+                    "Addresses": [],
+                    "_e_type": "default::IfcOrganization"
+                },
+                "Version": "XXX",
+                "ApplicationFullName": "ADA",
+                "ApplicationIdentifier": "ADA",
+                "_e_type": "default::IfcApplication"
+            },
+            "_e_type": "default::IfcOwnerHistory"
+        },
+        "ObjectPlacement": {
+            "PlacementRelTo": {
+                "id": "d2a00956-fc3d-11ec-9a43-a30df79c4edf"
+            },
+            "RelativePlacement": {
+                "Location": null,
+                "RefDirection": null,
+                "Axis": null,
+                "_e_type": "default::IfcAxis2Placement"
+            },
+            "_e_type": "default::IfcLocalPlacement"
+        },
+        "Representation": {
+            "Name": null,
+            "Description": null,
+            "Representations": [
+                {
+                    "RepresentationIdentifier": "Body",
+                    "RepresentationType": "SweptSolid",
+                    "ContextOfItems": {
+                        "ContextIdentifier": null,
+                        "ContextType": "Model",
+                        "CoordinateSpaceDimension": 3,
+                        "Precision": 1e-05,
+                        "WorldCoordinateSystem": {
+                            "Location": null,
+                            "RefDirection": null,
+                            "Axis": null,
+                            "_e_type": "default::IfcAxis2Placement"
+                        },
+                        "TrueNorth": {
+                            "DirectionRatios": [
+                                0,
+                                1,
+                                0
+                            ]
+                        }
+                    },
+                    "Items": [
+                        {
+                            "SweptArea": {
+                                "ProfileType": "AREA",
+                                "ProfileName": "IPE400",
+                                "Position": null,
+                                "OverallWidth": 0.18,
+                                "OverallDepth": 0.4,
+                                "WebThickness": 0.0086,
+                                "FlangeThickness": 0.0135,
+                                "FilletRadius": null,
+                                "FlangeEdgeRadius": null,
+                                "FlangeSlope": null
+                            },
+                            "Position": {
+                                "Location": {
+                                    "Coordinates": [
+                                        0,
+                                        0,
+                                        0
+                                    ]
+                                },
+                                "Axis": null,
+                                "RefDirection": null
+                            },
+                            "ExtrudedDirection": {
+                                "DirectionRatios": [
+                                    0,
+                                    0,
+                                    1
+                                ]
+                            },
+                            "Depth": 1.5,
+                            "Points": []
+                        }
+                    ]
+                },
+                {
+                    "RepresentationIdentifier": "Axis",
+                    "RepresentationType": "Curve3D",
+                    "ContextOfItems": {
+                        "ContextIdentifier": null,
+                        "ContextType": "Model",
+                        "CoordinateSpaceDimension": 3,
+                        "Precision": 1e-05,
+                        "WorldCoordinateSystem": {
+                            "Location": null,
+                            "RefDirection": null,
+                            "Axis": null,
+                            "_e_type": "default::IfcAxis2Placement"
+                        },
+                        "TrueNorth": {
+                            "DirectionRatios": [
+                                0,
+                                1,
+                                0
+                            ]
+                        }
+                    },
+                    "Items": [
+                        {
+                            "SweptArea": null,
+                            "Position": null,
+                            "ExtrudedDirection": null,
+                            "Depth": null,
+                            "Points": [
+                                {
+                                    "Coordinates": [
+                                        0,
+                                        0,
+                                        0
+                                    ]
+                                },
+                                {
+                                    "Coordinates": [
+                                        0,
+                                        0,
+                                        1.5
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "_e_type": "default::IfcProductDefinitionShape"
+        }
+    }
+]
