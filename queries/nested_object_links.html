@@ -340,63 +340,63 @@ code employed for both uploading IFC and subsequent queries.</p>
 </pre></div>
 </div>
 <p>which returns the following output</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[
-    {
-        &quot;GlobalId&quot;: &quot;3PXsnq_3qHxBd2w2f4ZOUQ&quot;,
-        &quot;Description&quot;: &quot;IPE400&quot;,
-        &quot;Name&quot;: &quot;MyBeam&quot;,
-        &quot;ObjectType&quot;: &quot;Beam&quot;,
-        &quot;Tag&quot;: &quot;MyBeam&quot;,
-        &quot;PredefinedType&quot;: null,
-        &quot;OwnerHistory&quot;: {
-            &quot;LastModifiedDate&quot;: 1656570506,
-            &quot;CreationDate&quot;: 1656570506,
-            &quot;OwningUser&quot;: {
-                &quot;id&quot;: &quot;cdf26e08-fc3d-11ec-9a43-571f0c7f780d&quot;
-            },
-            &quot;OwningApplication&quot;: {
-                &quot;id&quot;: &quot;ce028d60-fc3d-11ec-9a43-ebb5be876a60&quot;
-            },
-            &quot;State&quot;: &quot;READWRITE&quot;,
-            &quot;ChangeAction&quot;: null,
-            &quot;LastModifyingUser&quot;: {
-                &quot;id&quot;: &quot;cdf26e08-fc3d-11ec-9a43-571f0c7f780d&quot;
-            },
-            &quot;LastModifyingApplication&quot;: {
-                &quot;id&quot;: &quot;ce028d60-fc3d-11ec-9a43-ebb5be876a60&quot;
-            },
-            &quot;__type__&quot;: {
-                &quot;name&quot;: &quot;default::IfcOwnerHistory&quot;
-            }
-        },
-        &quot;ObjectPlacement&quot;: {
-            &quot;PlacementRelTo&quot;: {
-                &quot;id&quot;: &quot;d2a00956-fc3d-11ec-9a43-a30df79c4edf&quot;
-            },
-            &quot;RelativePlacement&quot;: {
-                &quot;id&quot;: &quot;d34057ee-fc3d-11ec-9a43-ef604cbe41c3&quot;
-            },
-            &quot;__type__&quot;: {
-                &quot;name&quot;: &quot;default::IfcLocalPlacement&quot;
-            }
-        },
-        &quot;Representation&quot;: {
-            &quot;Name&quot;: null,
-            &quot;Description&quot;: null,
-            &quot;Representations&quot;: [
-                {
-                    &quot;id&quot;: &quot;d1e213f6-fc3d-11ec-9a43-8392b8dac55f&quot;
-                },
-                {
-                    &quot;id&quot;: &quot;d1f995b2-fc3d-11ec-9a43-177d5a7ca147&quot;
-                }
-            ],
-            &quot;__type__&quot;: {
-                &quot;name&quot;: &quot;default::IfcProductDefinitionShape&quot;
-            }
-        }
-    }
-]
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;GlobalId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3PXsnq_3qHxBd2w2f4ZOUQ&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IPE400&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MyBeam&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;ObjectType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Beam&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Tag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MyBeam&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;PredefinedType&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;OwnerHistory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;LastModifiedDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1656570506</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;CreationDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1656570506</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;OwningUser&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cdf26e08-fc3d-11ec-9a43-571f0c7f780d&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;OwningApplication&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ce028d60-fc3d-11ec-9a43-ebb5be876a60&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;State&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;READWRITE&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;ChangeAction&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;LastModifyingUser&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cdf26e08-fc3d-11ec-9a43-571f0c7f780d&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;LastModifyingApplication&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ce028d60-fc3d-11ec-9a43-ebb5be876a60&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;__type__&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcOwnerHistory&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;ObjectPlacement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;PlacementRelTo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;d2a00956-fc3d-11ec-9a43-a30df79c4edf&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;RelativePlacement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;d34057ee-fc3d-11ec-9a43-ef604cbe41c3&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;__type__&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcLocalPlacement&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Representation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;Representations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;d1e213f6-fc3d-11ec-9a43-8392b8dac55f&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;d1f995b2-fc3d-11ec-9a43-177d5a7ca147&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="p">],</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;__type__&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcProductDefinitionShape&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">]</span><span class="w"></span>
 </pre></div>
 </div>
 <p>In the outputted results you can notice that there is a lot of elements with <code class="docutils literal notranslate"><span class="pre">&quot;id&quot;:</span> <span class="pre">&quot;..&quot;</span></code>. This is EdgeDB’s way of
@@ -679,220 +679,220 @@ result should be kept as low as possible.</p>
 </pre></div>
 </div>
 <p>which returns the following output</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[
-    {
-        &quot;GlobalId&quot;: &quot;3PXsnq_3qHxBd2w2f4ZOUQ&quot;,
-        &quot;Description&quot;: &quot;IPE400&quot;,
-        &quot;Name&quot;: &quot;MyBeam&quot;,
-        &quot;ObjectType&quot;: &quot;Beam&quot;,
-        &quot;Tag&quot;: &quot;MyBeam&quot;,
-        &quot;PredefinedType&quot;: null,
-        &quot;OwnerHistory&quot;: {
-            &quot;LastModifiedDate&quot;: 1656570506,
-            &quot;CreationDate&quot;: 1656570506,
-            &quot;OwningUser&quot;: {
-                &quot;ThePerson&quot;: {
-                    &quot;Identification&quot;: &quot;AdaUser&quot;,
-                    &quot;FamilyName&quot;: null,
-                    &quot;GivenName&quot;: null,
-                    &quot;MiddleNames&quot;: null,
-                    &quot;PrefixTitles&quot;: null,
-                    &quot;SuffixTitles&quot;: null,
-                    &quot;Roles&quot;: [],
-                    &quot;Addresses&quot;: []
-                },
-                &quot;TheOrganization&quot;: {
-                    &quot;Identification&quot;: &quot;ADA&quot;,
-                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
-                    &quot;Description&quot;: null,
-                    &quot;Roles&quot;: [],
-                    &quot;Addresses&quot;: [],
-                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
-                },
-                &quot;Roles&quot;: []
-            },
-            &quot;OwningApplication&quot;: {
-                &quot;ApplicationDeveloper&quot;: {
-                    &quot;Identification&quot;: &quot;ADA&quot;,
-                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
-                    &quot;Description&quot;: null,
-                    &quot;Roles&quot;: [],
-                    &quot;Addresses&quot;: [],
-                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
-                },
-                &quot;Version&quot;: &quot;XXX&quot;,
-                &quot;ApplicationFullName&quot;: &quot;ADA&quot;,
-                &quot;ApplicationIdentifier&quot;: &quot;ADA&quot;,
-                &quot;_e_type&quot;: &quot;default::IfcApplication&quot;
-            },
-            &quot;State&quot;: &quot;READWRITE&quot;,
-            &quot;ChangeAction&quot;: null,
-            &quot;LastModifyingUser&quot;: {
-                &quot;ThePerson&quot;: {
-                    &quot;Identification&quot;: &quot;AdaUser&quot;,
-                    &quot;FamilyName&quot;: null,
-                    &quot;GivenName&quot;: null,
-                    &quot;MiddleNames&quot;: null,
-                    &quot;PrefixTitles&quot;: null,
-                    &quot;SuffixTitles&quot;: null,
-                    &quot;Roles&quot;: [],
-                    &quot;Addresses&quot;: [],
-                    &quot;_e_type&quot;: &quot;default::IfcPerson&quot;
-                },
-                &quot;TheOrganization&quot;: {
-                    &quot;Identification&quot;: &quot;ADA&quot;,
-                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
-                    &quot;Description&quot;: null,
-                    &quot;Roles&quot;: [],
-                    &quot;Addresses&quot;: [],
-                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
-                },
-                &quot;Roles&quot;: [],
-                &quot;_e_type&quot;: &quot;default::IfcPersonAndOrganization&quot;
-            },
-            &quot;LastModifyingApplication&quot;: {
-                &quot;ApplicationDeveloper&quot;: {
-                    &quot;Identification&quot;: &quot;ADA&quot;,
-                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
-                    &quot;Description&quot;: null,
-                    &quot;Roles&quot;: [],
-                    &quot;Addresses&quot;: [],
-                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
-                },
-                &quot;Version&quot;: &quot;XXX&quot;,
-                &quot;ApplicationFullName&quot;: &quot;ADA&quot;,
-                &quot;ApplicationIdentifier&quot;: &quot;ADA&quot;,
-                &quot;_e_type&quot;: &quot;default::IfcApplication&quot;
-            },
-            &quot;_e_type&quot;: &quot;default::IfcOwnerHistory&quot;
-        },
-        &quot;ObjectPlacement&quot;: {
-            &quot;PlacementRelTo&quot;: {
-                &quot;id&quot;: &quot;d2a00956-fc3d-11ec-9a43-a30df79c4edf&quot;
-            },
-            &quot;RelativePlacement&quot;: {
-                &quot;Location&quot;: null,
-                &quot;RefDirection&quot;: null,
-                &quot;Axis&quot;: null,
-                &quot;_e_type&quot;: &quot;default::IfcAxis2Placement&quot;
-            },
-            &quot;_e_type&quot;: &quot;default::IfcLocalPlacement&quot;
-        },
-        &quot;Representation&quot;: {
-            &quot;Name&quot;: null,
-            &quot;Description&quot;: null,
-            &quot;Representations&quot;: [
-                {
-                    &quot;RepresentationIdentifier&quot;: &quot;Body&quot;,
-                    &quot;RepresentationType&quot;: &quot;SweptSolid&quot;,
-                    &quot;ContextOfItems&quot;: {
-                        &quot;ContextIdentifier&quot;: null,
-                        &quot;ContextType&quot;: &quot;Model&quot;,
-                        &quot;CoordinateSpaceDimension&quot;: 3,
-                        &quot;Precision&quot;: 1e-05,
-                        &quot;WorldCoordinateSystem&quot;: {
-                            &quot;Location&quot;: null,
-                            &quot;RefDirection&quot;: null,
-                            &quot;Axis&quot;: null,
-                            &quot;_e_type&quot;: &quot;default::IfcAxis2Placement&quot;
-                        },
-                        &quot;TrueNorth&quot;: {
-                            &quot;DirectionRatios&quot;: [
-                                0,
-                                1,
-                                0
-                            ]
-                        }
-                    },
-                    &quot;Items&quot;: [
-                        {
-                            &quot;SweptArea&quot;: {
-                                &quot;ProfileType&quot;: &quot;AREA&quot;,
-                                &quot;ProfileName&quot;: &quot;IPE400&quot;,
-                                &quot;Position&quot;: null,
-                                &quot;OverallWidth&quot;: 0.18,
-                                &quot;OverallDepth&quot;: 0.4,
-                                &quot;WebThickness&quot;: 0.0086,
-                                &quot;FlangeThickness&quot;: 0.0135,
-                                &quot;FilletRadius&quot;: null,
-                                &quot;FlangeEdgeRadius&quot;: null,
-                                &quot;FlangeSlope&quot;: null
-                            },
-                            &quot;Position&quot;: {
-                                &quot;Location&quot;: {
-                                    &quot;Coordinates&quot;: [
-                                        0,
-                                        0,
-                                        0
-                                    ]
-                                },
-                                &quot;Axis&quot;: null,
-                                &quot;RefDirection&quot;: null
-                            },
-                            &quot;ExtrudedDirection&quot;: {
-                                &quot;DirectionRatios&quot;: [
-                                    0,
-                                    0,
-                                    1
-                                ]
-                            },
-                            &quot;Depth&quot;: 1.5,
-                            &quot;Points&quot;: []
-                        }
-                    ]
-                },
-                {
-                    &quot;RepresentationIdentifier&quot;: &quot;Axis&quot;,
-                    &quot;RepresentationType&quot;: &quot;Curve3D&quot;,
-                    &quot;ContextOfItems&quot;: {
-                        &quot;ContextIdentifier&quot;: null,
-                        &quot;ContextType&quot;: &quot;Model&quot;,
-                        &quot;CoordinateSpaceDimension&quot;: 3,
-                        &quot;Precision&quot;: 1e-05,
-                        &quot;WorldCoordinateSystem&quot;: {
-                            &quot;Location&quot;: null,
-                            &quot;RefDirection&quot;: null,
-                            &quot;Axis&quot;: null,
-                            &quot;_e_type&quot;: &quot;default::IfcAxis2Placement&quot;
-                        },
-                        &quot;TrueNorth&quot;: {
-                            &quot;DirectionRatios&quot;: [
-                                0,
-                                1,
-                                0
-                            ]
-                        }
-                    },
-                    &quot;Items&quot;: [
-                        {
-                            &quot;SweptArea&quot;: null,
-                            &quot;Position&quot;: null,
-                            &quot;ExtrudedDirection&quot;: null,
-                            &quot;Depth&quot;: null,
-                            &quot;Points&quot;: [
-                                {
-                                    &quot;Coordinates&quot;: [
-                                        0,
-                                        0,
-                                        0
-                                    ]
-                                },
-                                {
-                                    &quot;Coordinates&quot;: [
-                                        0,
-                                        0,
-                                        1.5
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ],
-            &quot;_e_type&quot;: &quot;default::IfcProductDefinitionShape&quot;
-        }
-    }
-]
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;GlobalId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3PXsnq_3qHxBd2w2f4ZOUQ&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IPE400&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MyBeam&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;ObjectType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Beam&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Tag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MyBeam&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;PredefinedType&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;OwnerHistory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;LastModifiedDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1656570506</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;CreationDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1656570506</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;OwningUser&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ThePerson&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Identification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AdaUser&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;FamilyName&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;GivenName&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;MiddleNames&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;PrefixTitles&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;SuffixTitles&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Addresses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;TheOrganization&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Identification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Assembly For Design and Analysis&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Addresses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcOrganization&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;OwningApplication&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ApplicationDeveloper&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Identification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Assembly For Design and Analysis&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Addresses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcOrganization&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XXX&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ApplicationFullName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ApplicationIdentifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcApplication&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;State&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;READWRITE&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;ChangeAction&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;LastModifyingUser&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ThePerson&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Identification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AdaUser&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;FamilyName&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;GivenName&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;MiddleNames&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;PrefixTitles&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;SuffixTitles&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Addresses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcPerson&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;TheOrganization&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Identification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Assembly For Design and Analysis&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Addresses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcOrganization&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcPersonAndOrganization&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;LastModifyingApplication&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ApplicationDeveloper&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Identification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Assembly For Design and Analysis&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Roles&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Addresses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcOrganization&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XXX&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ApplicationFullName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;ApplicationIdentifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ADA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcApplication&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcOwnerHistory&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;ObjectPlacement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;PlacementRelTo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;d2a00956-fc3d-11ec-9a43-a30df79c4edf&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;RelativePlacement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;Location&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;RefDirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;Axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcAxis2Placement&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcLocalPlacement&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;Representation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;Name&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;Description&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;Representations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;RepresentationIdentifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Body&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;RepresentationType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SweptSolid&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;ContextOfItems&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;ContextIdentifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;ContextType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;CoordinateSpaceDimension&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;Precision&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-05</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;WorldCoordinateSystem&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Location&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;RefDirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcAxis2Placement&quot;</span><span class="w"></span>
+<span class="w">                        </span><span class="p">},</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;TrueNorth&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;DirectionRatios&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                                </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="mi">0</span><span class="w"></span>
+<span class="w">                            </span><span class="p">]</span><span class="w"></span>
+<span class="w">                        </span><span class="p">}</span><span class="w"></span>
+<span class="w">                    </span><span class="p">},</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                        </span><span class="p">{</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;SweptArea&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;ProfileType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AREA&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;ProfileName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IPE400&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;Position&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;OverallWidth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;OverallDepth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.4</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;WebThickness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0086</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;FlangeThickness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0135</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;FilletRadius&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;FlangeEdgeRadius&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;FlangeSlope&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w"></span>
+<span class="w">                            </span><span class="p">},</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Position&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;Location&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                    </span><span class="nt">&quot;Coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="w"></span>
+<span class="w">                                    </span><span class="p">]</span><span class="w"></span>
+<span class="w">                                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;Axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;RefDirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w"></span>
+<span class="w">                            </span><span class="p">},</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;ExtrudedDirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                </span><span class="nt">&quot;DirectionRatios&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                                    </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                    </span><span class="mi">1</span><span class="w"></span>
+<span class="w">                                </span><span class="p">]</span><span class="w"></span>
+<span class="w">                            </span><span class="p">},</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Depth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.5</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Points&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="w">                        </span><span class="p">}</span><span class="w"></span>
+<span class="w">                    </span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;RepresentationIdentifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Axis&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;RepresentationType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Curve3D&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;ContextOfItems&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;ContextIdentifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;ContextType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;CoordinateSpaceDimension&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;Precision&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-05</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;WorldCoordinateSystem&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Location&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;RefDirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Axis&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcAxis2Placement&quot;</span><span class="w"></span>
+<span class="w">                        </span><span class="p">},</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;TrueNorth&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;DirectionRatios&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                                </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                </span><span class="mi">0</span><span class="w"></span>
+<span class="w">                            </span><span class="p">]</span><span class="w"></span>
+<span class="w">                        </span><span class="p">}</span><span class="w"></span>
+<span class="w">                    </span><span class="p">},</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;Items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                        </span><span class="p">{</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;SweptArea&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Position&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;ExtrudedDirection&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Depth&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"></span>
+<span class="w">                            </span><span class="nt">&quot;Points&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                    </span><span class="nt">&quot;Coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="w"></span>
+<span class="w">                                    </span><span class="p">]</span><span class="w"></span>
+<span class="w">                                </span><span class="p">},</span><span class="w"></span>
+<span class="w">                                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                    </span><span class="nt">&quot;Coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="mf">1.5</span><span class="w"></span>
+<span class="w">                                    </span><span class="p">]</span><span class="w"></span>
+<span class="w">                                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                            </span><span class="p">]</span><span class="w"></span>
+<span class="w">                        </span><span class="p">}</span><span class="w"></span>
+<span class="w">                    </span><span class="p">]</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="p">],</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;_e_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default::IfcProductDefinitionShape&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">]</span><span class="w"></span>
 </pre></div>
 </div>
 </section>

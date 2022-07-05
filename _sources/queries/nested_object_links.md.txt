@@ -42,7 +42,7 @@ which generates the following output:
 which returns the following output
 
 ```{literalinclude} resources/q2_output.json
-:language: text
+:language: json
 ```
 
 In the outputted results you can notice that there is a lot of elements with `"id": ".."`. This is EdgeDB's way of 
@@ -68,7 +68,7 @@ result should be kept as low as possible.
 which returns the following output 
 
 ```{literalinclude} resources/q3_output.json
-:language: text
+:language: json
 ```
 
 ## Strategies for reducing the general IFC query shape complexity
