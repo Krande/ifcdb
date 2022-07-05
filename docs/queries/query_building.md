@@ -1,4 +1,4 @@
-## Query Building
+# Query Building
 
 [Back to Main Page](../index.md)
 

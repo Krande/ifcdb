@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 from dataclasses import dataclass, field
@@ -159,6 +160,55 @@ class EdgeObject:
 
         return link_list
 
+    def get_property_str(self, as_polymorph=False):
+        props = self.all_properties
+        return ",\n".join(props) if as_polymorph is False else ",\n".join([f"[is {self.name}].{x}" for x in props])
+
+    def get_links_str(self, as_polymorph=False, ref_classes: list[str] = None):
+
+        if ref_classes is None:
+            ref_classes = []
+        if self.name in ref_classes:
+            logging.warning(f"Skipping {self.name} to prevent recursion errors")
+            return ""
+        ref_classes.append(self.name)
+
+        links = self.links
+        links_str = ""
+        if self.abstract is True:
+            as_polymorph = True
+            for stype in self.subtypes:
+                if stype.abstract:
+                    continue
+                links = stype.links
+                for key, link in links.items():
+                    if isinstance(link, list):
+                        for select_obj in link:
+                            prop_name = key if as_polymorph is False else f"[is {select_obj.name}].{key}"
+                            prop_str = select_obj.get_property_str(True)
+                            link_str = select_obj.get_links_str(True, ref_classes=copy.copy(ref_classes))
+                            links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+                    else:
+                        prop_name = key if as_polymorph is False else f"[is {link.name}].{key}"
+                        prop_str = link.get_property_str()
+                        link_str = link.get_links_str(ref_classes=copy.copy(ref_classes))
+                        links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+        else:
+            for key, link in links.items():
+                if isinstance(link, list):
+                    for select_obj in link:
+                        prop_name = key if as_polymorph is False else f"[is {select_obj.name}].{key}"
+                        prop_str = select_obj.get_property_str(True)
+                        link_str = select_obj.get_links_str(True, ref_classes=copy.copy(ref_classes))
+                        links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+                else:
+                    prop_name = key if as_polymorph is False else f"[is {link.name}].{key}"
+                    prop_str = link.get_property_str()
+                    link_str = link.get_links_str(ref_classes=copy.copy(ref_classes))
+                    links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+
+        return links_str
+
 
 @dataclass
 class EQBuilder:
@@ -169,23 +219,27 @@ class EQBuilder:
     def __post_init__(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
-    def build_object_property_tree(self, class_name, swriter: SelectWriter = None, level=0, is_subtype=False) -> dict:
+    def build_object_property_tree(
+        self, class_name, swriter: SelectWriter = None, ref_classes: list[str] = None, level=0, is_subtype=False
+    ) -> dict:
         eobj = self.edgedb_objects[class_name]
+
         if swriter is None:
             swriter = SelectWriter(eobj)
             swriter.add_initial_select_str()
 
         swriter.current_level = level + 1
 
-        if eobj.name in swriter.referring_classes:
-            logging.warning(
-                f'"{eobj.name}" was skipped as it would lead to ' f'recursion issues -> "{swriter.referring_classes}"'
-            )
+        if ref_classes is None:
+            ref_classes = []
+
+        if eobj.name in ref_classes:
+            logging.warning(f'"{eobj.name}" was skipped as it would lead to ' f'recursion issues -> "{ref_classes}"')
             return {eobj.name: {x: None for x in eobj.all_properties}}
 
-        swriter.referring_classes.append(eobj.name)
+        ref_classes.append(eobj.name)
         swriter.current_class = eobj
-
+        tree_builder = self.build_object_property_tree
         if eobj.abstract is True:
             property_dict = {eobj.name: {"is_abstract": True}}
         else:
@@ -195,17 +249,30 @@ class EQBuilder:
                 swriter.add_as_subtype_properties(eobj.name, all_props)
             else:
                 swriter.add_properties(all_props)
-            for key, top_link in eobj.links.items():
-                if isinstance(top_link, list) is False:
-                    links = [top_link]
+            for key, link_ref in eobj.links.items():
+                if isinstance(link_ref, list):
+                    for link in link_ref:
+                        new_entry = swriter.add_link(
+                            key,
+                            link,
+                            level + 1,
+                            tree_builder,
+                            ref_classes=ref_classes,
+                            is_subtype=True,
+                        )
+                        if key not in property_dict[eobj.name].keys():
+                            property_dict[eobj.name][key] = []
+                        property_dict[eobj.name][key].append(new_entry)
                 else:
-                    links = top_link
-                for link in links:
-                    swriter.select_str += f"{swriter.indent_str}{key}: {{\n"
-                    new_entry = self.build_object_property_tree(link.name, swriter, level=level + 1)
+                    new_entry = swriter.add_link(
+                        key,
+                        link_ref,
+                        level + 1,
+                        tree_builder,
+                        ref_classes=ref_classes,
+                    )
                     if key not in property_dict[eobj.name].keys():
                         property_dict[eobj.name][key] = []
-                    swriter.select_str += f"{swriter.indent_str}}}"
                     property_dict[eobj.name][key].append(new_entry)
 
         skip_these = ["is_abstract"]
@@ -325,7 +392,19 @@ class SelectWriter:
     select_str: str = ""
     current_level: int = 0
     current_class: EdgeObject = None
-    referring_classes: list[str] = field(default_factory=list)
+
+    def add_link(self, key: str, link: EdgeObject, level: int, tree_builder, ref_classes: list[str], is_subtype=True):
+        s_str = f"{self.indent_str}{key}: {{\n"
+        temp_swriter = SelectWriter(link)
+        copy_ref = copy.copy(ref_classes)
+        new_entry = tree_builder(link.name, temp_swriter, level=level, ref_classes=copy_ref, is_subtype=is_subtype)
+        if temp_swriter.select_str == "":
+            return new_entry
+        s_str += temp_swriter.select_str
+        s_str += f"{self.indent_str}}},\n"
+
+        self.select_str += s_str
+        return new_entry
 
     def add_initial_select_str(self):
         self.select_str += f"SELECT {self.select_class.name} {{\n"

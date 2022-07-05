@@ -1,0 +1,19 @@
+[
+    {
+        "GlobalId": "3PXsnq_3qHxBd2w2f4ZOUQ",
+        "Description": "IPE400",
+        "Name": "MyBeam",
+        "ObjectType": "Beam",
+        "Tag": "MyBeam",
+        "PredefinedType": null,
+        "OwnerHistory": {
+            "id": "cffa883e-fc3d-11ec-9a43-4be861e73ff8"
+        },
+        "ObjectPlacement": {
+            "id": "d3405992-fc3d-11ec-9a43-37cf94fdac59"
+        },
+        "Representation": {
+            "id": "d2b64c66-fc3d-11ec-9a43-3b7eb49696b7"
+        }
+    }
+]

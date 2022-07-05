@@ -1,0 +1,57 @@
+[
+    {
+        "GlobalId": "3PXsnq_3qHxBd2w2f4ZOUQ",
+        "Description": "IPE400",
+        "Name": "MyBeam",
+        "ObjectType": "Beam",
+        "Tag": "MyBeam",
+        "PredefinedType": null,
+        "OwnerHistory": {
+            "LastModifiedDate": 1656570506,
+            "CreationDate": 1656570506,
+            "OwningUser": {
+                "id": "cdf26e08-fc3d-11ec-9a43-571f0c7f780d"
+            },
+            "OwningApplication": {
+                "id": "ce028d60-fc3d-11ec-9a43-ebb5be876a60"
+            },
+            "State": "READWRITE",
+            "ChangeAction": null,
+            "LastModifyingUser": {
+                "id": "cdf26e08-fc3d-11ec-9a43-571f0c7f780d"
+            },
+            "LastModifyingApplication": {
+                "id": "ce028d60-fc3d-11ec-9a43-ebb5be876a60"
+            },
+            "__type__": {
+                "name": "default::IfcOwnerHistory"
+            }
+        },
+        "ObjectPlacement": {
+            "PlacementRelTo": {
+                "id": "d2a00956-fc3d-11ec-9a43-a30df79c4edf"
+            },
+            "RelativePlacement": {
+                "id": "d34057ee-fc3d-11ec-9a43-ef604cbe41c3"
+            },
+            "__type__": {
+                "name": "default::IfcLocalPlacement"
+            }
+        },
+        "Representation": {
+            "Name": null,
+            "Description": null,
+            "Representations": [
+                {
+                    "id": "d1e213f6-fc3d-11ec-9a43-8392b8dac55f"
+                },
+                {
+                    "id": "d1f995b2-fc3d-11ec-9a43-177d5a7ca147"
+                }
+            ],
+            "__type__": {
+                "name": "default::IfcProductDefinitionShape"
+            }
+        }
+    }
+]

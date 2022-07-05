@@ -16,11 +16,11 @@ from ifcdb import EdgeIO
 
 ifc_path = pathlib.Path("files/tessellated-item.ifc")
 
-with EdgeIO(ifc_file=ifc_path, db_schema_dir="db/dbschema", ifc_schema="IFC4x1", database="testdb") as io:
+with EdgeIO(db_schema_dir="db/dbschema", ifc_schema="IFC4x1", database="testdb") as io:
     # Use `from_ifc_file=True` if you want to limit number of IFC schema elements to what's contained in your IFC file    
-    io.create_schema(from_ifc_file=True)
+    io.create_schema(from_ifc_file=ifc_path)
     io.setup_database(delete_existing_migrations=True)
-    io.insert_ifc()
+    io.insert_ifc(ifc_path)
     # Do all kinds of query experiments here
     
     # Or just read the entire EdgeDB IFC content into an IFC file str using ifcopenshell like this

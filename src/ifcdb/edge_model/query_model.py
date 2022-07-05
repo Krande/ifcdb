@@ -115,10 +115,10 @@ class EdgeIOBase:
 
         return client
 
-    def __enter__(self):
-        if self.ifc_file is not None:
-            self.ifc_io = IfcIO(ifc_file=self.ifc_file, edge_io=self)
+    def load_ifc(self, ifc_file):
+        self.ifc_io = IfcIO(ifc_file=ifc_file, edge_io=self)
 
+    def __enter__(self):
         self.client = self.create_client()
 
         return self
@@ -129,14 +129,15 @@ class EdgeIOBase:
 
     # IFC utils
 
-    def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=False, specific_entities=None):
+    def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=None, specific_entities=None):
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
         else:
             dbschema_dir = self.db_schema_dir
 
         esdl_file_path = dbschema_dir / "default.esdl"
-        if from_ifc_file:
+        if from_ifc_file is not None:
+            self.load_ifc(ifc_file=from_ifc_file)
             unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
         else:
             unique_entities = self.em.get_all_entities()
@@ -233,9 +234,10 @@ class EdgeIOBase:
         unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
         self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
 
-    def _insert_items_sequentially(self, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
+    def _insert_items_sequentially(self, ifc_file, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
         from .query_utils import get_att_insert_str
 
+        self.load_ifc(ifc_file)
         ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
@@ -363,7 +365,8 @@ class EdgeIO(EdgeIOBase):
 
     def _get_by_uuid_and_class_name(self, uuid, class_name):
         res = self.eq_builder.build_object_property_tree(class_name)
-        out_str = json.dumps(res.select_str, indent=4)
+        select_str = res.select_str
+        out_str = json.dumps(select_str, indent=4)
         print(out_str)
         select_str_a = self.eq_builder.select_object_str(class_name)
         query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
@@ -491,12 +494,12 @@ class EdgeIO(EdgeIOBase):
         return json.loads(client.query_json(select_str))
 
     # Insertions
-    def insert_ifc(self, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
+    def insert_ifc(self, ifc_file, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
         """Upload all IFC elements to EdgeDB instance"""
         for tx in self.client.transaction():
             with tx:
                 if method == INSERTS.SEQ:
-                    self._insert_items_sequentially(tx, specific_ifc_ids)
+                    self._insert_items_sequentially(ifc_file, tx, specific_ifc_ids)
                 else:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 

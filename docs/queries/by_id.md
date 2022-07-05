@@ -1,4 +1,4 @@
-## Query by element name(s)/GlobalId(s)
+# Query by element name(s)/GlobalId(s)
 
 [Back to Main Page](../index.md)
 

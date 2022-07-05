@@ -14,11 +14,11 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
     db_name = ifc_file.replace(".ifc", "").replace("-", "_")
     ifc_path = top_dir() / "files" / ifc_file
 
-    with EdgeIO(ifc_file=ifc_path, db_schema_dir=f"db/{db_name}/dbschema", ifc_schema="IFC4x1", database=db_name) as io:
+    with EdgeIO(db_schema_dir=f"db/{db_name}/dbschema", ifc_schema="IFC4x1", database=db_name) as io:
         if refresh_db:
-            io.create_schema(from_ifc_file=True)
+            io.create_schema(from_ifc_file=ifc_path)
             io.setup_database(delete_existing_migrations=True)
-            io.insert_ifc()
+            io.insert_ifc(ifc_path)
 
         # Validate Data
         if validate_data:
