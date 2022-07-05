@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Query Building" href="query_building.html" /><link rel="prev" title="Basic Insertion Validation" href="../inserts/basic_insert.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Slicing in the Spatial Hierarchy" href="spatial_query.html" /><link rel="prev" title="Query by element name(s)/GlobalId(s)" href="by_id.html" />
 
     <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
         <title>Nested Object links - IFC as a Database</title>
@@ -161,11 +161,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Queries</span></p>
 <ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Nested Object links</a></li>
 <li class="toctree-l1"><a class="reference internal" href="query_building.html">Query Building</a></li>
+<li class="toctree-l1"><a class="reference internal" href="by_id.html">Query by element name(s)/GlobalId(s)</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Nested Object links</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spatial_query.html">Slicing in the Spatial Hierarchy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="large_queries.html">Large queries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="by_id.html">Query by element name(s)/GlobalId(s)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Updating</span></p>
 <ul>
@@ -209,13 +209,16 @@
         <article role="main">
           <section id="nested-object-links">
 <h1>Nested Object links<a class="headerlink" href="#nested-object-links" title="Permalink to this heading">#</a></h1>
-<p>A manual investigation of the complex nested object property links is necessary as a stepping stone towards building an
+<p>A manual investigation of the complex nested object property links found in the IFC schema.
+This manual query building exercise functions as a stepping stone towards building an
 automatic query generator for IFC in EdgeDB.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The intention is that the query builder will in fact work on any EdgeDB schema, not only for IFC.</p>
 </div>
-<p>The rooted IFC element <code class="docutils literal notranslate"><span class="pre">IfcBeam</span></code> is used as a source for further investigation.</p>
+<p>The rooted IFC element <code class="docutils literal notranslate"><span class="pre">IfcBeam</span></code> is used as a source for further investigation.
+See the <a class="reference external" href="https://standards.buildingsmart.org/IFC/RELEASE/IFC4_3/lexical/IfcBeam.htm">IfcBeam docs</a> for more information
+about the IfcBeam.</p>
 <p>The ifc file <a class="reference download internal" download="" href="../_downloads/653cf189a2fe986f036f3992a79cd7a2/MyBeam.ifc"><span class="xref download myst">MyBeam.ifc</span></a> is first uploaded to an EdgeDB instance. See below for the full
 code employed for both uploading IFC and subsequent queries.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
@@ -235,7 +238,7 @@ code employed for both uploading IFC and subsequent queries.</p>
             <span class="n">io</span><span class="o">.</span><span class="n">insert_ifc</span><span class="p">(</span><span class="n">ifc_path</span><span class="p">)</span>
 
         <span class="c1"># Queries</span>
-        <span class="k">for</span> <span class="n">qref</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;q1&quot;</span><span class="p">,</span> <span class="s2">&quot;q2&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">qref</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;q1&quot;</span><span class="p">,</span> <span class="s2">&quot;q2&quot;</span><span class="p">,</span> <span class="s2">&quot;q3&quot;</span><span class="p">]:</span>
             <span class="n">q1_res</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">query_json</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qref</span><span class="si">}</span><span class="s2">.esdl&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()))</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qref</span><span class="si">}</span><span class="s2">_output.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">q1_res</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
@@ -336,7 +339,7 @@ code employed for both uploading IFC and subsequent queries.</p>
 }
 </pre></div>
 </div>
-<p>which returns the</p>
+<p>which returns the following output</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[
     {
         &quot;GlobalId&quot;: &quot;3PXsnq_3qHxBd2w2f4ZOUQ&quot;,
@@ -396,9 +399,526 @@ code employed for both uploading IFC and subsequent queries.</p>
 ]
 </pre></div>
 </div>
-<p>In the outputted results you can notice that there is a lot of references to <code class="docutils literal notranslate"><span class="pre">&quot;id&quot;:</span> <span class="pre">&quot;..&quot;</span></code>. This is EdgeDB’s way of
+<p>In the outputted results you can notice that there is a lot of elements with <code class="docutils literal notranslate"><span class="pre">&quot;id&quot;:</span> <span class="pre">&quot;..&quot;</span></code>. This is EdgeDB’s way of
 letting us know that this property is linked to another object.</p>
-<p>And at the time of writing, there is no “automatic” way of getting all the linked object properties out from</p>
+<p>At the time of writing, there is no “automatic” way of asking in a single query for all related object’s and their
+properties without knowing upfront what exactly are the related object type’s and the names of their properties.</p>
+<p>As a consequence of this, it is necessary to explicitly define the entire path of every related object and their
+properties. This will be the final step in this experiment</p>
+</section>
+<section id="query-3-the-completed-query-shape">
+<h2>Query 3 -&gt; The completed query shape<a class="headerlink" href="#query-3-the-completed-query-shape" title="Permalink to this heading">#</a></h2>
+<p>As a final piece in this exercise, it will be attempted to write the entire query shape to return all related object
+properties originating from the <code class="docutils literal notranslate"><span class="pre">IfcBeam</span></code> class. In other terms, the number of occurrences of <code class="docutils literal notranslate"><span class="pre">&quot;id&quot;:</span> <span class="pre">&quot;..&quot;</span></code> in the
+result should be kept as low as possible.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>SELECT IfcBeam {
+    # Properties pointing to native types (str, float64, int64, etc.)
+    GlobalId,
+    Description,
+    Name,
+    ObjectType,
+    Tag,
+    PredefinedType,
+    # Links to other objects
+    OwnerHistory : { # IfcOwnerHistory
+        # Properties
+        LastModifiedDate,
+        CreationDate,
+        # Links to other objects
+        OwningUser : { # IfcPersonAndOrganization
+            ThePerson : { # IfcPerson
+                Identification,
+                FamilyName,
+                GivenName,
+                MiddleNames,
+                PrefixTitles,
+                SuffixTitles,
+                Roles : { # IfcActorRole
+                    Role,
+                    UserDefinedRole,
+                    Description,
+                    _e_type := .__type__.name
+                },
+                Addresses : { # IfcAddress
+                    Purpose,
+                    Description,
+                    UserDefinedPurpose,
+                    _e_type := .__type__.name
+                }
+            },
+            TheOrganization : { # IfcOrganization
+                Identification,
+                Name,
+                Description,
+                Roles : { # IfcActorRole
+                    Role,
+                    UserDefinedRole,
+                    Description,
+                    _e_type := .__type__.name
+                },
+                Addresses : { # IfcAddress
+                    Purpose,
+                    Description,
+                    UserDefinedPurpose,
+                    _e_type := .__type__.name
+                },
+                _e_type := .__type__.name
+            },
+            Roles : { # IfcActorRole
+                Role,
+                UserDefinedRole,
+                Description,
+                _e_type := .__type__.name
+            }
+        },
+        OwningApplication : { # IfcApplication
+            ApplicationDeveloper : { # IfcOrganization
+                Identification,
+                Name,
+                Description,
+                Roles : { # IfcActorRole
+                    Role,
+                    UserDefinedRole,
+                    Description,
+                    _e_type := .__type__.name
+                },
+                Addresses : { # IfcAddress
+                    Purpose,
+                    Description,
+                    UserDefinedPurpose
+                },
+                _e_type := .__type__.name
+            },
+            Version,
+            ApplicationFullName,
+            ApplicationIdentifier,
+            _e_type := .__type__.name
+        },
+        State,
+        ChangeAction,
+        LastModifyingUser : { # IfcPersonAndOrganization
+            ThePerson : { # IfcPerson
+                Identification,
+                FamilyName,
+                GivenName,
+                MiddleNames,
+                PrefixTitles,
+                SuffixTitles,
+                Roles : { # IfcActorRole
+                    Role,
+                    UserDefinedRole,
+                    Description,
+                    _e_type := .__type__.name
+                },
+                Addresses : { # IfcAddress
+                    Purpose,
+                    Description,
+                    UserDefinedPurpose,
+                    _e_type := .__type__.name
+                },
+                _e_type := .__type__.name
+            },
+            TheOrganization : { # IfcOrganization
+                Identification,
+                Name,
+                Description,
+                Roles : { # IfcActorRole
+                    Role,
+                    UserDefinedRole,
+                    Description,
+                    _e_type := .__type__.name
+                },
+                Addresses : { # IfcAddress
+                    Purpose,
+                    Description,
+                    UserDefinedPurpose,
+                    _e_type := .__type__.name
+                },
+                _e_type := .__type__.name
+            },
+            Roles : { # IfcActorRole
+                Role,
+                UserDefinedRole,
+                Description,
+                _e_type := .__type__.name
+            },
+            _e_type := .__type__.name
+        },
+        LastModifyingApplication : { # IfcApplication
+            ApplicationDeveloper : { # IfcOrganization
+                Identification,
+                Name,
+                Description,
+                Roles : { # IfcActorRole
+                    Role,
+                    UserDefinedRole,
+                    Description,
+                    _e_type := .__type__.name
+                },
+                Addresses : { # IfcAddress
+                    Purpose,
+                    Description,
+                    UserDefinedPurpose,
+                    _e_type := .__type__.name
+                },
+                _e_type := .__type__.name
+            },
+            Version,
+            ApplicationFullName,
+            ApplicationIdentifier,
+            _e_type := .__type__.name
+        },
+        # These are specific EdgeDB attributes to get more information about the object itself
+        _e_type := .__type__.name
+    },
+    ObjectPlacement : { # IfcObjectPlacement
+        # ObjectPlacement points to an abstract superclass &quot;IfcObjectPlacement&quot;.
+        # Therefore we need to consider various subtypes using the [is ..].key
+        # (to reduce size of this file and since we know that for this scenario ObjectPlacement is pointing to an
+        # IfcLocalPlacement, we will skip the other subtypes &quot;IfcLinearPlacement&quot; &amp; &quot;IfcGridPlacement&quot;
+        [is IfcLocalPlacement].PlacementRelTo,
+        # PlacementRelTo links to same type of object &quot;IfcObjectPlacement&quot;.
+        # Therefore it is considered not necessary to follow the path further, given that this information would have
+        # to be collected in a separate step
+        [is IfcLocalPlacement].RelativePlacement : { # IfcAxis2Placement
+            # IfcAxis2Placement is a Select object. Which means it can be one of many objects.
+            # It is however, not known how
+            [is IfcAxis2Placement3D].Location : { # IfcPoint
+                [is IfcCartesianPoint].Coordinates
+            },
+            [is IfcAxis2Placement3D].RefDirection: { # IfcDirection
+                DirectionRatios
+            },
+            [is IfcAxis2Placement3D].Axis,
+            # These are specific EdgeDB attributes to get more information about the object itself
+            _e_type := .__type__.name
+        },
+        # These are specific EdgeDB attributes to get more information about the object itself
+        _e_type := .__type__.name
+    },
+    Representation : { # IfcProductRepresentation
+        # Points to an abstract superclass &quot;IfcProductRepresentation&quot;. However only the subtype
+        # &quot;IfcMaterialDefinitionRepresentation&quot; has any unique properties not associated with its parent class and
+        # it is not used in this particular test IFC file and is therefore omitted.
+        # Properties
+        Name,
+        Description,
+        # Links to other objects
+        Representations : { # IfcRepresentation
+            [is IfcShapeRepresentation].RepresentationIdentifier,
+            [is IfcShapeRepresentation].RepresentationType,
+            [is IfcShapeRepresentation].ContextOfItems : { # IfcRepresentationContext
+                ContextIdentifier,
+                ContextType,
+                [is IfcGeometricRepresentationContext].CoordinateSpaceDimension,
+                [is IfcGeometricRepresentationContext].Precision,
+                [is IfcGeometricRepresentationContext].WorldCoordinateSystem : { # IfcAxis2Placement
+                    # IfcAxis2Placement is a Select object. Which means it can be one of many objects.
+                    # It is however, not known how
+                    [is IfcAxis2Placement3D].Location : { # IfcPoint
+                        [is IfcCartesianPoint].Coordinates
+                    },
+                    [is IfcAxis2Placement3D].RefDirection: { # IfcDirection
+                        DirectionRatios
+                    },
+                    [is IfcAxis2Placement3D].Axis,
+                    # These are specific EdgeDB attributes to get more information about the object itself
+                    _e_type := .__type__.name
+                },
+                [is IfcGeometricRepresentationContext].TrueNorth : { # IfcDirection
+                    DirectionRatios
+                },
+            },
+            [is IfcShapeRepresentation].Items : { # IfcRepresentationItem
+                # IfcRepresentationItem is an abstract class that represents &gt; 100 different types of representation
+                # types. Therefore only the 2 subtypes found in the IFC file is included
+                [is IfcExtrudedAreaSolid].SweptArea : { # IfcProfileDef
+                    # IfcProfileDef is an abstract superclass. Here only the IfcIShapeProfileDef is included.
+                    [is IfcIShapeProfileDef].ProfileType,
+                    [is IfcIShapeProfileDef].ProfileName,
+                    [is IfcIShapeProfileDef].Position : { # IfcAxis2Placement2D
+                        Location : { # IfcPoint
+                            [is IfcCartesianPoint].Coordinates
+                        },
+                        RefDirection : { # IfcDirection
+                            DirectionRatios
+                        },
+                    },
+                    [is IfcIShapeProfileDef].OverallWidth,
+                    [is IfcIShapeProfileDef].OverallDepth,
+                    [is IfcIShapeProfileDef].WebThickness,
+                    [is IfcIShapeProfileDef].FlangeThickness,
+                    [is IfcIShapeProfileDef].FilletRadius,
+                    [is IfcIShapeProfileDef].FlangeEdgeRadius,
+                    [is IfcIShapeProfileDef].FlangeSlope
+                },
+                [is IfcExtrudedAreaSolid].Position : { # IfcAxis2Placement3D
+                    Location : { # IfcPoint
+                        [is IfcCartesianPoint].Coordinates
+                    },
+                    Axis : { # IfcDirection
+                        DirectionRatios
+                    },
+                    RefDirection : { # IfcDirection
+                        DirectionRatios
+                    },
+                },
+                [is IfcExtrudedAreaSolid].ExtrudedDirection : { # IfcDirection
+                    DirectionRatios
+                },
+                [is IfcExtrudedAreaSolid].Depth,
+                [is IfcPolyline].Points : { # IfcCartesianPoint
+                    Coordinates
+                }
+            }
+        },
+        # These are specific EdgeDB attributes to get more information about the object itself
+        _e_type := .__type__.name
+    }
+}
+</pre></div>
+</div>
+<p>which returns the following output</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[
+    {
+        &quot;GlobalId&quot;: &quot;3PXsnq_3qHxBd2w2f4ZOUQ&quot;,
+        &quot;Description&quot;: &quot;IPE400&quot;,
+        &quot;Name&quot;: &quot;MyBeam&quot;,
+        &quot;ObjectType&quot;: &quot;Beam&quot;,
+        &quot;Tag&quot;: &quot;MyBeam&quot;,
+        &quot;PredefinedType&quot;: null,
+        &quot;OwnerHistory&quot;: {
+            &quot;LastModifiedDate&quot;: 1656570506,
+            &quot;CreationDate&quot;: 1656570506,
+            &quot;OwningUser&quot;: {
+                &quot;ThePerson&quot;: {
+                    &quot;Identification&quot;: &quot;AdaUser&quot;,
+                    &quot;FamilyName&quot;: null,
+                    &quot;GivenName&quot;: null,
+                    &quot;MiddleNames&quot;: null,
+                    &quot;PrefixTitles&quot;: null,
+                    &quot;SuffixTitles&quot;: null,
+                    &quot;Roles&quot;: [],
+                    &quot;Addresses&quot;: []
+                },
+                &quot;TheOrganization&quot;: {
+                    &quot;Identification&quot;: &quot;ADA&quot;,
+                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
+                    &quot;Description&quot;: null,
+                    &quot;Roles&quot;: [],
+                    &quot;Addresses&quot;: [],
+                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
+                },
+                &quot;Roles&quot;: []
+            },
+            &quot;OwningApplication&quot;: {
+                &quot;ApplicationDeveloper&quot;: {
+                    &quot;Identification&quot;: &quot;ADA&quot;,
+                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
+                    &quot;Description&quot;: null,
+                    &quot;Roles&quot;: [],
+                    &quot;Addresses&quot;: [],
+                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
+                },
+                &quot;Version&quot;: &quot;XXX&quot;,
+                &quot;ApplicationFullName&quot;: &quot;ADA&quot;,
+                &quot;ApplicationIdentifier&quot;: &quot;ADA&quot;,
+                &quot;_e_type&quot;: &quot;default::IfcApplication&quot;
+            },
+            &quot;State&quot;: &quot;READWRITE&quot;,
+            &quot;ChangeAction&quot;: null,
+            &quot;LastModifyingUser&quot;: {
+                &quot;ThePerson&quot;: {
+                    &quot;Identification&quot;: &quot;AdaUser&quot;,
+                    &quot;FamilyName&quot;: null,
+                    &quot;GivenName&quot;: null,
+                    &quot;MiddleNames&quot;: null,
+                    &quot;PrefixTitles&quot;: null,
+                    &quot;SuffixTitles&quot;: null,
+                    &quot;Roles&quot;: [],
+                    &quot;Addresses&quot;: [],
+                    &quot;_e_type&quot;: &quot;default::IfcPerson&quot;
+                },
+                &quot;TheOrganization&quot;: {
+                    &quot;Identification&quot;: &quot;ADA&quot;,
+                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
+                    &quot;Description&quot;: null,
+                    &quot;Roles&quot;: [],
+                    &quot;Addresses&quot;: [],
+                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
+                },
+                &quot;Roles&quot;: [],
+                &quot;_e_type&quot;: &quot;default::IfcPersonAndOrganization&quot;
+            },
+            &quot;LastModifyingApplication&quot;: {
+                &quot;ApplicationDeveloper&quot;: {
+                    &quot;Identification&quot;: &quot;ADA&quot;,
+                    &quot;Name&quot;: &quot;Assembly For Design and Analysis&quot;,
+                    &quot;Description&quot;: null,
+                    &quot;Roles&quot;: [],
+                    &quot;Addresses&quot;: [],
+                    &quot;_e_type&quot;: &quot;default::IfcOrganization&quot;
+                },
+                &quot;Version&quot;: &quot;XXX&quot;,
+                &quot;ApplicationFullName&quot;: &quot;ADA&quot;,
+                &quot;ApplicationIdentifier&quot;: &quot;ADA&quot;,
+                &quot;_e_type&quot;: &quot;default::IfcApplication&quot;
+            },
+            &quot;_e_type&quot;: &quot;default::IfcOwnerHistory&quot;
+        },
+        &quot;ObjectPlacement&quot;: {
+            &quot;PlacementRelTo&quot;: {
+                &quot;id&quot;: &quot;d2a00956-fc3d-11ec-9a43-a30df79c4edf&quot;
+            },
+            &quot;RelativePlacement&quot;: {
+                &quot;Location&quot;: null,
+                &quot;RefDirection&quot;: null,
+                &quot;Axis&quot;: null,
+                &quot;_e_type&quot;: &quot;default::IfcAxis2Placement&quot;
+            },
+            &quot;_e_type&quot;: &quot;default::IfcLocalPlacement&quot;
+        },
+        &quot;Representation&quot;: {
+            &quot;Name&quot;: null,
+            &quot;Description&quot;: null,
+            &quot;Representations&quot;: [
+                {
+                    &quot;RepresentationIdentifier&quot;: &quot;Body&quot;,
+                    &quot;RepresentationType&quot;: &quot;SweptSolid&quot;,
+                    &quot;ContextOfItems&quot;: {
+                        &quot;ContextIdentifier&quot;: null,
+                        &quot;ContextType&quot;: &quot;Model&quot;,
+                        &quot;CoordinateSpaceDimension&quot;: 3,
+                        &quot;Precision&quot;: 1e-05,
+                        &quot;WorldCoordinateSystem&quot;: {
+                            &quot;Location&quot;: null,
+                            &quot;RefDirection&quot;: null,
+                            &quot;Axis&quot;: null,
+                            &quot;_e_type&quot;: &quot;default::IfcAxis2Placement&quot;
+                        },
+                        &quot;TrueNorth&quot;: {
+                            &quot;DirectionRatios&quot;: [
+                                0,
+                                1,
+                                0
+                            ]
+                        }
+                    },
+                    &quot;Items&quot;: [
+                        {
+                            &quot;SweptArea&quot;: {
+                                &quot;ProfileType&quot;: &quot;AREA&quot;,
+                                &quot;ProfileName&quot;: &quot;IPE400&quot;,
+                                &quot;Position&quot;: null,
+                                &quot;OverallWidth&quot;: 0.18,
+                                &quot;OverallDepth&quot;: 0.4,
+                                &quot;WebThickness&quot;: 0.0086,
+                                &quot;FlangeThickness&quot;: 0.0135,
+                                &quot;FilletRadius&quot;: null,
+                                &quot;FlangeEdgeRadius&quot;: null,
+                                &quot;FlangeSlope&quot;: null
+                            },
+                            &quot;Position&quot;: {
+                                &quot;Location&quot;: {
+                                    &quot;Coordinates&quot;: [
+                                        0,
+                                        0,
+                                        0
+                                    ]
+                                },
+                                &quot;Axis&quot;: null,
+                                &quot;RefDirection&quot;: null
+                            },
+                            &quot;ExtrudedDirection&quot;: {
+                                &quot;DirectionRatios&quot;: [
+                                    0,
+                                    0,
+                                    1
+                                ]
+                            },
+                            &quot;Depth&quot;: 1.5,
+                            &quot;Points&quot;: []
+                        }
+                    ]
+                },
+                {
+                    &quot;RepresentationIdentifier&quot;: &quot;Axis&quot;,
+                    &quot;RepresentationType&quot;: &quot;Curve3D&quot;,
+                    &quot;ContextOfItems&quot;: {
+                        &quot;ContextIdentifier&quot;: null,
+                        &quot;ContextType&quot;: &quot;Model&quot;,
+                        &quot;CoordinateSpaceDimension&quot;: 3,
+                        &quot;Precision&quot;: 1e-05,
+                        &quot;WorldCoordinateSystem&quot;: {
+                            &quot;Location&quot;: null,
+                            &quot;RefDirection&quot;: null,
+                            &quot;Axis&quot;: null,
+                            &quot;_e_type&quot;: &quot;default::IfcAxis2Placement&quot;
+                        },
+                        &quot;TrueNorth&quot;: {
+                            &quot;DirectionRatios&quot;: [
+                                0,
+                                1,
+                                0
+                            ]
+                        }
+                    },
+                    &quot;Items&quot;: [
+                        {
+                            &quot;SweptArea&quot;: null,
+                            &quot;Position&quot;: null,
+                            &quot;ExtrudedDirection&quot;: null,
+                            &quot;Depth&quot;: null,
+                            &quot;Points&quot;: [
+                                {
+                                    &quot;Coordinates&quot;: [
+                                        0,
+                                        0,
+                                        0
+                                    ]
+                                },
+                                {
+                                    &quot;Coordinates&quot;: [
+                                        0,
+                                        0,
+                                        1.5
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            &quot;_e_type&quot;: &quot;default::IfcProductDefinitionShape&quot;
+        }
+    }
+]
+</pre></div>
+</div>
+</section>
+<section id="strategies-for-reducing-the-general-ifc-query-shape-complexity">
+<h2>Strategies for reducing the general IFC query shape complexity<a class="headerlink" href="#strategies-for-reducing-the-general-ifc-query-shape-complexity" title="Permalink to this heading">#</a></h2>
+<p>Based on the observed results here are some proposals for further improving the efficiency and ergonomics of the
+query shapes.</p>
+<section id="ifc-specific-query-modifications">
+<h3>IFC specific query modifications<a class="headerlink" href="#ifc-specific-query-modifications" title="Permalink to this heading">#</a></h3>
+<p>The following will work only for IFC and would not apply for general query building using ESDL in general.</p>
+<ul class="simple">
+<li><p>Exclude <code class="docutils literal notranslate"><span class="pre">OwnerHistory</span></code> in the general query builder and instead create a custom query for
+exporting all OwnerHistory related information</p></li>
+<li><p>Move <code class="docutils literal notranslate"><span class="pre">ObjectPlacement</span></code> query out of the general query builder and to its own custom query in order
+to resolve World Coordinates based on potentially nested <code class="docutils literal notranslate"><span class="pre">RelativePlacement</span></code> references.</p></li>
+</ul>
+</section>
+<section id="general-query-modifications">
+<h3>General query modifications<a class="headerlink" href="#general-query-modifications" title="Permalink to this heading">#</a></h3>
+<p>These options are more general and should apply to all esdl schemas.</p>
+<ul class="simple">
+<li><p>Do an initial query to return all nested object links and object types without any non-link-property information.
+In scenarios with objects being referred to multiple times, this strategy will reduce duplication of result data, and
+should improve things especially with shapes containing a lot of references to same objects.</p></li>
+</ul>
+</section>
 </section>
 </section>
 
@@ -407,23 +927,23 @@ letting us know that this property is linked to another object.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="query_building.html">
+          <a class="next-page" href="spatial_query.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Query Building</div>
+                <div class="title">Slicing in the Spatial Hierarchy</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../inserts/basic_insert.html">
+          <a class="prev-page" href="by_id.html">
               <svg><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Basic Insertion Validation</div>
+                <div class="title">Query by element name(s)/GlobalId(s)</div>
                 
               </div>
             </a>
@@ -462,6 +982,12 @@ letting us know that this property is linked to another object.</p>
 <li><a class="reference internal" href="#">Nested Object links</a><ul>
 <li><a class="reference internal" href="#query-1-basic-select">Query 1 -&gt; Basic Select</a></li>
 <li><a class="reference internal" href="#query-2-get-properties-of-linked-objects">Query 2 -&gt; Get properties of linked objects</a></li>
+<li><a class="reference internal" href="#query-3-the-completed-query-shape">Query 3 -&gt; The completed query shape</a></li>
+<li><a class="reference internal" href="#strategies-for-reducing-the-general-ifc-query-shape-complexity">Strategies for reducing the general IFC query shape complexity</a><ul>
+<li><a class="reference internal" href="#ifc-specific-query-modifications">IFC specific query modifications</a></li>
+<li><a class="reference internal" href="#general-query-modifications">General query modifications</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
