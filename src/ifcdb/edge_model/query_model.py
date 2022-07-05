@@ -144,7 +144,7 @@ class EdgeIOBase:
             unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
         else:
             if self.ifc_schema is None:
-                raise ValueError('If no IFC file is passed you need to set the "ifc_schema" variable')
+                raise ValueError('No IFC file is passed. Set the "ifc_schema" variable to a valid IFC schema version')
             unique_entities = self.em.get_all_entities()
 
         if specific_entities is not None:
