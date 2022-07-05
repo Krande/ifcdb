@@ -12,11 +12,11 @@ def test_roundtrip_ifc_files_validation(ifc_files_dir, em_ifc4x1):
     if db_schema_dir.exists():
         shutil.rmtree(db_schema_dir)
 
-    with EdgeIO(ifc_file, em=em_ifc4x1, db_schema_dir=db_schema_dir, database=db_name) as io:
+    with EdgeIO(em=em_ifc4x1, db_schema_dir=db_schema_dir, database=db_name) as io:
         # Set up Schema & Database
-        io.create_schema(from_ifc_file=True)
+        io.create_schema(from_ifc_file=ifc_file)
         io.setup_database(delete_existing_migrations=True)
-        io.insert_ifc()
+        io.insert_ifc(ifc_file)
 
         result_by_id = io.get_by_global_id("3qzoyCPy1CtfV237Rle9$t")
         result_by_name = io.get_by_name("Grasshopper Building")

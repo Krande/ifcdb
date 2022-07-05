@@ -39,9 +39,11 @@ class IfcIO:
     ifc_file: str | pathlib.Path
     ifc_obj: ifcopenshell.file = None
     edge_io: EdgeIOBase = None
+    schema: str = None
 
     def __post_init__(self):
         self.ifc_obj = ifcopenshell.open(self.ifc_file)
+        self.schema = self.ifc_obj.wrapped_data.schema
 
     def get_ifc_dep_map(self, use_ids=True):
         dep_map = dict()
@@ -85,8 +87,6 @@ class EdgeIOBase:
 
     def __post_init__(self):
         self.wrap = ifcopenshell.ifcopenshell_wrapper
-        if self.em is None:
-            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
 
         if self.db_schema_dir is not None:
             self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
@@ -117,6 +117,9 @@ class EdgeIOBase:
 
     def load_ifc(self, ifc_file):
         self.ifc_io = IfcIO(ifc_file=ifc_file, edge_io=self)
+        self.ifc_schema = self.ifc_io.schema
+        if self.em is None:
+            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
 
     def __enter__(self):
         self.client = self.create_client()
@@ -140,6 +143,8 @@ class EdgeIOBase:
             self.load_ifc(ifc_file=from_ifc_file)
             unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
         else:
+            if self.ifc_schema is None:
+                raise ValueError('If no IFC file is passed you need to set the "ifc_schema" variable')
             unique_entities = self.em.get_all_entities()
 
         if specific_entities is not None:
