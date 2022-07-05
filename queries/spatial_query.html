@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Large queries" href="large_queries.html" /><link rel="prev" title="Query Building" href="query_building.html" />
 
     <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
-        <title>Spatial Query - IFC as a Database</title>
+        <title>Slicing in the Spatial Hierarchy - IFC as a Database</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -155,10 +155,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Queries</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../inserts/basic_insert.html">Basic Insertion Validation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Queries</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="nested_object_links.html">Nested Object links</a></li>
 <li class="toctree-l1"><a class="reference internal" href="query_building.html">Query Building</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Spatial Query</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Slicing in the Spatial Hierarchy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="large_queries.html">Large queries</a></li>
 <li class="toctree-l1"><a class="reference internal" href="by_id.html">Query by element name(s)/GlobalId(s)</a></li>
 </ul>
@@ -202,8 +207,8 @@
           </label>
         </div>
         <article role="main">
-          <section id="spatial-query">
-<h1>Spatial Query<a class="headerlink" href="#spatial-query" title="Permalink to this heading">#</a></h1>
+          <section id="slicing-in-the-spatial-hierarchy">
+<h1>Slicing in the Spatial Hierarchy<a class="headerlink" href="#slicing-in-the-spatial-hierarchy" title="Permalink to this heading">#</a></h1>
 <p><a class="reference internal" href="../index.html"><span class="doc std std-doc">Back to Main Page</span></a></p>
 <p>For reference, here is <a class="reference download internal" download="" href="../_downloads/47d7403afa5609164a9dcccfd7e512a2/default.esdl"><span class="xref download myst">the ESDL schema</span></a> for this Spatial Query
 investigation.</p>
@@ -318,7 +323,7 @@ See <a class="reference download internal" download="" href="../_downloads/71aec
 </section>
 <section id="query-2-getting-all-relevant-data-associated-to-the-returned-list-of-classes">
 <h2>Query 2 -&gt; Getting all relevant data associated to the returned list of classes<a class="headerlink" href="#query-2-getting-all-relevant-data-associated-to-the-returned-list-of-classes" title="Permalink to this heading">#</a></h2>
-<p>With the exported <span class="xref myst">results.json</span> python is used to find parent/children relationships of
+<p>With the exported <a class="reference download internal" download="" href="../_downloads/71aec5b4adc6fe85db09d66902ba8f90/result.json"><span class="xref download myst">result.json</span></a> python is used to find parent/children relationships of
 the spatial hierarchy and slice out all sub-elements and related parent elements of the <code class="docutils literal notranslate"><span class="pre">Sublevel_1_a</span></code> spatial element.</p>
 <section id="alternative-a-loop-over-the-returned-spatial-classes-and-build-nested-select-queries">
 <h3>Alternative “A” -&gt; Loop over the returned spatial classes and build nested select queries.<a class="headerlink" href="#alternative-a-loop-over-the-returned-spatial-classes-and-build-nested-select-queries" title="Permalink to this heading">#</a></h3>
@@ -574,7 +579,7 @@ the client side to remove any duplicate object references, so the final query is
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Spatial Query</a><ul>
+<li><a class="reference internal" href="#">Slicing in the Spatial Hierarchy</a><ul>
 <li><a class="reference internal" href="#motivation-goal">Motivation &amp; Goal</a></li>
 <li><a class="reference internal" href="#scenario">Scenario</a></li>
 <li><a class="reference internal" href="#query-strategy">Query Strategy</a></li>

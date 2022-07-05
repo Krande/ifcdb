@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Query Building" href="queries/query_building.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Basic Insertion Validation" href="inserts/basic_insert.html" />
 
     <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
         <title>IFC as a Database</title>
@@ -155,10 +155,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Queries</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="inserts/basic_insert.html">Basic Insertion Validation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Queries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="queries/nested_object_links.html">Nested Object links</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queries/query_building.html">Query Building</a></li>
-<li class="toctree-l1"><a class="reference internal" href="queries/spatial_query.html">Spatial Query</a></li>
+<li class="toctree-l1"><a class="reference internal" href="queries/spatial_query.html">Slicing in the Spatial Hierarchy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queries/large_queries.html">Large queries</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queries/by_id.html">Query by element name(s)/GlobalId(s)</a></li>
 </ul>
@@ -204,47 +209,52 @@
         <article role="main">
           <section id="ifc-as-a-database">
 <h1>IFC as a database<a class="headerlink" href="#ifc-as-a-database" title="Permalink to this heading">#</a></h1>
-<p>A document describing the exploration of IFC as a Database.</p>
-<section id="inserts">
-<h2>Inserts<a class="headerlink" href="#inserts" title="Permalink to this heading">#</a></h2>
-<ul class="simple">
-<li><p><a class="reference internal" href="inserts/basic_insert.html"><span class="doc std std-doc">Basic Inserts</span></a></p></li>
-</ul>
-</section>
-<section id="queries">
-<h2>Queries<a class="headerlink" href="#queries" title="Permalink to this heading">#</a></h2>
-<ul class="simple">
-<li><p><a class="reference internal" href="queries/query_building.html"><span class="doc std std-doc">Query Building</span></a></p></li>
-</ul>
-<p>Various query scenarios are explored</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="queries/spatial_query.html"><span class="doc std std-doc">Spatial Queries</span></a></p></li>
-<li><p><a class="reference internal" href="queries/large_queries.html"><span class="doc std std-doc">Large Queries</span></a></p></li>
-<li><p><a class="reference internal" href="queries/by_id.html"><span class="doc std std-doc">Simple Queries by GlobalID/Name</span></a></p></li>
-</ul>
-</section>
-<section id="updates">
-<h2>Updates<a class="headerlink" href="#updates" title="Permalink to this heading">#</a></h2>
-<p>Different update strategies are considered here</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="updating/diffing.html"><span class="doc std std-doc">Updating an IFC db</span></a></p></li>
-</ul>
-</section>
-<section id="continuous-integration">
-<h2>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Permalink to this heading">#</a></h2>
-<p>Work on continuous integration is covered in this section</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="ci/unittesting.html"><span class="doc std std-doc">CI/CD</span></a></p></li>
-</ul>
+<p>A document describing the experimentation of IFC as a Database.</p>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inserts/basic_insert.html">Basic Insertion Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="inserts/basic_insert.html#roundtripping-the-ifc-file-cube-advanced-brep-ifc">Roundtripping the IFC file <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
+</ul>
+</li>
+</ul>
 </div>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Queries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="queries/nested_object_links.html">Nested Object links</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="queries/nested_object_links.html#query-1-basic-select">Query 1 -&gt; Basic Select</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries/nested_object_links.html#query-2-get-properties-of-linked-objects">Query 2 -&gt; Get properties of linked objects</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="queries/query_building.html">Query Building</a></li>
+<li class="toctree-l1"><a class="reference internal" href="queries/spatial_query.html">Slicing in the Spatial Hierarchy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="queries/spatial_query.html#motivation-goal">Motivation &amp; Goal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries/spatial_query.html#scenario">Scenario</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries/spatial_query.html#query-strategy">Query Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries/spatial_query.html#query-1-get-the-entire-spatial-hierarchy">Query 1 -&gt; Get the entire spatial hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries/spatial_query.html#query-2-getting-all-relevant-data-associated-to-the-returned-list-of-classes">Query 2 -&gt; Getting all relevant data associated to the returned list of classes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="queries/large_queries.html">Large queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="queries/large_queries.html#edgedb-pagination">EdgeDB “Pagination”</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="queries/by_id.html">Query by element name(s)/GlobalId(s)</a></li>
+</ul>
 </div>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Updating</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="updating/diffing.html">Updating elements</a></li>
+</ul>
 </div>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
+</ul>
 </div>
-</section>
 </section>
 
         </article>
@@ -252,12 +262,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="queries/query_building.html">
+          <a class="next-page" href="inserts/basic_insert.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Query Building</div>
+                <div class="title">Basic Insertion Validation</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -295,12 +305,6 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">IFC as a database</a><ul>
-<li><a class="reference internal" href="#inserts">Inserts</a></li>
-<li><a class="reference internal" href="#queries">Queries</a></li>
-<li><a class="reference internal" href="#updates">Updates</a></li>
-<li><a class="reference internal" href="#continuous-integration">Continuous Integration</a><ul>
-</ul>
-</li>
 </ul>
 </li>
 </ul>

@@ -1,4 +1,4 @@
-# Spatial Query
+# Slicing in the Spatial Hierarchy
 
 [Back to Main Page](../index.md)
 
@@ -127,7 +127,7 @@ See [result.json](resources/result.json) for the entire output.
 
 ## Query 2 -> Getting all relevant data associated to the returned list of classes
 
-With the exported [results.json](resources/results.json) python is used to find parent/children relationships of 
+With the exported [result.json](resources/result.json) python is used to find parent/children relationships of 
 the spatial hierarchy and slice out all sub-elements and related parent elements of the `Sublevel_1_a` spatial element. 
 
 ### Alternative "A" -> Loop over the returned spatial classes and build nested select queries. 
