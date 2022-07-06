@@ -76,7 +76,7 @@ class IfcIO:
 class EdgeIOBase:
     ifc_file: str | pathlib.Path = None
     ifc_io: IfcIO = None
-    ifc_schema: str | None = None
+    ifc_schema: str = None
     db_schema_dir: str | pathlib.Path = None
     em: EdgeModel = None
     client: edgedb.Client = None
@@ -145,12 +145,15 @@ class EdgeIOBase:
         else:
             if self.ifc_schema is None:
                 raise ValueError('No IFC file is passed. Set the "ifc_schema" variable to a valid IFC schema version')
+            if self.em is None:
+                self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
             unique_entities = self.em.get_all_entities()
 
         if specific_entities is not None:
             unique_entities = specific_entities
 
-        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
+        related_entities = self.em.get_related_entities(unique_entities)
+        self.em.write_entities_to_esdl_file(related_entities, esdl_file_path, module_name)
 
         if len(self.em.intermediate_classes) > 0:
             print("The following intermediate classes was created to enable nested entity relationships")
