@@ -4,11 +4,11 @@ The following insert strategies currently exists or are planned
 
 * SEQUENCE
 * BULK (planned)
-* PARALLEL
+* PARALLEL (planned)
 
 ## SEQUENCE
 
-The `SEQUENCE` strategy inserts every IFC element 1 by 1. Meaning it is the least performant,
+The `SEQUENCE` strategy inserts every IFC element 1 by 1 on a single thread. Meaning it is the least performant,
 but ideal for debugging insert statements individually.
 
 Below is a snippet from the printouts during insert of the `MyBeam.ifc` file using the `SEQUENCE` insert strategy
