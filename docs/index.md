@@ -1,6 +1,12 @@
 # IFC as a database 
 
-A document describing the experimentation of IFC as a Database.
+A document describing various experiments of IFC as a Database. 
+
+```{note}
+I am writing this document primarily to organize my thoughts. 
+
+Consequently, this document will be continously updated and for the most part appear chaotic and inconsistent.    
+``` 
 
 ```{toctree}
 :maxdepth: 2

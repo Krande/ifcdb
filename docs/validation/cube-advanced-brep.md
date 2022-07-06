@@ -1,8 +1,8 @@
-# Roundtripping `cube-advanced-brep.ifc` 
+# Round-tripping `cube-advanced-brep.ifc` 
 
 [Back to Main Page](../index.md)
 
-The `cube-advanced-brep.ifc` has been tested and was successfully roundtripped 
+The `cube-advanced-brep.ifc` has been tested and was successfully round-tripped 
 
 (left: original, right: roundtripped through EdgeDB)
 ![img.png](cube-advanced-brep.png)
@@ -12,7 +12,10 @@ To insert the following `IfcBSplineSurfaceWithKnots`:
 
 `"#36=IfcBSplineSurfaceWithKnots(3,1,((#48,#49),(#50,#51),(#52,#53),(#54,#55)),.UNSPECIFIED.,.F.,.F.,.F.,(4,4),(2,2),(0.,1224.74487139159),(3.,4.),.UNSPECIFIED.)"`
 
-I ended up with the following automatically generated insert statement.
+One of the main issues in this IFC file was adapting the `ControlPointsList` property on `IfcBSplineSurfaceWithKnots` 
+class that points to a list of lists of `IfcCartesianPoint` elements. 
+
+The following automatically generated insert statement was the result.
 
 ```
 
@@ -46,7 +49,7 @@ SELECT (INSERT IfcBSplineSurfaceWithKnots {
 )
 ```
 
-And the class definitions are like this:
+And the class definition auto-generation modified so that it produces the following:
 
 ```
 type IfcCartesianPointICList { required multi link IfcCartesianPoints -> IfcCartesianPoint }

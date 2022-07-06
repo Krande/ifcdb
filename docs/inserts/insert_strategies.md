@@ -6,7 +6,7 @@ The following insert strategies currently exists or are planned
 * BULK (planned)
 * PARALLEL
 
-## SEQUENCE Strategy
+## SEQUENCE
 
 The `SEQUENCE` strategy inserts every IFC element 1 by 1. Meaning it is the least performant,
 but ideal for debugging insert statements individually.
@@ -44,7 +44,7 @@ SELECT (INSERT IfcPersonAndOrganization {
 ```
 
 
-## BULK Strategy
+## BULK
 
 ```{note}
 Not yet started on this strategy.
@@ -54,10 +54,11 @@ Using sequential processing, group all similar IFC element types together and us
 items using lists of dictionary data and using with statements for all related properties that are not in use by other  
 
 
-## PARALLEL Strategy
+## PARALLEL
 
 ```{note}
 Not yet started on this strategy.
 ``` 
 
-Using multiple threads to insert unrelated groups of IFC elements to the EdgeDB instance 
+Insert unrelated groups of IFC elements to the EdgeDB instance using different threads. Early tests showed that 
+this offers a substantial performance increase. 
