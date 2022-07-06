@@ -47,6 +47,7 @@ type IfcQuantityArea extending IfcPhysicalSimpleQuantity {
 ```{note}
 For any constraints associated with these base IFC classes, it is possible to assert them directly to the 
 ESDL property statements. 
+```
 
 This means, that if the `IfcLabel` string limit must be enforced, it is possible to do so 
 using the EdgeDB built-in `constraint` expression and the `max_len_value` function
@@ -58,6 +59,4 @@ type IfcQuantityArea extending IfcPhysicalSimpleQuantity {
         constraint max_len_value(255);
     };
 }
-```
-
 ```

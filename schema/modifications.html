@@ -259,16 +259,15 @@ and <code class="docutils literal notranslate"><span class="pre">str</span></cod
 <p class="admonition-title">Note</p>
 <p>For any constraints associated with these base IFC classes, it is possible to assert them directly to the
 ESDL property statements.</p>
+</div>
 <p>This means, that if the <code class="docutils literal notranslate"><span class="pre">IfcLabel</span></code> string limit must be enforced, it is possible to do so
 using the EdgeDB built-in <code class="docutils literal notranslate"><span class="pre">constraint</span></code> expression and the <code class="docutils literal notranslate"><span class="pre">max_len_value</span></code> function</p>
-</div>
-<p>type IfcQuantityArea extending IfcPhysicalSimpleQuantity {
-required property AreaValue -&gt; float64;
-property Formula -&gt; str {
-constraint max_len_value(255);
-};
-}</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">IfcQuantityArea</span> <span class="n">extending</span> <span class="n">IfcPhysicalSimpleQuantity</span> <span class="p">{</span>
+    <span class="n">required</span> <span class="nb">property</span> <span class="n">AreaValue</span> <span class="o">-&gt;</span> <span class="n">float64</span><span class="p">;</span>
+    <span class="nb">property</span> <span class="n">Formula</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="p">{</span>
+        <span class="n">constraint</span> <span class="n">max_len_value</span><span class="p">(</span><span class="mi">255</span><span class="p">);</span>
+    <span class="p">};</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>
