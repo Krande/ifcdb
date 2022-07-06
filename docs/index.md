@@ -1,20 +1,12 @@
 # IFC as a database 
 
-A document describing various experiments of IFC as a Database. 
+Various experiments of storing IFC as an [EdgeDB](https://edgedb.com) Database. 
 
 ```{note}
 I am writing this document primarily to organize my thoughts. 
 
-Consequently, this document will be continously updated and for the most part appear chaotic and inconsistent.    
+Consequently, this document will be randomly updated and for the most part appear chaotic and inconsistent.    
 ``` 
-
-```{toctree}
-:maxdepth: 2
-:glob:
-:caption: Inserts
-
-inserts/insert_strategies
-```
 
 ```{toctree}
 :maxdepth: 2
@@ -28,7 +20,15 @@ schema/modifications.md
 ```{toctree}
 :maxdepth: 2
 :glob:
-:caption: Queries
+:caption: Inserting Elements
+
+inserts/insert_strategies
+```
+
+```{toctree}
+:maxdepth: 2
+:glob:
+:caption: Querying Elements
 
 queries/query_building
 queries/by_id
@@ -40,18 +40,9 @@ queries/large_queries
 ```{toctree}
 :maxdepth: 2
 :glob:
-:caption: Updating
+:caption: Updating Elements
 
 updating/diffing
-```
-
-
-```{toctree}
-:maxdepth: 2
-:glob:
-:caption: CI/CD
-
-ci/unittesting
 ```
 
 ```{toctree}
@@ -61,4 +52,12 @@ ci/unittesting
 
 validation/validation_intro.md
 validation/cube-advanced-brep.md
+```
+
+```{toctree}
+:maxdepth: 2
+:glob:
+:caption: CI/CD
+
+ci/unittesting
 ```
