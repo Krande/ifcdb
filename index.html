@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="IFC Insert Strategies" href="inserts/insert_strategies.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Converting IFC schema to EdgeDB schema (ESDL)" href="schema/schema_to_esdl.html" />
 
     <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
         <title>IFC as a Database</title>
@@ -155,16 +155,16 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="inserts/insert_strategies.html">IFC Insert Strategies</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Schema Conversion</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Schema Conversion</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="schema/schema_to_esdl.html">Converting IFC schema to EdgeDB schema (ESDL)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schema/modifications.html">Necessary modifications to the IFC schema</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Queries</span></p>
+<p class="caption" role="heading"><span class="caption-text">Inserting Elements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inserts/insert_strategies.html">IFC Insert Strategies</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Querying Elements</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="queries/query_building.html">Query Building</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queries/by_id.html">Query by element name(s)/GlobalId(s)</a></li>
@@ -172,18 +172,18 @@
 <li class="toctree-l1"><a class="reference internal" href="queries/spatial_query.html">Slicing in the Spatial Hierarchy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queries/large_queries.html">Large queries</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Updating</span></p>
+<p class="caption" role="heading"><span class="caption-text">Updating Elements</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="updating/diffing.html">Updating elements</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Validation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="validation/validation_intro.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation/cube-advanced-brep.html">Round-tripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
 </ul>
 
 </div>
@@ -219,22 +219,11 @@
         <article role="main">
           <section id="ifc-as-a-database">
 <h1>IFC as a database<a class="headerlink" href="#ifc-as-a-database" title="Permalink to this heading">#</a></h1>
-<p>A document describing various experiments of IFC as a Database.</p>
+<p>Various experiments of storing IFC as an <a class="reference external" href="https://edgedb.com">EdgeDB</a> Database.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>I am writing this document primarily to organize my thoughts.</p>
-<p>Consequently, this document will be continously updated and for the most part appear chaotic and inconsistent.</p>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="inserts/insert_strategies.html">IFC Insert Strategies</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#sequence">SEQUENCE</a></li>
-<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#bulk">BULK</a></li>
-<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#parallel">PARALLEL</a></li>
-</ul>
-</li>
-</ul>
+<p>Consequently, this document will be randomly updated and for the most part appear chaotic and inconsistent.</p>
 </div>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Schema Conversion</span></p>
@@ -251,7 +240,18 @@
 </ul>
 </div>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Queries</span></p>
+<p class="caption" role="heading"><span class="caption-text">Inserting Elements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inserts/insert_strategies.html">IFC Insert Strategies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#sequence">SEQUENCE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#bulk">BULK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#parallel">PARALLEL</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Querying Elements</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="queries/query_building.html">Query Building</a></li>
 <li class="toctree-l1"><a class="reference internal" href="queries/by_id.html">Query by element name(s)/GlobalId(s)</a></li>
@@ -277,15 +277,9 @@
 </ul>
 </div>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Updating</span></p>
+<p class="caption" role="heading"><span class="caption-text">Updating Elements</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="updating/diffing.html">Updating elements</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
@@ -295,6 +289,12 @@
 <li class="toctree-l1"><a class="reference internal" href="validation/cube-advanced-brep.html">Round-tripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
 </ul>
 </div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
+</ul>
+</div>
 </section>
 
         </article>
@@ -302,12 +302,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="inserts/insert_strategies.html">
+          <a class="next-page" href="schema/schema_to_esdl.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">IFC Insert Strategies</div>
+                <div class="title">Converting IFC schema to EdgeDB schema (ESDL)</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
