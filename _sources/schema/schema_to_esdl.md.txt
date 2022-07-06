@@ -34,3 +34,15 @@ from ifcdb import EdgeIO
 with EdgeIO(db_schema_dir="db/dbschema", ifc_schema="IFC4x1", database="testdb") as io:
     io.setup_database(delete_existing_migrations=True)
 ```
+
+## EdgeDB using specific IFC entities
+
+To create a schema using only specific IFC entities (and all related entities) it is possible to do the following. 
+
+```python
+from ifcdb import EdgeIO
+
+with EdgeIO(db_schema_dir="db/dbschema", ifc_schema="IFC4X1", database="testdb") as io:
+    io.create_schema(specific_entities=["IfcQuantityArea"])
+    io.setup_database(delete_existing_migrations=True)
+```

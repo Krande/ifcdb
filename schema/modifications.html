@@ -225,10 +225,51 @@ specific elements/relationships of elements.</p>
 <h2>Base Types<a class="headerlink" href="#base-types" title="Permalink to this heading">#</a></h2>
 <p>All IFC schema objects that are wrapping base types only (i.e. string, float, integers, etc..) are replaced by their
 respective base types. I.e. IfcLabel is never instantiated, rather it is stored as a string.</p>
+<p>Take an arbitrarily chosen class <code class="docutils literal notranslate"><span class="pre">IfcQuantityArea</span></code> which points to the IFC built-in types <code class="docutils literal notranslate"><span class="pre">IfcAreaMeasure</span></code> &amp;
+<code class="docutils literal notranslate"><span class="pre">IfcLabel</span></code>.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ENTITY IfcQuantityArea
+ SUBTYPE OF (IfcPhysicalSimpleQuantity);
+	AreaValue : IfcAreaMeasure;
+	Formula : OPTIONAL IfcLabel;
+ WHERE
+	WR21 : NOT(EXISTS(SELF\IfcPhysicalSimpleQuantity.Unit)) OR
+   (SELF\IfcPhysicalSimpleQuantity.Unit.UnitType = IfcUnitEnum.AREAUNIT);
+	WR22 : AreaValue &gt;= 0.;
+END_ENTITY;
+</pre></div>
+</div>
+<p>These built-in types are in practice a <code class="docutils literal notranslate"><span class="pre">float</span></code> and <code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TYPE</span> <span class="n">IfcAreaMeasure</span> <span class="o">=</span> <span class="n">REAL</span><span class="p">;</span>
+<span class="n">END_TYPE</span><span class="p">;</span>
+
+<span class="n">TYPE</span> <span class="n">IfcLabel</span> <span class="o">=</span> <span class="n">STRING</span><span class="p">(</span><span class="mi">255</span><span class="p">);</span>
+<span class="n">END_TYPE</span><span class="p">;</span>
+
+</pre></div>
+</div>
+<p>Consequently, in the EdgeDB ESDL schema declaration, these IFC built-in types are replaced by the native types <code class="docutils literal notranslate"><span class="pre">float</span></code>
+and <code class="docutils literal notranslate"><span class="pre">str</span></code> as shown here</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">IfcQuantityArea</span> <span class="n">extending</span> <span class="n">IfcPhysicalSimpleQuantity</span> <span class="p">{</span>
+    <span class="n">required</span> <span class="nb">property</span> <span class="n">AreaValue</span> <span class="o">-&gt;</span> <span class="n">float64</span><span class="p">;</span>
+    <span class="nb">property</span> <span class="n">Formula</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>For any constraints associated with these base IFC classes, it is possible to assert them directly to the
 ESDL property statements.</p>
+<p>This means, that if the <code class="docutils literal notranslate"><span class="pre">IfcLabel</span></code> string limit must be enforced, it is possible to do so
+using the EdgeDB built-in <code class="docutils literal notranslate"><span class="pre">constraint</span></code> expression and the <code class="docutils literal notranslate"><span class="pre">max_len_value</span></code> function</p>
+</div>
+<p>type IfcQuantityArea extending IfcPhysicalSimpleQuantity {
+required property AreaValue -&gt; float64;
+property Formula -&gt; str {
+constraint max_len_value(255);
+};
+}</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
 </div>
 </section>
 </section>
