@@ -1,6 +1,8 @@
 # IFC as a database 
 
 Various experiments of storing IFC as an [EdgeDB](https://edgedb.com) Database. 
+See the [GitHub repo](https://github.com/Krande/ifcdb) for the source code for the docs and all related code
+
 
 ```{note}
 I am writing this document primarily to organize my thoughts. 

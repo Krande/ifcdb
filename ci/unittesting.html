@@ -178,7 +178,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Validation</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../validation/validation_intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../validation/validation_intro.html">Validation Strategy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../validation/cube-advanced-brep.html">Round-tripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
@@ -222,7 +222,48 @@
 <p><a class="reference internal" href="../index.html"><span class="doc std std-doc">Back to Main Page</span></a></p>
 <p>A github actions workflow <a class="reference download internal" download="" href="../_downloads/5bceec173c29331418894b357e4062ce/ci-edgedb.yml"><span class="xref download myst">ci-edgedb.yml</span></a> has been created to test different
 IFC schema’s and relevant inserts/queries based on specific IFC files.</p>
-<p>Currently the github actions workflow fails on 2 of 3 IFC files</p>
+<p>At the time of writing the GitHub actions workflow fails on 2 of 3 IFC files on the “fingerprint assertion”. The
+“cube-advanced-brep.ifc” is the only IFC file that currently passes.</p>
+<p>Here is the complete pytest setup for roundtrip testing of IFC files</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+<span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="kn">from</span> <span class="nn">ifcdb</span> <span class="kn">import</span> <span class="n">EdgeIO</span>
+<span class="kn">from</span> <span class="nn">ifcdb.edge_model.query_utils</span> <span class="kn">import</span> <span class="n">validate_ifc_objects</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span>
+    <span class="s2">&quot;ifc_file_name&quot;</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="s2">&quot;tessellated-item.ifc&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cube-advanced-brep.ifc&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;SpatialHierarchy1.ifc&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MyBeam.ifc&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MyBeamWithHoles.ifc&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_roundtrip_ifc_files_validation</span><span class="p">(</span><span class="n">ifc_files_dir</span><span class="p">,</span> <span class="n">ifc_file_name</span><span class="p">):</span>
+    <span class="n">db_name</span> <span class="o">=</span> <span class="n">ifc_file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.ifc&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+    <span class="n">ifc_file</span> <span class="o">=</span> <span class="n">ifc_files_dir</span> <span class="o">/</span> <span class="n">ifc_file_name</span>
+
+    <span class="n">db_schema_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;temp&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span> <span class="o">/</span> <span class="n">db_name</span> <span class="o">/</span> <span class="s2">&quot;dbschema&quot;</span>
+    <span class="k">if</span> <span class="n">db_schema_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="n">db_schema_dir</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">db_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>
+        <span class="c1"># Set up Schema &amp; Database</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">create_schema</span><span class="p">(</span><span class="n">from_ifc_file</span><span class="o">=</span><span class="n">ifc_file</span><span class="p">)</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">setup_database</span><span class="p">(</span><span class="n">delete_existing_migrations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Insert IFC elements</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">insert_ifc</span><span class="p">(</span><span class="n">ifc_file</span><span class="p">)</span>
+
+        <span class="c1"># Query &amp; Validate Data using IfcOpenShell</span>
+        <span class="n">validate_ifc_objects</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">ifc_io</span><span class="o">.</span><span class="n">ifc_obj</span><span class="p">,</span> <span class="n">io</span><span class="o">.</span><span class="n">to_ifcopenshell_object</span><span class="p">())</span>
+</pre></div>
+</div>
 </section>
 
         </article>
