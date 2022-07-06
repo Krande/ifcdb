@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Basic Insertion Validation" href="inserts/basic_insert.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="IFC Insert Strategies" href="inserts/insert_strategies.html" />
 
     <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
         <title>IFC as a Database</title>
@@ -157,7 +157,7 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="inserts/basic_insert.html">Basic Insertion Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inserts/insert_strategies.html">IFC Insert Strategies</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Queries</span></p>
 <ul>
@@ -174,6 +174,11 @@
 <p class="caption" role="heading"><span class="caption-text">CI/CD</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Validation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="validation/validation_intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation/cube-advanced-brep.html">Roundtripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
 </ul>
 
 </div>
@@ -213,8 +218,10 @@
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="inserts/basic_insert.html">Basic Insertion Validation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="inserts/basic_insert.html#roundtripping-the-ifc-file-cube-advanced-brep-ifc">Roundtripping the IFC file <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="inserts/insert_strategies.html">IFC Insert Strategies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#sequence-strategy">SEQUENCE Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#bulk-strategy">BULK Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inserts/insert_strategies.html#parallel-strategy">PARALLEL Strategy</a></li>
 </ul>
 </li>
 </ul>
@@ -257,6 +264,13 @@
 <li class="toctree-l1"><a class="reference internal" href="ci/unittesting.html">Unittesting EdgeDB schemas</a></li>
 </ul>
 </div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Validation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="validation/validation_intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation/cube-advanced-brep.html">Roundtripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
+</ul>
+</div>
 </section>
 
         </article>
@@ -264,12 +278,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="inserts/basic_insert.html">
+          <a class="next-page" href="inserts/insert_strategies.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Basic Insertion Validation</div>
+                <div class="title">IFC Insert Strategies</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>

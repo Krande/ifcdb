@@ -1,15 +1,11 @@
-# Basic Insertion Validation
+# Roundtripping `cube-advanced-brep.ifc` 
 
 [Back to Main Page](../index.md)
 
-
-Validation is done by roundtripping various IFC files and ensuring that whatever is returned is equal
-to what was sent.
-
-## Roundtripping the IFC file `cube-advanced-brep.ifc` 
+The `cube-advanced-brep.ifc` has been tested and was successfully roundtripped 
 
 (left: original, right: roundtripped through EdgeDB)
-![img.png](basic_inserts.png)
+![img.png](cube-advanced-brep.png)
 
 
 To insert the following `IfcBSplineSurfaceWithKnots`:

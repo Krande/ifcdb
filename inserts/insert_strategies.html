@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Query by element name(s)/GlobalId(s)" href="by_id.html" /><link rel="prev" title="IFC Insert Strategies" href="../inserts/insert_strategies.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Query Building" href="../queries/query_building.html" /><link rel="prev" title="IFC as a database" href="../index.html" />
 
     <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
-        <title>Query Building - IFC as a Database</title>
+        <title>IFC Insert Strategies - IFC as a Database</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -135,7 +135,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -156,16 +156,16 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">Inserts</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../inserts/insert_strategies.html">IFC Insert Strategies</a></li>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">IFC Insert Strategies</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Queries</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Query Building</a></li>
-<li class="toctree-l1"><a class="reference internal" href="by_id.html">Query by element name(s)/GlobalId(s)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_object_links.html">Nested Object links</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spatial_query.html">Slicing in the Spatial Hierarchy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="large_queries.html">Large queries</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../queries/query_building.html">Query Building</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../queries/by_id.html">Query by element name(s)/GlobalId(s)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../queries/nested_object_links.html">Nested Object links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../queries/spatial_query.html">Slicing in the Spatial Hierarchy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../queries/large_queries.html">Large queries</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Updating</span></p>
 <ul>
@@ -206,19 +206,69 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
-          <section id="query-building">
-<h1>Query Building<a class="headerlink" href="#query-building" title="Permalink to this heading">#</a></h1>
-<p><a class="reference internal" href="../index.html"><span class="doc std std-doc">Back to Main Page</span></a></p>
-<p>IfcOpenShell schema is used to build the EdgeDB schema.</p>
-<p>Once the EdgeDB schema is created, <a class="reference external" href="https://www.edgedb.com/docs/guides/introspection/index#introspection">introspection</a>
-is employed to read the created schema and use that as a source for constructing queries that are required to
-explicitly define all related classes hiding in the nested chain of properties on the different IFC object types.</p>
+          <section id="ifc-insert-strategies">
+<h1>IFC Insert Strategies<a class="headerlink" href="#ifc-insert-strategies" title="Permalink to this heading">#</a></h1>
+<p>The following insert strategies currently exists or are planned</p>
+<ul class="simple">
+<li><p>SEQUENCE</p></li>
+<li><p>BULK (planned)</p></li>
+<li><p>PARALLEL</p></li>
+</ul>
+<section id="sequence-strategy">
+<h2>SEQUENCE Strategy<a class="headerlink" href="#sequence-strategy" title="Permalink to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">SEQUENCE</span></code> strategy inserts every IFC element 1 by 1. Meaning it is the least performant,
+but ideal for debugging insert statements individually.</p>
+<p>Below is a snippet from the printouts during insert of the <code class="docutils literal notranslate"><span class="pre">MyBeam.ifc</span></code> file using the <code class="docutils literal notranslate"><span class="pre">SEQUENCE</span></code> insert strategy</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>inserting ifc item (1 of 84) &quot;#1=IfcPerson(&#39;AdaUser&#39;,$,$,$,$,$,$,$)&quot;
+SELECT (INSERT IfcPerson {
+    Identification := &#39;AdaUser&#39;
+   }
+)
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>inserting ifc item (2 of 84) &quot;#2=IfcOrganization(&#39;Assembly For Design and Analysis&#39;,&#39;Assembly For Design and Analysis&#39;,$,$,$)&quot;
+SELECT (INSERT IfcOrganization {
+    Identification := &#39;Assembly For Design and Analysis&#39;,
+    Name := &#39;Assembly For Design and Analysis&#39;
+   }
+)
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>inserting ifc item (31 of 84) &quot;#3=IfcPersonAndOrganization(#1,#2,$)&quot;
+WITH
+    ifc_1 := (SELECT IfcPerson filter .id = &lt;uuid&gt;&quot;68b74946-fd00-11ec-a5ed-b371333a38a3&quot;),
+    ifc_2 := (SELECT IfcOrganization filter .id = &lt;uuid&gt;&quot;68c1068e-fd00-11ec-a5ed-1b36f1090f9c&quot;),
+SELECT (INSERT IfcPersonAndOrganization {
+    ThePerson := ifc_1,
+    TheOrganization := ifc_2
+   }
+)
+</pre></div>
+</div>
+</section>
+<section id="bulk-strategy">
+<h2>BULK Strategy<a class="headerlink" href="#bulk-strategy" title="Permalink to this heading">#</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Not yet started on this strategy.</p>
+</div>
+<p>Using sequential processing, group all similar IFC element types together and use for loops to insert
+items using lists of dictionary data and using with statements for all related properties that are not in use by other</p>
+</section>
+<section id="parallel-strategy">
+<h2>PARALLEL Strategy<a class="headerlink" href="#parallel-strategy" title="Permalink to this heading">#</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Not yet started on this strategy.</p>
+</div>
+<p>Using multiple threads to insert unrelated groups of IFC elements to the EdgeDB instance</p>
+</section>
 </section>
 
         </article>
@@ -226,23 +276,23 @@ explicitly define all related classes hiding in the nested chain of properties o
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="by_id.html">
+          <a class="next-page" href="../queries/query_building.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Query by element name(s)/GlobalId(s)</div>
+                <div class="title">Query Building</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../inserts/insert_strategies.html">
+          <a class="prev-page" href="../index.html">
               <svg><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">IFC Insert Strategies</div>
+                <div class="title">Home</div>
                 
               </div>
             </a>
@@ -266,8 +316,29 @@ explicitly define all related classes hiding in the nested chain of properties o
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">IFC Insert Strategies</a><ul>
+<li><a class="reference internal" href="#sequence-strategy">SEQUENCE Strategy</a></li>
+<li><a class="reference internal" href="#bulk-strategy">BULK Strategy</a></li>
+<li><a class="reference internal" href="#parallel-strategy">PARALLEL Strategy</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
