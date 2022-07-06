@@ -42,7 +42,7 @@ class IfcIO:
     schema: str = None
 
     def __post_init__(self):
-        self.ifc_obj = ifcopenshell.open(self.ifc_file)
+        self.ifc_obj = ifcopenshell.open(str(self.ifc_file))
         self.schema = self.ifc_obj.wrapped_data.schema
 
     def get_ifc_dep_map(self, use_ids=True):
@@ -567,6 +567,16 @@ class EdgeIO(EdgeIOBase):
     def to_ifc_str(self, specific_classes: list[str] = None, only_ifc_entities=True) -> str:
         f = self.to_ifcopenshell_object(specific_classes, only_ifc_entities)
         return StringIO(f.wrapped_data.to_string()).read()
+
+    def to_ifc_file(
+        self, ifc_file_path: str | pathlib.Path, specific_classes: list[str] = None, only_ifc_entities=True
+    ):
+        ifc_file_path = pathlib.Path(ifc_file_path)
+        res = self.to_ifc_str(specific_classes, only_ifc_entities)
+
+        os.makedirs(ifc_file_path.parent, exist_ok=True)
+        with open(str(ifc_file_path), "w") as f:
+            f.write(res)
 
 
 @dataclass
