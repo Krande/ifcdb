@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="Introduction" href="validation_intro.html" />
 
     <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
-        <title>Roundtripping cube-advanced-brep.ifc - IFC as a Database</title>
+        <title>Round-tripping cube-advanced-brep.ifc - IFC as a Database</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -178,7 +178,7 @@
 <p class="caption" role="heading"><span class="caption-text">Validation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="validation_intro.html">Introduction</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Roundtripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Round-tripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
 </ul>
 
 </div>
@@ -212,15 +212,17 @@
           </label>
         </div>
         <article role="main">
-          <section id="roundtripping-cube-advanced-brep-ifc">
-<h1>Roundtripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code><a class="headerlink" href="#roundtripping-cube-advanced-brep-ifc" title="Permalink to this heading">#</a></h1>
+          <section id="round-tripping-cube-advanced-brep-ifc">
+<h1>Round-tripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code><a class="headerlink" href="#round-tripping-cube-advanced-brep-ifc" title="Permalink to this heading">#</a></h1>
 <p><a class="reference internal" href="../index.html"><span class="doc std std-doc">Back to Main Page</span></a></p>
-<p>The <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code> has been tested and was successfully roundtripped</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code> has been tested and was successfully round-tripped</p>
 <p>(left: original, right: roundtripped through EdgeDB)
 <img alt="img.png" src="../_images/cube-advanced-brep.png" /></p>
 <p>To insert the following <code class="docutils literal notranslate"><span class="pre">IfcBSplineSurfaceWithKnots</span></code>:</p>
 <p><code class="docutils literal notranslate"><span class="pre">&quot;#36=IfcBSplineSurfaceWithKnots(3,1,((#48,#49),(#50,#51),(#52,#53),(#54,#55)),.UNSPECIFIED.,.F.,.F.,.F.,(4,4),(2,2),(0.,1224.74487139159),(3.,4.),.UNSPECIFIED.)&quot;</span></code></p>
-<p>I ended up with the following automatically generated insert statement.</p>
+<p>One of the main issues in this IFC file was adapting the <code class="docutils literal notranslate"><span class="pre">ControlPointsList</span></code> property on <code class="docutils literal notranslate"><span class="pre">IfcBSplineSurfaceWithKnots</span></code>
+class that points to a list of lists of <code class="docutils literal notranslate"><span class="pre">IfcCartesianPoint</span></code> elements.</p>
+<p>The following automatically generated insert statement was the result.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 <span class="n">WITH</span>
     <span class="n">ifc_48</span> <span class="o">:=</span> <span class="p">(</span><span class="n">INSERT</span> <span class="n">IfcCartesianPoint</span> <span class="p">{</span>  <span class="n">Coordinates</span> <span class="o">:=</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]}),</span>
@@ -252,7 +254,7 @@
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>And the class definitions are like this:</p>
+<p>And the class definition auto-generation modified so that it produces the following:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">IfcCartesianPointICList</span> <span class="p">{</span> <span class="n">required</span> <span class="n">multi</span> <span class="n">link</span> <span class="n">IfcCartesianPoints</span> <span class="o">-&gt;</span> <span class="n">IfcCartesianPoint</span> <span class="p">}</span>
 
 <span class="n">abstract</span> <span class="nb">type</span> <span class="n">IfcBSplineSurface</span> <span class="n">extending</span> <span class="n">IfcBoundedSurface</span> <span class="p">{</span>

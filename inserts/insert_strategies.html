@@ -178,7 +178,7 @@
 <p class="caption" role="heading"><span class="caption-text">Validation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../validation/validation_intro.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../validation/cube-advanced-brep.html">Roundtripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../validation/cube-advanced-brep.html">Round-tripping <code class="docutils literal notranslate"><span class="pre">cube-advanced-brep.ifc</span></code></a></li>
 </ul>
 
 </div>
@@ -218,11 +218,11 @@
 <ul class="simple">
 <li><p>SEQUENCE</p></li>
 <li><p>BULK (planned)</p></li>
-<li><p>PARALLEL</p></li>
+<li><p>PARALLEL (planned)</p></li>
 </ul>
-<section id="sequence-strategy">
-<h2>SEQUENCE Strategy<a class="headerlink" href="#sequence-strategy" title="Permalink to this heading">#</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">SEQUENCE</span></code> strategy inserts every IFC element 1 by 1. Meaning it is the least performant,
+<section id="sequence">
+<h2>SEQUENCE<a class="headerlink" href="#sequence" title="Permalink to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">SEQUENCE</span></code> strategy inserts every IFC element 1 by 1 on a single thread. Meaning it is the least performant,
 but ideal for debugging insert statements individually.</p>
 <p>Below is a snippet from the printouts during insert of the <code class="docutils literal notranslate"><span class="pre">MyBeam.ifc</span></code> file using the <code class="docutils literal notranslate"><span class="pre">SEQUENCE</span></code> insert strategy</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>inserting ifc item (1 of 84) &quot;#1=IfcPerson(&#39;AdaUser&#39;,$,$,$,$,$,$,$)&quot;
@@ -252,8 +252,8 @@ SELECT (INSERT IfcPersonAndOrganization {
 </pre></div>
 </div>
 </section>
-<section id="bulk-strategy">
-<h2>BULK Strategy<a class="headerlink" href="#bulk-strategy" title="Permalink to this heading">#</a></h2>
+<section id="bulk">
+<h2>BULK<a class="headerlink" href="#bulk" title="Permalink to this heading">#</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Not yet started on this strategy.</p>
@@ -261,13 +261,14 @@ SELECT (INSERT IfcPersonAndOrganization {
 <p>Using sequential processing, group all similar IFC element types together and use for loops to insert
 items using lists of dictionary data and using with statements for all related properties that are not in use by other</p>
 </section>
-<section id="parallel-strategy">
-<h2>PARALLEL Strategy<a class="headerlink" href="#parallel-strategy" title="Permalink to this heading">#</a></h2>
+<section id="parallel">
+<h2>PARALLEL<a class="headerlink" href="#parallel" title="Permalink to this heading">#</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Not yet started on this strategy.</p>
 </div>
-<p>Using multiple threads to insert unrelated groups of IFC elements to the EdgeDB instance</p>
+<p>Insert unrelated groups of IFC elements to the EdgeDB instance using different threads. Early tests showed that
+this offers a substantial performance increase.</p>
 </section>
 </section>
 
@@ -329,9 +330,9 @@ items using lists of dictionary data and using with statements for all related p
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">IFC Insert Strategies</a><ul>
-<li><a class="reference internal" href="#sequence-strategy">SEQUENCE Strategy</a></li>
-<li><a class="reference internal" href="#bulk-strategy">BULK Strategy</a></li>
-<li><a class="reference internal" href="#parallel-strategy">PARALLEL Strategy</a></li>
+<li><a class="reference internal" href="#sequence">SEQUENCE</a></li>
+<li><a class="reference internal" href="#bulk">BULK</a></li>
+<li><a class="reference internal" href="#parallel">PARALLEL</a></li>
 </ul>
 </li>
 </ul>
