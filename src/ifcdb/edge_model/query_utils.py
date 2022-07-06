@@ -7,7 +7,7 @@ from itertools import count
 
 import ifcopenshell
 
-from ifcdb.edge_model.edge_model_base import (
+from ifcdb.edge_model.schema_gen import (
     ArrayEdgeModel,
     AttributeEdgeModel,
     EdgeModel,

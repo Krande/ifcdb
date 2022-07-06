@@ -3,7 +3,7 @@ import pathlib
 import ifcopenshell
 import pytest
 
-from ifcdb.edge_model.edge_model_base import EdgeModel
+from ifcdb.edge_model.schema_gen import EdgeModel
 from ifcdb.pymodel.base import ExpReader
 
 

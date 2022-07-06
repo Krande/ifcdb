@@ -19,6 +19,15 @@ inserts/insert_strategies
 ```{toctree}
 :maxdepth: 2
 :glob:
+:caption: Schema Conversion
+
+schema/schema_to_esdl.md
+schema/modifications.md
+```
+
+```{toctree}
+:maxdepth: 2
+:glob:
 :caption: Queries
 
 queries/query_building

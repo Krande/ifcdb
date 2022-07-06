@@ -16,7 +16,8 @@ import edgedb
 import ifcopenshell
 from toposort import toposort, toposort_flatten
 
-from ifcdb.edge_model.edge_model_base import (
+from ifcdb.edge_model.query_builder import EQBuilder
+from ifcdb.edge_model.schema_gen import (
     AttributeEdgeModel,
     EdgeModel,
     EntityEdgeModel,
@@ -26,7 +27,6 @@ from ifcdb.edge_model.edge_model_base import (
     TypeEdgeModel,
     WithNode,
 )
-from ifcdb.edge_model.query_builder import EQBuilder
 from ifcdb.edge_model.utils import clean_name, walk_edge_results_and_make_uuid_map
 
 
@@ -288,37 +288,14 @@ class EdgeIOBase:
         ent_dict.update(to_be_added)
 
     def get_spatial_hierarchy(self, filter_by_name: str = None) -> dict[str, SpatialNode]:
-        if filter_by_name is not None:
-            filter_str_stru = f" filter .RelatingStructure.Name = '{filter_by_name}'"
-            filter_str_rel = f" filter .RelatingObject.Name = '{filter_by_name}'"
-        else:
-            filter_str_stru = ""
-            filter_str_rel = ""
-
-        in_str = f"""SELECT {{
-    spatial_stru := (
-        SELECT IfcRelContainedInSpatialStructure {{
-            id,
-            RelatingStructure : {{ Name, id, __type__ : {{ name }}, OwnerHistory }},
-            RelatedElements : {{ Name, id, __type__ : {{ name }}, OwnerHistory }}
-        }}{filter_str_stru}
-    ),
-    rel_aggs := (
-        SELECT IfcRelAggregates {{
-            id,
-            RelatingObject : {{ Name, id, __type__ : {{ name }}, OwnerHistory }},
-            RelatedObjects : {{ Name, id, __type__ : {{ name }}, OwnerHistory }}
-        }}{filter_str_rel}
-    )
-}}"""
-        print(in_str)
+        in_str = self.eq_builder.get_spatial_hierarchy_str(filter_by_name=filter_by_name)
 
         def get_class_name(type_obj):
-            return type_obj["__type__"]["name"].replace("default::", "")
+            return type_obj["_e_type"].replace("default::", "")
 
         result = json.loads(self.client.query_json(in_str))
-        out_str = json.dumps(result, indent=4)
-        print(out_str)
+        # out_str = json.dumps(result, indent=4)
+        # print(out_str)
         rel_aggs = result[0]["rel_aggs"]
         spatial_nodes: dict[str, SpatialNode] = dict()
         for rel in rel_aggs:
@@ -359,34 +336,13 @@ class EdgeIOBase:
 
     def get_owner_history(self) -> dict:
         """Returns all OwnerHistory-related objects"""
-        query_str = "SELECT {\n"
-
-        classes = ["IfcOrganization", "IfcPerson", "IfcApplication", "IfcPersonAndOrganization", "IfcOwnerHistory"]
-        for class_name in classes:
-            q_str = self.eq_builder.select_object_str(class_name, include_all_nested_objects=False)
-            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n{q_str}}}),\n"
-        query_str += "}"
+        query_str = self.eq_builder.get_owner_history_str()
         result = json.loads(self.client.query_json(query_str))
         return result
 
     def get_object_placements(self) -> dict:
         """Returns all related objects and properties needed to resolve locations of all IFC objects"""
-        query_str = "SELECT {\n"
-
-        classes = [
-            "IfcLocalPlacement",
-            "IfcAxis2Placement",
-            "IfcDirection",
-            "IfcAxis2Placement3D",
-            "IfcAxis2Placement2D",
-            "IfcCartesianPoint",
-            "IfcGeometricRepresentationContext",
-        ]
-        for class_name in classes:
-            q_str = self.eq_builder.select_object_str(class_name, include_all_nested_objects=False)
-            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n    id,\n{q_str}}}),\n"
-        query_str += "}"
-
+        query_str = self.eq_builder.get_object_placements_str()
         result = json.loads(self.client.query_json(query_str))
         return result
 

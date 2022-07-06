@@ -387,6 +387,65 @@ class EQBuilder:
         else:
             return props_str + "\n"
 
+    def get_spatial_hierarchy_str(self, filter_by_name: str = None) -> str:
+        if filter_by_name is not None:
+            filter_str_stru = f" filter .RelatingStructure.Name = '{filter_by_name}'"
+            filter_str_rel = f" filter .RelatingObject.Name = '{filter_by_name}'"
+        else:
+            filter_str_stru = ""
+            filter_str_rel = ""
+
+        edge_props = "id, _e_type := .__type__.name"
+
+        in_str = f"""SELECT {{
+    spatial_stru := (
+        SELECT IfcRelContainedInSpatialStructure {{
+            id,
+            RelatingStructure : {{ Name, {edge_props}, OwnerHistory }},
+            RelatedElements : {{ Name, {edge_props}, OwnerHistory }}
+        }}{filter_str_stru}
+    ),
+    rel_aggs := (
+        SELECT IfcRelAggregates {{
+            id,
+            RelatingObject : {{ Name, {edge_props}, OwnerHistory }},
+            RelatedObjects : {{ Name, {edge_props}, OwnerHistory }}
+        }}{filter_str_rel}
+    )
+}}"""
+        return in_str
+
+    def get_owner_history_str(self) -> str:
+        """Returns all OwnerHistory-related objects"""
+        query_str = "SELECT {\n"
+
+        classes = ["IfcOrganization", "IfcPerson", "IfcApplication", "IfcPersonAndOrganization", "IfcOwnerHistory"]
+        for class_name in classes:
+            q_str = self.select_object_str(class_name, include_all_nested_objects=False)
+            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n{q_str}}}),\n"
+        query_str += "}"
+        return query_str
+
+    def get_object_placements_str(self) -> str:
+        """Returns all related objects and properties needed to resolve locations of all IFC objects"""
+        query_str = "SELECT {\n"
+
+        classes = [
+            "IfcLocalPlacement",
+            "IfcAxis2Placement",
+            "IfcDirection",
+            "IfcAxis2Placement3D",
+            "IfcAxis2Placement2D",
+            "IfcCartesianPoint",
+            "IfcGeometricRepresentationContext",
+        ]
+        for class_name in classes:
+            q_str = self.select_object_str(class_name, include_all_nested_objects=False)
+            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n    id,\n{q_str}}}),\n"
+        query_str += "}"
+
+        return query_str
+
 
 @dataclass
 class SelectWriter:
