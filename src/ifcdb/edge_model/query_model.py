@@ -115,6 +115,15 @@ class EdgeIOBase:
 
         return client
 
+    def database_exists(self):
+        try:
+            self.client.execute(f"CREATE DATABASE {self.database}")
+        except edgedb.errors.DuplicateDatabaseDefinitionError:
+            return True
+
+        self.client.execute(f"DROP DATABASE {self.database}")
+        return False
+
     def load_ifc(self, ifc_file):
         self.ifc_io = IfcIO(ifc_file=ifc_file, edge_io=self)
         self.ifc_schema = self.ifc_io.schema
@@ -360,23 +369,39 @@ class EdgeIO(EdgeIOBase):
             raise ValueError
         return result[0]
 
-    def _get_by_uuid_and_class_name(self, uuid, class_name):
-        # res = self.eq_builder.build_object_property_tree(class_name)
-        # select_str = res.select_str
-        # out_str = json.dumps(select_str, indent=4)
-        # print(out_str)
-        select_str_a = self.eq_builder.select_object_str(class_name)
+    def _get_specific_uuid_class_name(self, uuid, class_name, top_level_only=False):
+        _ = self.get_owner_history()
+        _ = self.get_object_placements()
+        skippable_classes = ["IfcOwnerHistory", "IfcObjectPlacement", "IfcRepresentationContext"]
+        query_str = self.eq_builder.get_specific_object_str(class_name, uuid, skippable_classes=skippable_classes)
+        result = json.loads(self.client.query_json(query_str))
+        # Resolve owner history and object placements here ->
+
+        # <-
+        return result
+
+    def _get_by_uuid_and_class_name(self, uuid, class_name, top_level_only=False):
+        # Experimental query strategy
+        _ = self._get_specific_uuid_class_name(uuid, class_name, top_level_only)
+
+        select_str_a = self.eq_builder.select_object_str(class_name, include_all_nested_objects=not top_level_only)
         query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
         return json.loads(self.client.query_json(query_str))
 
-    def get_by_global_id(self, global_id: str, class_name: str = None):
+    def get_by_global_id(self, global_id: str, class_name: str = None, top_level_only=True):
+        """Get rooted IFC element based on its 'GlobalId' property"""
         result = self._get_id_class_name_from_simple_filter("GlobalId", global_id)
-        final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
+        final_result = self._get_by_uuid_and_class_name(
+            result["id"], clean_name(result["__type__"]), top_level_only=top_level_only
+        )
         return final_result
 
-    def get_by_name(self, name: str):
+    def get_by_name(self, name: str, class_name: str = None, top_level_only=False):
+        """Get rooted IFC element based on its 'Name' property"""
         result = self._get_id_class_name_from_simple_filter("Name", name)
-        final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
+        final_result = self._get_by_uuid_and_class_name(
+            result["id"], clean_name(result["__type__"]), top_level_only=top_level_only
+        )
         # fstr = json.dumps(final_result, indent=4)
         return final_result
 

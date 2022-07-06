@@ -4,6 +4,7 @@ import copy
 import json
 import logging
 from dataclasses import dataclass, field
+from typing import Iterable
 
 import edgedb
 
@@ -187,12 +188,12 @@ class EdgeObject:
                             prop_name = key if as_polymorph is False else f"[is {select_obj.name}].{key}"
                             prop_str = select_obj.get_property_str(True)
                             link_str = select_obj.get_links_str(True, ref_classes=copy.copy(ref_classes))
-                            links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+                            links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
                     else:
                         prop_name = key if as_polymorph is False else f"[is {link.name}].{key}"
                         prop_str = link.get_property_str()
                         link_str = link.get_links_str(ref_classes=copy.copy(ref_classes))
-                        links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+                        links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
         else:
             for key, link in links.items():
                 if isinstance(link, list):
@@ -200,12 +201,12 @@ class EdgeObject:
                         prop_name = key if as_polymorph is False else f"[is {select_obj.name}].{key}"
                         prop_str = select_obj.get_property_str(True)
                         link_str = select_obj.get_links_str(True, ref_classes=copy.copy(ref_classes))
-                        links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+                        links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
                 else:
                     prop_name = key if as_polymorph is False else f"[is {link.name}].{key}"
                     prop_str = link.get_property_str()
                     link_str = link.get_links_str(ref_classes=copy.copy(ref_classes))
-                    links_str += f"{prop_name}: {{ {prop_str+link_str} }},"
+                    links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
 
         return links_str
 
@@ -437,7 +438,7 @@ class EQBuilder:
             "IfcAxis2Placement3D",
             "IfcAxis2Placement2D",
             "IfcCartesianPoint",
-            "IfcGeometricRepresentationContext",
+            "IfcRepresentationContext",
         ]
         for class_name in classes:
             q_str = self.select_object_str(class_name, include_all_nested_objects=False)
@@ -445,6 +446,88 @@ class EQBuilder:
         query_str += "}"
 
         return query_str
+
+    def get_specific_object_str(self, class_name: str, uuid: str, skippable_classes: list[str]) -> str:
+        eobj = self.edgedb_objects[class_name]
+
+        obj_props_str = ",\n".join(eobj.all_properties)
+
+        objects = []
+        for obj in walk_obj_links(eobj, skip_objects=skippable_classes):
+            objects.append(obj)
+
+        # Try to resolve using objects list
+
+        for obj in objects:
+            pass
+
+        # Try to resolve using key_chain object
+        key_chain_original = objects[-1].key_chain
+        key_chain = copy.copy(key_chain_original)
+
+        for key, value in key_chain.items():
+            abstract = value.pop("is_abstract")
+            _ = value.pop("subtypes")
+            # props = value.pop("properties")
+            if abstract is True:
+                continue
+            for ref, link in value.items():
+                if isinstance(link, list):
+                    continue
+                link_obj = self.edgedb_objects[link]
+                if link_obj.abstract is True:
+                    result = [key_chain[x.name] for x in link_obj.subtypes if x.abstract is False]
+                else:
+                    result = key_chain[link]
+                key_chain[key][ref] = result
+
+        query_str = f"SELECT {class_name} {{ {obj_props_str} }} filter .id = <uuid>'{uuid}'"
+
+        return query_str
+
+
+def walk_obj_links(eobj: EdgeObject, skip_objects: list[str]) -> Iterable[CurrEdgeObject]:
+    curr_objects = [eobj]
+    all_objects = [eobj]
+    key_chain = dict()
+    prev_obj = None
+    curr_obj = None
+    level = 0
+    while len(curr_objects) > 0:
+        level += 1
+        if curr_obj is not None:
+            prev_obj = curr_obj
+        curr_obj = curr_objects.pop(0)
+        all_objects.append(curr_obj)
+        if curr_obj.name not in key_chain.keys():
+            key_chain[curr_obj.name] = dict(
+                subtypes=[],
+                properties=curr_obj.all_properties,
+                is_abstract=curr_obj.abstract,
+            )
+        if curr_obj.abstract is False:
+            for key, link in curr_obj.links.items():
+                if link.name in skip_objects:
+                    continue
+                curr_objects.append(link)
+                key_chain[curr_obj.name][key] = link.name
+                ceobj = CurrEdgeObject(key, link, level, curr_obj, key_chain, prev_obj)
+                yield ceobj
+
+        for subtype in curr_obj.subtypes:
+            if subtype not in curr_objects and subtype not in all_objects:
+                key_chain[curr_obj.name]["subtypes"].append(subtype.name)
+                curr_objects.append(subtype)
+
+
+@dataclass
+class CurrEdgeObject:
+    key: str
+    eobj: EdgeObject
+    level: int
+    parent: EdgeObject
+    key_chain: dict
+    prev_obj: CurrEdgeObject
 
 
 @dataclass
