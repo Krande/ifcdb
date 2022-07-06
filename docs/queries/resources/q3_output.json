@@ -18,7 +18,8 @@
                     "PrefixTitles": null,
                     "SuffixTitles": null,
                     "Roles": [],
-                    "Addresses": []
+                    "Addresses": [],
+                    "_e_type": "default::IfcPerson"
                 },
                 "TheOrganization": {
                     "Identification": "ADA",
@@ -87,7 +88,8 @@
         },
         "ObjectPlacement": {
             "PlacementRelTo": {
-                "id": "d2a00956-fc3d-11ec-9a43-a30df79c4edf"
+                "id": "ee386f0e-fced-11ec-97f5-b3f35fe72359",
+                "_e_type": "default::IfcLocalPlacement"
             },
             "RelativePlacement": {
                 "Location": null,
@@ -121,7 +123,8 @@
                                 1,
                                 0
                             ]
-                        }
+                        },
+                        "_e_type": "default::IfcGeometricRepresentationContext"
                     },
                     "Items": [
                         {
@@ -180,7 +183,8 @@
                                 1,
                                 0
                             ]
-                        }
+                        },
+                        "_e_type": "default::IfcGeometricRepresentationContext"
                     },
                     "Items": [
                         {

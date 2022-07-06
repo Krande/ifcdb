@@ -2,14 +2,12 @@
 
 A document describing the experimentation of IFC as a Database.
 
-
-
 ```{toctree}
 :maxdepth: 2
 :glob:
 :caption: Inserts
 
-inserts/basic_insert
+inserts/insert_strategies
 ```
 
 ```{toctree}
@@ -39,4 +37,13 @@ updating/diffing
 :caption: CI/CD
 
 ci/unittesting
+```
+
+```{toctree}
+:maxdepth: 2
+:glob:
+:caption: Validation
+
+validation/validation_intro.md
+validation/cube-advanced-brep.md
 ```

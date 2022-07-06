@@ -76,7 +76,7 @@ class IfcIO:
 class EdgeIOBase:
     ifc_file: str | pathlib.Path = None
     ifc_io: IfcIO = None
-    ifc_schema: str = None
+    ifc_schema: str | None = None
     db_schema_dir: str | pathlib.Path = None
     em: EdgeModel = None
     client: edgedb.Client = None
@@ -356,6 +356,39 @@ class EdgeIOBase:
                 spatial_nodes[child_id] = sub_n
 
         return spatial_nodes
+
+    def get_owner_history(self) -> dict:
+        """Returns all OwnerHistory-related objects"""
+        query_str = "SELECT {\n"
+
+        classes = ["IfcOrganization", "IfcPerson", "IfcApplication", "IfcPersonAndOrganization", "IfcOwnerHistory"]
+        for class_name in classes:
+            q_str = self.eq_builder.select_object_str(class_name, include_all_nested_objects=False)
+            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n{q_str}}}),\n"
+        query_str += "}"
+        result = json.loads(self.client.query_json(query_str))
+        return result
+
+    def get_object_placements(self) -> dict:
+        """Returns all related objects and properties needed to resolve locations of all IFC objects"""
+        query_str = "SELECT {\n"
+
+        classes = [
+            "IfcLocalPlacement",
+            "IfcAxis2Placement",
+            "IfcDirection",
+            "IfcAxis2Placement3D",
+            "IfcAxis2Placement2D",
+            "IfcCartesianPoint",
+            "IfcGeometricRepresentationContext",
+        ]
+        for class_name in classes:
+            q_str = self.eq_builder.select_object_str(class_name, include_all_nested_objects=False)
+            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n    id,\n{q_str}}}),\n"
+        query_str += "}"
+
+        result = json.loads(self.client.query_json(query_str))
+        return result
 
 
 @dataclass

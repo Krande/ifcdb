@@ -349,6 +349,8 @@ class EQBuilder:
         if include_linked_objects is False:
             return props_str
 
+        obj_info = "{id, _e_type := .__type__.name}"
+
         if props_str != "":
             props_str += ",\n"
 
@@ -358,11 +360,11 @@ class EQBuilder:
             # does the link refer to other links?
 
             if include_all_nested_objects is False:
-                props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
+                props_str += f"{indent}{key} : {obj_info},\n"
                 continue
 
             if isinstance(link, list):
-                props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
+                props_str += f"{indent}{key} : {obj_info},\n"
                 continue
 
             if include_is_a_prefix is True:
@@ -375,7 +377,7 @@ class EQBuilder:
                         ref_link_str = self.select_object_str(r.name, level=level + 1, include_is_a_prefix=True)
                         props_str += f"{indent}{key} : {{\n{ref_link_str}{indent}}},\n"
                 else:
-                    props_str += f"{indent}{key} : {{ id, __type__ : {{name}} }},\n"
+                    props_str += f"{indent}{key} : {obj_info},\n"
             else:
                 ref_link_str = self.select_object_str(link.name, level=level + 1)
                 props_str += f"{indent}{key} : {{\n{ref_link_str}{indent}}},\n"

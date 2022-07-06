@@ -31,7 +31,8 @@ SELECT IfcBeam {
                     Description,
                     UserDefinedPurpose,
                     _e_type := .__type__.name
-                }
+                },
+                _e_type := .__type__.name
             },
             TheOrganization : { # IfcOrganization
                 Identification,
@@ -163,7 +164,10 @@ SELECT IfcBeam {
         # Therefore we need to consider various subtypes using the [is ..].key
         # (to reduce size of this file and since we know that for this scenario ObjectPlacement is pointing to an
         # IfcLocalPlacement, we will skip the other subtypes "IfcLinearPlacement" & "IfcGridPlacement"
-        [is IfcLocalPlacement].PlacementRelTo,
+        [is IfcLocalPlacement].PlacementRelTo : {
+            id,
+            _e_type := .__type__.name
+        },
         # PlacementRelTo links to same type of object "IfcObjectPlacement".
         # Therefore it is considered not necessary to follow the path further, given that this information would have
         # to be collected in a separate step
@@ -215,6 +219,7 @@ SELECT IfcBeam {
                 [is IfcGeometricRepresentationContext].TrueNorth : { # IfcDirection
                     DirectionRatios
                 },
+                _e_type := .__type__.name
             },
             [is IfcShapeRepresentation].Items : { # IfcRepresentationItem
                 # IfcRepresentationItem is an abstract class that represents > 100 different types of representation

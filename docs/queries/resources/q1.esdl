@@ -9,5 +9,7 @@ SELECT IfcBeam {
     # Links to other objects
     OwnerHistory,
     ObjectPlacement,
-    Representation
+    Representation,
+    # These are specific EdgeDB attributes to get more information about the object itself
+    _e_type := .__type__.name
 }

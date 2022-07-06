@@ -7,13 +7,14 @@
         "Tag": "MyBeam",
         "PredefinedType": null,
         "OwnerHistory": {
-            "id": "cffa883e-fc3d-11ec-9a43-4be861e73ff8"
+            "id": "ebe57210-fced-11ec-97f5-57e3b32f3dcd"
         },
         "ObjectPlacement": {
-            "id": "d3405992-fc3d-11ec-9a43-37cf94fdac59"
+            "id": "eee839b6-fced-11ec-97f5-73fd14217afc"
         },
         "Representation": {
-            "id": "d2b64c66-fc3d-11ec-9a43-3b7eb49696b7"
-        }
+            "id": "ee4d8ae2-fced-11ec-97f5-7f55f62e5c6b"
+        },
+        "_e_type": "default::IfcBeam"
     }
 ]

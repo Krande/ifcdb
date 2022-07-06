@@ -41,7 +41,8 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
         # res_id = io.get_by_global_id("1dGALjyLuHxAG601fzsd4G")
 
         # Get "Sublevel_1_a" by GlobalId
-
+        _ = io.get_owner_history()
+        _ = io.get_object_placements()
         _ = io.get_by_name("MyBeam")
 
         start = time.time()
@@ -59,5 +60,5 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
 if __name__ == "__main__":
     # main("cube-advanced-brep.ifc")
     # main("SpatialHierarchy1.ifc", refresh_db=False)
-    main("MyBeam.ifc", refresh_db=True)
+    main("MyBeam.ifc", refresh_db=False)
     # main("tessellated-item.ifc")

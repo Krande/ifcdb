@@ -19,7 +19,7 @@ SELECT IfcBeam {
         LastModifyingUser,
         LastModifyingApplication,
         # These are specific EdgeDB attributes to get more information about the object itself
-        __type__ : {name}
+        _e_type := .__type__.name
     },
     ObjectPlacement : {
         # ObjectPlacement points to an abstract superclass "IfcObjectPlacement".
@@ -29,7 +29,7 @@ SELECT IfcBeam {
         [is IfcLocalPlacement].PlacementRelTo,
         [is IfcLocalPlacement].RelativePlacement,
         # These are specific EdgeDB attributes to get more information about the object itself
-        __type__ : {name}
+        _e_type := .__type__.name
     },
     Representation : {
         # Points to an abstract superclass "IfcProductRepresentation". However only the subtype
@@ -41,6 +41,6 @@ SELECT IfcBeam {
         # Links to other objects
         Representations,
         # These are specific EdgeDB attributes to get more information about the object itself
-        __type__ : {name}
+        _e_type := .__type__.name
     }
 }
