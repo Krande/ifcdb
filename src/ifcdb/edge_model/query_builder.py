@@ -4,6 +4,8 @@ import copy
 import json
 import logging
 from dataclasses import dataclass, field
+from itertools import groupby
+from operator import attrgetter
 from typing import Iterable
 
 import edgedb
@@ -457,9 +459,8 @@ class EQBuilder:
             objects.append(obj)
 
         # Try to resolve using objects list
-
-        for obj in objects:
-            pass
+        # level = 0
+        _ = [(parent, list(group)) for parent, group in groupby(objects, key=attrgetter("parent"))]
 
         # Try to resolve using key_chain object
         key_chain_original = objects[-1].key_chain
@@ -487,12 +488,13 @@ class EQBuilder:
 
 
 def walk_obj_links(eobj: EdgeObject, skip_objects: list[str]) -> Iterable[CurrEdgeObject]:
-    curr_objects = [eobj]
-    all_objects = [eobj]
     key_chain = dict()
     prev_obj = None
     curr_obj = None
     level = 0
+    o_obj = CurrEdgeObject(None, eobj, level, curr_obj, key_chain, prev_obj)
+    curr_objects = [o_obj]
+    all_objects = [o_obj]
     while len(curr_objects) > 0:
         level += 1
         if curr_obj is not None:
@@ -509,9 +511,9 @@ def walk_obj_links(eobj: EdgeObject, skip_objects: list[str]) -> Iterable[CurrEd
             for key, link in curr_obj.links.items():
                 if link.name in skip_objects:
                     continue
-                curr_objects.append(link)
                 key_chain[curr_obj.name][key] = link.name
                 ceobj = CurrEdgeObject(key, link, level, curr_obj, key_chain, prev_obj)
+                curr_objects.append(ceobj)
                 yield ceobj
 
         for subtype in curr_obj.subtypes:
