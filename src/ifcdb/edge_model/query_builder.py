@@ -220,6 +220,9 @@ class EQBuilder:
     edgedb_objects: dict[str, EdgeObject] = None
 
     def __post_init__(self):
+        self.load_db_objects()
+
+    def load_db_objects(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
     def build_object_property_tree(
@@ -488,13 +491,12 @@ class EQBuilder:
 
 
 def walk_obj_links(eobj: EdgeObject, skip_objects: list[str]) -> Iterable[CurrEdgeObject]:
+    curr_objects = [eobj]
+    all_objects = [eobj]
     key_chain = dict()
     prev_obj = None
     curr_obj = None
     level = 0
-    o_obj = CurrEdgeObject(None, eobj, level, curr_obj, key_chain, prev_obj)
-    curr_objects = [o_obj]
-    all_objects = [o_obj]
     while len(curr_objects) > 0:
         level += 1
         if curr_obj is not None:
@@ -511,9 +513,9 @@ def walk_obj_links(eobj: EdgeObject, skip_objects: list[str]) -> Iterable[CurrEd
             for key, link in curr_obj.links.items():
                 if link.name in skip_objects:
                     continue
+                curr_objects.append(link)
                 key_chain[curr_obj.name][key] = link.name
                 ceobj = CurrEdgeObject(key, link, level, curr_obj, key_chain, prev_obj)
-                curr_objects.append(ceobj)
                 yield ceobj
 
         for subtype in curr_obj.subtypes:

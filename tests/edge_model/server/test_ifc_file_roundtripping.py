@@ -13,7 +13,6 @@ from ifcdb.edge_model.query_utils import validate_ifc_objects
         "tessellated-item.ifc",
         "cube-advanced-brep.ifc",
         "SpatialHierarchy1.ifc",
-        "MyBeam.ifc",
         "MyBeamWithHoles.ifc",
     ],
 )

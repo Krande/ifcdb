@@ -106,22 +106,23 @@ class EdgeIOBase:
         else:
             return f"-I {self.instance_name}"
 
-    def create_client(self) -> edgedb.Client:
-        client = edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
+    def create_client(self, database=None) -> edgedb.Client:
+        client = edgedb.create_client(self.conn_str, tls_security="insecure", database=database)
         try:
             self.eq_builder = EQBuilder(client)
         except edgedb.errors.UnknownDatabaseError as e:
-            logging.debug(e)
+            logging.warning(e)
 
         return client
 
     def database_exists(self):
+        client = self.create_client()
         try:
-            self.client.execute(f"CREATE DATABASE {self.database}")
+            client.execute(f"CREATE DATABASE {self.database}")
         except edgedb.errors.DuplicateDatabaseDefinitionError:
             return True
 
-        self.client.execute(f"DROP DATABASE {self.database}")
+        client.execute(f"DROP DATABASE {self.database}")
         return False
 
     def load_ifc(self, ifc_file):
@@ -131,7 +132,7 @@ class EdgeIOBase:
             self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
 
     def __enter__(self):
-        self.client = self.create_client()
+        self.client = self.create_client(self.database)
 
         return self
 
