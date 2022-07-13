@@ -1,5 +1,5 @@
 import pytest
-import json
+
 from ifcdb.edge_model.utils import clean_name
 
 
@@ -21,13 +21,11 @@ def test_get_ifc_class_select(io):
     uuid = result["id"]
     class_name = clean_name(result["__type__"])
 
-    query_str = io.eq_builder.get_specific_object_str(class_name, uuid, skippable_classes=skippable_classes)
+    _ = io.eq_builder.get_specific_object_str(class_name, uuid, skippable_classes=skippable_classes)
 
-    result = json.loads(io.client.query_json(query_str))
-    _ = io._get_specific_uuid_class_name(uuid, class_name, top_level_only=True)
-
-    result_by_name = io.get_by_name("MyBeam", top_level_only=True)
+    # result = json.loads(io.client.query_json(query_str))
+    # result_by_name = io.get_by_name("MyBeam", top_level_only=True)
 
 
 def test_get_by_globalid(io):
-    result_by_id = io.get_by_global_id("3PXsnq_3qHxBd2w2f4ZOUQ", top_level_only=True)
+    _ = io.get_by_global_id("3PXsnq_3qHxBd2w2f4ZOUQ", top_level_only=True)

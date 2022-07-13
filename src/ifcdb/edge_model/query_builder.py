@@ -225,78 +225,14 @@ class EQBuilder:
     def load_db_objects(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
-    def build_object_property_tree(
-        self, class_name, swriter: SelectWriter = None, ref_classes: list[str] = None, level=0, is_subtype=False
-    ) -> dict:
+    def get_select_str(self, class_name, max_depth=0) -> str:
+        s_str = f"SELECT {class_name} {{"
         eobj = self.edgedb_objects[class_name]
-
-        if swriter is None:
-            swriter = SelectWriter(eobj)
-            swriter.add_initial_select_str()
-
-        swriter.current_level = level + 1
-
-        if ref_classes is None:
-            ref_classes = []
-
-        if eobj.name in ref_classes:
-            logging.warning(f'"{eobj.name}" was skipped as it would lead to ' f'recursion issues -> "{ref_classes}"')
-            return {eobj.name: {x: None for x in eobj.all_properties}}
-
-        ref_classes.append(eobj.name)
-        swriter.current_class = eobj
-        tree_builder = self.build_object_property_tree
-        if eobj.abstract is True:
-            property_dict = {eobj.name: {"is_abstract": True}}
-        else:
-            all_props = eobj.all_properties
-            property_dict = {eobj.name: {x: None for x in all_props}}
-            if is_subtype:
-                swriter.add_as_subtype_properties(eobj.name, all_props)
-            else:
-                swriter.add_properties(all_props)
-            for key, link_ref in eobj.links.items():
-                if isinstance(link_ref, list):
-                    for link in link_ref:
-                        new_entry = swriter.add_link(
-                            key,
-                            link,
-                            level + 1,
-                            tree_builder,
-                            ref_classes=ref_classes,
-                            is_subtype=True,
-                        )
-                        if key not in property_dict[eobj.name].keys():
-                            property_dict[eobj.name][key] = []
-                        property_dict[eobj.name][key].append(new_entry)
-                else:
-                    new_entry = swriter.add_link(
-                        key,
-                        link_ref,
-                        level + 1,
-                        tree_builder,
-                        ref_classes=ref_classes,
-                    )
-                    if key not in property_dict[eobj.name].keys():
-                        property_dict[eobj.name][key] = []
-                    property_dict[eobj.name][key].append(new_entry)
-
-        skip_these = ["is_abstract"]
-        swriter.written_props = [x for x in property_dict[eobj.name].keys() if x not in skip_these]
-
-        property_dict[eobj.name]["subtypes"] = []
-        subtype_list = property_dict[eobj.name]["subtypes"]
-        subtypes = eobj.subtypes
-        for stype in subtypes:
-            if stype.abstract is True:
-                continue
-            key = stype.name
-            new_entry = self.build_object_property_tree(key, swriter, level=level + 1, is_subtype=True)
-            subtype_list.append(new_entry)
-
-        # if level == 0:
-        #     res = WalkPropTreeSelect(property_dict)
-        return swriter
+        s_str += "".join([f"{x},\n" for x in eobj.all_properties])
+        if max_depth > 0:
+            raise NotImplementedError("Depth > 0 is not yet supported")
+        s_str += "}"
+        return s_str
 
     def select_linked_objects_query_str(self, class_name, level=0, ref_classes: list[str] = None):
         from itertools import chain

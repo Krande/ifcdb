@@ -300,6 +300,7 @@ class EdgeIOBase:
 
         ent_dict.update(to_be_added)
 
+    # Base Queries
     def get_spatial_hierarchy(self, filter_by_name: str = None) -> dict[str, SpatialNode]:
         in_str = self.eq_builder.get_spatial_hierarchy_str(filter_by_name=filter_by_name)
 
@@ -359,51 +360,38 @@ class EdgeIOBase:
         result = json.loads(self.client.query_json(query_str))
         return result
 
+    def _get_by_uuid_and_class_name(self, uuid, class_name, top_level_only=False):
+        select_str_a = self.eq_builder.select_object_str(class_name, include_all_nested_objects=not top_level_only)
+        query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
+        return json.loads(self.client.query_json(query_str))
 
-@dataclass
-class EdgeIO(EdgeIOBase):
-    # Queries
+    # Introspection
     def _get_id_class_name_from_simple_filter(self, identifier: str, value: str, base_object="IfcRoot"):
         query_str = f"""SELECT {base_object} {{ id, __type__ : {{ name }} }} filter .{identifier} = '{value}'"""
         result = json.loads(self.client.query_json(query_str))
         if len(result) != 1:
             raise ValueError
-        return result[0]
 
-    def _get_specific_uuid_class_name(self, uuid, class_name, top_level_only=False):
-        _ = self.get_owner_history()
-        _ = self.get_object_placements()
-        skippable_classes = ["IfcOwnerHistory", "IfcObjectPlacement", "IfcRepresentationContext"]
-        query_str = self.eq_builder.get_specific_object_str(class_name, uuid, skippable_classes=skippable_classes)
-        result = json.loads(self.client.query_json(query_str))
-        # Resolve owner history and object placements here ->
+        uuid = result[0]["id"]
+        class_name = clean_name(result[0]["__type__"])
 
-        # <-
-        return result
+        return uuid, class_name
 
-    def _get_by_uuid_and_class_name(self, uuid, class_name, top_level_only=False):
-        # Experimental query strategy
-        _ = self._get_specific_uuid_class_name(uuid, class_name, top_level_only)
 
-        select_str_a = self.eq_builder.select_object_str(class_name, include_all_nested_objects=not top_level_only)
-        query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
-        return json.loads(self.client.query_json(query_str))
+@dataclass
+class EdgeIO(EdgeIOBase):
+    # Queries
 
     def get_by_global_id(self, global_id: str, class_name: str = None, top_level_only=True):
         """Get rooted IFC element based on its 'GlobalId' property"""
-        result = self._get_id_class_name_from_simple_filter("GlobalId", global_id)
-        final_result = self._get_by_uuid_and_class_name(
-            result["id"], clean_name(result["__type__"]), top_level_only=top_level_only
-        )
+        uuid, class_name = self._get_id_class_name_from_simple_filter("GlobalId", global_id)
+        final_result = self._get_by_uuid_and_class_name(uuid, class_name, top_level_only=top_level_only)
         return final_result
 
     def get_by_name(self, name: str, class_name: str = None, top_level_only=False):
         """Get rooted IFC element based on its 'Name' property"""
-        result = self._get_id_class_name_from_simple_filter("Name", name)
-        final_result = self._get_by_uuid_and_class_name(
-            result["id"], clean_name(result["__type__"]), top_level_only=top_level_only
-        )
-        # fstr = json.dumps(final_result, indent=4)
+        uuid, class_name = self._get_id_class_name_from_simple_filter("Name", name)
+        final_result = self._get_by_uuid_and_class_name(uuid, class_name, top_level_only=top_level_only)
         return final_result
 
     def get_slice_in_spatial_hierarchy(self, spatial_name: str):
