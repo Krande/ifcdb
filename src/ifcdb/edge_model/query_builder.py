@@ -111,7 +111,7 @@ class EdgeObject:
     name: str
     abstract: bool = None
     ancestors: list[EdgeObject] = field(default=None, repr=False)
-    links: dict[str, EdgeObject] = None
+    links: dict[str, EdgeObject | list[EdgeObject]] = None
     properties: list[str] = None
     subtypes: list[EdgeObject] = field(default_factory=list, repr=False)
 
@@ -198,6 +198,9 @@ class LinkTraveller:
 
     walk_history: list[str] = field(default_factory=list)
 
+    curr_key: str = None
+    curr_link: EdgeObject = None
+
     def __post_init__(self):
         if self.max_depth is None:
             self.max_depth = 999
@@ -206,33 +209,74 @@ class LinkTraveller:
         if eobj is None:
             eobj = self.eobj
         if curr_depth > self.max_depth:
-            return ""
+            return "\n"
         if ref_classes is None:
             ref_classes = []
         if eobj.name in ref_classes:
             logging.warning("Preventing recursion")
-            return ""
+            return "\n"
+
+        indent = 4 * " " * curr_depth
         ref_classes.append(eobj.name)
         self.walk_history.append(eobj.name)
         rstr = ""
-        links = eobj.get_links()
-        for key, value in links.items():
-            rstr += key
+        all_links = eobj.links
+        all_props = eobj.all_properties
+        new_props = []
+        new_link = []
+
+        # resolve subtypes
+        for subtype in eobj.subtypes:
+            for prop in subtype.properties:
+                if prop not in all_props and prop not in new_props:
+                    rstr += f"{indent}[is {subtype.name}].{prop},\n"
+                    new_props.append(prop)
+
+            for key, value in subtype.links.items():
+                if key not in all_links.keys() and key not in new_link:
+                    if isinstance(value, EdgeObject):
+                        copy_ref = copy.copy(ref_classes)
+                        substr = self.walk_links_to_str(value, curr_depth + 1, ref_classes=copy_ref)
+                        if substr.strip() != "":
+                            rstr += f"{indent}[is {subtype.name}].{key} : {{\n{substr}}},\n"
+                        new_link.append(value)
+                    else:
+                        raise ValueError()
+
+        for key, value in all_links.items():
+            rstr += indent + key
+            self.curr_key = key
             if curr_depth == self.max_depth:
                 rstr += ",\n"
                 continue
-            if len(value) == 1 and self.skip_link_classes is not None and value[0].name in self.skip_link_classes:
+            if (
+                isinstance(value, EdgeObject)
+                and self.skip_link_classes is not None
+                and value.name in self.skip_link_classes
+            ):
                 rstr += ",\n"
                 continue
 
-            rstr += " : {\n"
-            if len(value) > 1:
-                pass
+            link_str = ""
+            if isinstance(value, list):
+                for link in value:
+                    print(f'Adding select link "{link.name}"')
+                    self.curr_link = link
+                    copy_ref = copy.copy(ref_classes)
+                    substr = self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref)
+                    if substr.strip() != "":
+                        link_str += substr + "},\n"
             else:
-                link = value[0]
+                link = value
+                self.curr_link = link
                 copy_ref = copy.copy(ref_classes)
-                rstr += self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref)
-
+                substr = self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref)
+                if substr.strip() != "":
+                    link_str += substr + "},\n"
+            if link_str.strip() != "":
+                rstr += " : {\n" + link_str
+            else:
+                rstr += ",\n"
         return rstr
 
 
