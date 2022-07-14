@@ -167,50 +167,73 @@ class EdgeObject:
         props = self.all_properties
         return ",\n".join(props) if as_polymorph is False else ",\n".join([f"[is {self.name}].{x}" for x in props])
 
-    def get_links_str(self, as_polymorph=False, ref_classes: list[str] = None):
+    def get_links(self) -> dict[str, list[EdgeObject]]:
+        key_values = dict()
+        links = self.links
 
+        for stype in self.subtypes:
+            if stype.abstract:
+                continue
+            links = stype.links
+            for key, link in links.items():
+                if key not in key_values.keys():
+                    key_values[key] = []
+                if link not in key_values[key]:
+                    key_values[key].append(link)
+
+        for key, link in links.items():
+            if key not in key_values.keys():
+                key_values[key] = []
+            if link not in key_values[key]:
+                key_values[key].append(link)
+
+        return key_values
+
+
+@dataclass
+class LinkTraveller:
+    eobj: EdgeObject
+    max_depth: int | None = 0
+    skip_link_classes: list[str] = None
+
+    walk_history: list[str] = field(default_factory=list)
+
+    def __post_init__(self):
+        if self.max_depth is None:
+            self.max_depth = 999
+
+    def walk_links_to_str(self, eobj: EdgeObject = None, curr_depth=0, ref_classes: list[str] = None) -> str:
+        if eobj is None:
+            eobj = self.eobj
+        if curr_depth > self.max_depth:
+            return ""
         if ref_classes is None:
             ref_classes = []
-        if self.name in ref_classes:
-            logging.warning(f"Skipping {self.name} to prevent recursion errors")
+        if eobj.name in ref_classes:
+            logging.warning("Preventing recursion")
             return ""
-        ref_classes.append(self.name)
+        ref_classes.append(eobj.name)
+        self.walk_history.append(eobj.name)
+        rstr = ""
+        links = eobj.get_links()
+        for key, value in links.items():
+            rstr += key
+            if curr_depth == self.max_depth:
+                rstr += ",\n"
+                continue
+            if len(value) == 1 and self.skip_link_classes is not None and value[0].name in self.skip_link_classes:
+                rstr += ",\n"
+                continue
 
-        links = self.links
-        links_str = ""
-        if self.abstract is True:
-            as_polymorph = True
-            for stype in self.subtypes:
-                if stype.abstract:
-                    continue
-                links = stype.links
-                for key, link in links.items():
-                    if isinstance(link, list):
-                        for select_obj in link:
-                            prop_name = key if as_polymorph is False else f"[is {select_obj.name}].{key}"
-                            prop_str = select_obj.get_property_str(True)
-                            link_str = select_obj.get_links_str(True, ref_classes=copy.copy(ref_classes))
-                            links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
-                    else:
-                        prop_name = key if as_polymorph is False else f"[is {link.name}].{key}"
-                        prop_str = link.get_property_str()
-                        link_str = link.get_links_str(ref_classes=copy.copy(ref_classes))
-                        links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
-        else:
-            for key, link in links.items():
-                if isinstance(link, list):
-                    for select_obj in link:
-                        prop_name = key if as_polymorph is False else f"[is {select_obj.name}].{key}"
-                        prop_str = select_obj.get_property_str(True)
-                        link_str = select_obj.get_links_str(True, ref_classes=copy.copy(ref_classes))
-                        links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
-                else:
-                    prop_name = key if as_polymorph is False else f"[is {link.name}].{key}"
-                    prop_str = link.get_property_str()
-                    link_str = link.get_links_str(ref_classes=copy.copy(ref_classes))
-                    links_str += f"{prop_name}: {{ {prop_str + link_str} }},"
+            rstr += " : {\n"
+            if len(value) > 1:
+                pass
+            else:
+                link = value[0]
+                copy_ref = copy.copy(ref_classes)
+                rstr += self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref)
 
-        return links_str
+        return rstr
 
 
 @dataclass
@@ -225,13 +248,26 @@ class EQBuilder:
     def load_db_objects(self):
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
-    def get_select_str(self, class_name, max_depth=0) -> str:
+    def get_select_str(
+        self, class_name, uuids: str | list[str] = None, max_depth=0, skip_link_classes: list[str] = None
+    ) -> str:
         s_str = f"SELECT {class_name} {{"
         eobj = self.edgedb_objects[class_name]
         s_str += "".join([f"{x},\n" for x in eobj.all_properties])
-        if max_depth > 0:
-            raise NotImplementedError("Depth > 0 is not yet supported")
-        s_str += "}"
+
+        link_trvlr = LinkTraveller(eobj, max_depth, skip_link_classes)
+        s_str += link_trvlr.walk_links_to_str(eobj)
+
+        if uuids is None:
+            uuid_str = ""
+        else:
+            uuid_str = " filter .id = <uuid>'"
+            if isinstance(uuids, list):
+                uuid_str += "{" + ",".join([f"'{x}'" for x in uuids]) + "}"
+            else:
+                uuid_str += uuids
+            uuid_str += "'"
+        s_str += f"}}{uuid_str}"
         return s_str
 
     def select_linked_objects_query_str(self, class_name, level=0, ref_classes: list[str] = None):
@@ -364,7 +400,7 @@ class EQBuilder:
         classes = ["IfcOrganization", "IfcPerson", "IfcApplication", "IfcPersonAndOrganization", "IfcOwnerHistory"]
         for class_name in classes:
             q_str = self.select_object_str(class_name, include_all_nested_objects=False)
-            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n{q_str}}}),\n"
+            query_str += f"{class_name} := (\n  SELECT {class_name} {{\n    id,{q_str}}}),\n"
         query_str += "}"
         return query_str
 
