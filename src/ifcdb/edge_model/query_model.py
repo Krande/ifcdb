@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -422,17 +423,18 @@ class EdgeIO(EdgeIOBase):
                 obj_num += 1
                 obj_map[obj_num] = uuid
         query_str_2 += "    }"
-        final_result = json.loads(self.client.query_single_json(query_str_2))
-        print(final_result)
 
-        # Resolving Owner
+        # Resolving Representations
+        _ = json.loads(self.client.query_single_json(query_str_2))
+
+        # Resolving Owner History
         owner_id = result["OwnerHistory"]["id"]
-        owner_map = {o["id"]: o for o in owner["IfcOwnerHistory"]}
-        _ = owner_map[owner_id]
+        owner_map = {o.pop("id"): o for o in copy.deepcopy(owner["IfcOwnerHistory"])}
+        _ = insert_uuid_objects_from_source(owner, flatten_uuid_source(owner_map[owner_id]))
 
-        # Resolving Placement
+        # Resolving Object Placement
         obj_place_id = result["ObjectPlacement"]["id"]
-        place_map = {p["id"]: p for p in place["IfcLocalPlacement"]}
+        place_map = {p.pop("id"): p for p in place["IfcLocalPlacement"]}
         _ = place_map[obj_place_id]
 
         print("sd")
@@ -821,3 +823,38 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
             props[key] = value
 
     return props
+
+
+def flatten_uuid_source(source: dict) -> dict:
+    rdict = dict()
+    for key, value in source.items():
+        if isinstance(value, list) is False:
+            raise ValueError("Unknown format of source dictionary")
+        for v in value:
+            rdict[v.pop("id")] = v
+
+    # Replace nested uuids
+    ordict = copy.deepcopy(rdict)
+    for uuid, obj in ordict.items():
+        for key, value in obj.items():
+            if isinstance(value, dict):
+                res = value.get('id')
+                if res is None:
+                    raise ValueError("")
+                rdict[uuid][key] = rdict[res]
+
+    return rdict
+
+
+def insert_uuid_objects_from_source(flat_source: dict, destination: dict):
+    new_d = dict()
+    for key, value in destination.items():
+        if isinstance(value, dict) is False:
+            new_d[key] = value
+            continue
+
+        obj_id = value.pop("id")
+        source_res = flat_source[obj_id]
+        new_d[key] = source_res
+
+    return new_d
