@@ -357,13 +357,30 @@ class EdgeIOBase:
     def get_owner_history(self) -> dict:
         """Returns all OwnerHistory-related objects"""
         query_str = self.eq_builder.get_owner_history_str()
-        result = json.loads(self.client.query_json(query_str))
+        result = json.loads(self.client.query_single_json(query_str))
         return result
 
     def get_object_placements(self) -> dict:
         """Returns all related objects and properties needed to resolve locations of all IFC objects"""
         query_str = self.eq_builder.get_object_placements_str()
-        result = json.loads(self.client.query_json(query_str))
+        result = json.loads(self.client.query_single_json(query_str))
+        return result
+
+    def get_representation_elements(
+        self,
+        identifier: str,
+        value: str,
+    ):
+        skippable_classes = ["IfcOwnerHistory", "IfcObjectPlacement", "IfcRepresentationContext"]
+
+        uuid, class_name = self._get_id_class_name_from_simple_filter(identifier, value)
+        query_str = self.eq_builder.get_select_str(
+            class_name, uuid, max_depth=None, skip_link_classes=skippable_classes
+        )
+        result = json.loads(self.client.query_single_json(query_str))
+        if len(result.keys()) == 0:
+            raise ValueError(f'Unable to find any result using the input "{value}"')
+
         return result
 
     def _get_by_uuid_and_class_name(self, uuid, class_name, top_level_only=False):
@@ -387,6 +404,38 @@ class EdgeIOBase:
 @dataclass
 class EdgeIO(EdgeIOBase):
     # Queries
+
+    def get_by_name_v2(self, name: str):
+        owner = self.get_owner_history()
+        place = self.get_object_placements()
+        result = self.get_representation_elements("Name", name)
+
+        query_str_2 = "SELECT {\n"
+        obj_num = 1
+        obj_map = dict()
+        for shapes in result["Representation"]["Representations"]:
+            for item in shapes["Items"]:
+                uuid = item["id"]
+                class_name = item["_e_type"].replace("default::", "")
+                sub_str = self.eq_builder.get_select_str(class_name, uuids=uuid, max_depth=None)
+                query_str_2 += f"    obj_{obj_num} := ({sub_str}),\n"
+                obj_num += 1
+                obj_map[obj_num] = uuid
+        query_str_2 += "    }"
+        final_result = json.loads(self.client.query_single_json(query_str_2))
+        print(final_result)
+
+        # Resolving Owner
+        owner_id = result["OwnerHistory"]["id"]
+        owner_map = {o["id"]: o for o in owner["IfcOwnerHistory"]}
+        _ = owner_map[owner_id]
+
+        # Resolving Placement
+        obj_place_id = result["ObjectPlacement"]["id"]
+        place_map = {p["id"]: p for p in place["IfcLocalPlacement"]}
+        _ = place_map[obj_place_id]
+
+        print("sd")
 
     def get_by_global_id(self, global_id: str, class_name: str = None, top_level_only=True):
         """Get rooted IFC element based on its 'GlobalId' property"""

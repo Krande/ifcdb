@@ -4,9 +4,7 @@ import copy
 import json
 import logging
 from dataclasses import dataclass, field
-from itertools import groupby
-from operator import attrgetter
-from typing import Iterable
+from itertools import chain
 
 import edgedb
 
@@ -191,10 +189,118 @@ class EdgeObject:
 
 
 @dataclass
+class SubTypeProp:
+    subtype: EdgeObject
+    weight: int
+    unique_props: list[str]
+    unique_links: dict[str, EdgeObject]
+    parent_name: str
+
+
+@dataclass
+class SubTypeResolver:
+    eobj: EdgeObject
+    link_trvlr: LinkTraveller
+    curr_depth: int
+    ref_classes: list[str]
+    key: str = None
+
+    subtype_index: dict[str, SubTypeProp] = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.resolve()
+        self.find_overloading_keys()
+
+    def has_unique_props(self) -> bool:
+        for x in self.subtype_index.values():
+            if len(x.unique_props) > 0 or len(x.unique_links) > 0:
+                return True
+        return False
+
+    def resolve(self, eobj: EdgeObject = None):
+        eobj = self.eobj if eobj is None else eobj
+        o_links = frozenset({key: value.name for key, value in eobj.links.items()})
+        o_props = set(eobj.all_properties)
+
+        for subtype in eobj.subtypes:
+            i = len(subtype.ancestors) - subtype.ancestors.index(self.eobj)
+            sub_links = frozenset({key: value.name for key, value in subtype.links.items()})
+            sub_props = set(subtype.all_properties)
+            pdiff = sub_props.difference(o_props)
+            odiff = sub_links.difference(o_links)
+            unique_links = {x: subtype.links[x] for x in odiff}
+            self.subtype_index[subtype.name] = SubTypeProp(subtype, i, list(pdiff), unique_links, eobj.name)
+            self.resolve(subtype)
+
+    def find_overloading_keys(self):
+        keys = dict()
+        link_pop = dict()
+        prop_pop = dict()
+
+        for stkey, st in self.subtype_index.items():
+            for prop in st.unique_props:
+                unique_prop = f"{st.parent_name}_{prop}"
+                if unique_prop not in keys.keys():
+                    keys[unique_prop] = (stkey, st)
+                else:
+                    old_stkey, old_st = keys[unique_prop]
+                    if old_st.weight < st.weight:
+                        if stkey not in prop_pop.keys():
+                            prop_pop[stkey] = []
+                        prop_pop[stkey].append(prop)
+                    else:
+                        if old_stkey not in prop_pop.keys():
+                            prop_pop[old_stkey] = []
+                        prop_pop[old_stkey].append(prop)
+
+            for prop, link in st.unique_links.items():
+                unique_prop = f"{st.parent_name}_{prop}"
+                if unique_prop not in keys.keys():
+                    keys[unique_prop] = (stkey, st)
+                else:
+                    old_stkey, old_st = keys[unique_prop]
+                    if old_st.subtype in st.subtype.ancestors:
+                        if stkey not in link_pop.keys():
+                            link_pop[stkey] = []
+                        link_pop[stkey].append(prop)
+                    elif st.subtype in old_st.subtype.ancestors:
+                        if old_stkey not in link_pop.keys():
+                            link_pop[old_stkey] = []
+                        link_pop[old_stkey].append(prop)
+                    else:
+                        continue
+                    # Compare subtype levels and ensure that they are inherited from each other
+        for key, props in link_pop.items():
+            for prop in props:
+                self.subtype_index[key].unique_links.pop(prop)
+
+    def to_str(self) -> str:
+        curr_depth = self.curr_depth
+        ref_classes = self.ref_classes
+        indent = indent_str(curr_depth)
+        rstr = ""
+        for subtype in self.subtype_index.values():
+            for prop in subtype.unique_props:
+                rstr += f"{indent}[is {subtype.subtype.name}].{prop},\n"
+
+            for key, value in subtype.unique_links.items():
+                if isinstance(value, EdgeObject) is False:
+                    raise ValueError()
+
+                copy_ref = copy.copy(ref_classes)
+                substr = self.link_trvlr.walk_links_to_str(value, curr_depth + 1, ref_classes=copy_ref, key=key)
+                if substr.strip() != "":
+                    rstr += f"{indent}[is {subtype.subtype.name}].{key} : {{\n{substr}{indent}}},\n"
+
+        return rstr
+
+
+@dataclass
 class LinkTraveller:
     eobj: EdgeObject
     max_depth: int | None = 0
     skip_link_classes: list[str] = None
+    skip_representation_items: bool = True
 
     walk_history: list[str] = field(default_factory=list)
 
@@ -205,7 +311,9 @@ class LinkTraveller:
         if self.max_depth is None:
             self.max_depth = 999
 
-    def walk_links_to_str(self, eobj: EdgeObject = None, curr_depth=0, ref_classes: list[str] = None) -> str:
+    def walk_links_to_str(
+        self, eobj: EdgeObject = None, curr_depth=0, ref_classes: list[str] = None, key: str = None
+    ) -> str:
         if eobj is None:
             eobj = self.eobj
         if curr_depth > self.max_depth:
@@ -216,34 +324,25 @@ class LinkTraveller:
             logging.warning("Preventing recursion")
             return "\n"
 
-        indent = 4 * " " * curr_depth
+        indent = indent_str(curr_depth)
+        if eobj.name == "IfcRepresentationItem":
+            return f"{indent}id\n"
+
         ref_classes.append(eobj.name)
         self.walk_history.append(eobj.name)
         rstr = ""
-        all_links = eobj.links
-        all_props = eobj.all_properties
-        new_props = []
-        new_link = []
 
-        # resolve subtypes
-        for subtype in eobj.subtypes:
-            for prop in subtype.properties:
-                if prop not in all_props and prop not in new_props:
-                    rstr += f"{indent}[is {subtype.name}].{prop},\n"
-                    new_props.append(prop)
+        # Resolve Subtypes
+        sub_resolver = SubTypeResolver(eobj, self, curr_depth, ref_classes, key=key)
+        substr = sub_resolver.to_str()
+        if self.eobj != eobj:
+            rstr += "".join([f"{indent}{x},\n" for x in eobj.all_properties])
+        if substr != "":
+            rstr += substr
 
-            for key, value in subtype.links.items():
-                if key not in all_links.keys() and key not in new_link:
-                    if isinstance(value, EdgeObject):
-                        copy_ref = copy.copy(ref_classes)
-                        substr = self.walk_links_to_str(value, curr_depth + 1, ref_classes=copy_ref)
-                        if substr.strip() != "":
-                            rstr += f"{indent}[is {subtype.name}].{key} : {{\n{substr}}},\n"
-                        new_link.append(value)
-                    else:
-                        raise ValueError()
-
-        for key, value in all_links.items():
+        for key, value in eobj.links.items():
+            if self.eobj.name == "IfcExtrudedAreaSolid" and key == "Location":
+                print("sd")
             rstr += indent + key
             self.curr_key = key
             if curr_depth == self.max_depth:
@@ -263,21 +362,27 @@ class LinkTraveller:
                     print(f'Adding select link "{link.name}"')
                     self.curr_link = link
                     copy_ref = copy.copy(ref_classes)
-                    substr = self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref)
+                    substr = self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref, key=key)
                     if substr.strip() != "":
-                        link_str += substr + "},\n"
+                        link_str += substr + indent + "},\n"
             else:
                 link = value
                 self.curr_link = link
                 copy_ref = copy.copy(ref_classes)
-                substr = self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref)
+                substr = self.walk_links_to_str(link, curr_depth + 1, ref_classes=copy_ref, key=key)
                 if substr.strip() != "":
-                    link_str += substr + "},\n"
+                    link_str += substr + indent + "},\n"
+
             if link_str.strip() != "":
-                rstr += " : {\n" + link_str
+                rstr += " : {\n" + indent_str(curr_depth + 1) + "_e_type := .__type__.name,\n" + link_str
             else:
                 rstr += ",\n"
+
         return rstr
+
+
+def indent_str(curr_depth) -> str:
+    return 4 * " " * (curr_depth + 1)
 
 
 @dataclass
@@ -293,13 +398,25 @@ class EQBuilder:
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
     def get_select_str(
-        self, class_name, uuids: str | list[str] = None, max_depth=0, skip_link_classes: list[str] = None
+        self,
+        class_name,
+        uuids: str | list[str] = None,
+        max_depth=0,
+        skip_link_classes: list[str] = None,
+        skip_representation_items=True,
     ) -> str:
-        s_str = f"SELECT {class_name} {{"
+        s_str = f"SELECT {class_name} {{\n"
         eobj = self.edgedb_objects[class_name]
-        s_str += "".join([f"{x},\n" for x in eobj.all_properties])
+        indent = 4 * " "
 
-        link_trvlr = LinkTraveller(eobj, max_depth, skip_link_classes)
+        s_str += "".join([f"{indent}{x},\n" for x in eobj.all_properties])
+
+        link_trvlr = LinkTraveller(
+            eobj,
+            max_depth,
+            skip_link_classes,
+            skip_representation_items=skip_representation_items,
+        )
         s_str += link_trvlr.walk_links_to_str(eobj)
 
         if uuids is None:
@@ -315,8 +432,6 @@ class EQBuilder:
         return s_str
 
     def select_linked_objects_query_str(self, class_name, level=0, ref_classes: list[str] = None):
-        from itertools import chain
-
         if ref_classes is None:
             ref_classes = []
 
@@ -340,9 +455,6 @@ class EQBuilder:
 
         for prop_name, link in all_related_links.items():
             key = prop_name
-            # res = subtype_links.get(key)
-            # if res is not None:
-            #     key = f"[is {res.name}].{key}"
             if isinstance(link, list):
                 all_link_references = len(list(list(chain.from_iterable([l.get_all_link_references() for l in link]))))
                 if all_link_references > 0:
@@ -458,7 +570,6 @@ class EQBuilder:
             "IfcDirection",
             "IfcAxis2Placement3D",
             "IfcAxis2Placement2D",
-            "IfcCartesianPoint",
             "IfcRepresentationContext",
         ]
         for class_name in classes:
@@ -467,77 +578,6 @@ class EQBuilder:
         query_str += "}"
 
         return query_str
-
-    def get_specific_object_str(self, class_name: str, uuid: str, skippable_classes: list[str]) -> str:
-        eobj = self.edgedb_objects[class_name]
-
-        obj_props_str = ",\n".join(eobj.all_properties)
-
-        objects = []
-        for obj in walk_obj_links(eobj, skip_objects=skippable_classes):
-            objects.append(obj)
-
-        # Try to resolve using objects list
-        # level = 0
-        _ = [(parent, list(group)) for parent, group in groupby(objects, key=attrgetter("parent"))]
-
-        # Try to resolve using key_chain object
-        key_chain_original = objects[-1].key_chain
-        key_chain = copy.copy(key_chain_original)
-
-        for key, value in key_chain.items():
-            abstract = value.pop("is_abstract")
-            _ = value.pop("subtypes")
-            # props = value.pop("properties")
-            if abstract is True:
-                continue
-            for ref, link in value.items():
-                if isinstance(link, list):
-                    continue
-                link_obj = self.edgedb_objects[link]
-                if link_obj.abstract is True:
-                    result = [key_chain[x.name] for x in link_obj.subtypes if x.abstract is False]
-                else:
-                    result = key_chain[link]
-                key_chain[key][ref] = result
-
-        query_str = f"SELECT {class_name} {{ {obj_props_str} }} filter .id = <uuid>'{uuid}'"
-
-        return query_str
-
-
-def walk_obj_links(eobj: EdgeObject, skip_objects: list[str]) -> Iterable[CurrEdgeObject]:
-    curr_objects = [eobj]
-    all_objects = [eobj]
-    key_chain = dict()
-    prev_obj = None
-    curr_obj = None
-    level = 0
-    while len(curr_objects) > 0:
-        level += 1
-        if curr_obj is not None:
-            prev_obj = curr_obj
-        curr_obj = curr_objects.pop(0)
-        all_objects.append(curr_obj)
-        if curr_obj.name not in key_chain.keys():
-            key_chain[curr_obj.name] = dict(
-                subtypes=[],
-                properties=curr_obj.all_properties,
-                is_abstract=curr_obj.abstract,
-            )
-        if curr_obj.abstract is False:
-            for key, link in curr_obj.links.items():
-                if link.name in skip_objects:
-                    continue
-                curr_objects.append(link)
-                key_chain[curr_obj.name][key] = link.name
-                ceobj = CurrEdgeObject(key, link, level, curr_obj, key_chain, prev_obj)
-                yield ceobj
-
-        for subtype in curr_obj.subtypes:
-            if subtype not in curr_objects and subtype not in all_objects:
-                key_chain[curr_obj.name]["subtypes"].append(subtype.name)
-                curr_objects.append(subtype)
 
 
 @dataclass
@@ -616,7 +656,7 @@ def WalkPropTreeSelect(prop_tree):
             for o in obj:
                 walk_tree(o, level + 1)
         else:
-            raise NotImplementedError(f"Unknown type {type(obj)}")
+            raise ValueError(f"Unknown type {type(obj)}")
 
     walk_tree(prop_tree)
     return select_str

@@ -40,14 +40,7 @@ def test_get_ifc_class_select_zero_depth(io):
 
 def test_get_ifc_class_select_full_depth(io):
     name = "MyBeam"
-
-    _ = io.get_owner_history()
-    _ = io.get_object_placements()
-    skippable_classes = ["IfcOwnerHistory", "IfcObjectPlacement", "IfcRepresentationContext"]
-
-    uuid, class_name = io._get_id_class_name_from_simple_filter("Name", name)
-    query_str = io.eq_builder.get_select_str(class_name, uuid, max_depth=None, skip_link_classes=skippable_classes)
-    _ = json.loads(io.client.query_json(query_str))[0]
+    io.get_by_name_v2(name)
 
 
 def test_get_by_globalid(io):
