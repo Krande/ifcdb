@@ -10,7 +10,7 @@ def top_dir() -> pathlib.Path:
         if subdirs.issuperset(top_level_dirs):
             return parent
 
-    raise ValueError(f"Unable to find top directory containing '{top_level_dirs}' within parent dirs '{parents}'")
+    raise ValueError(f"Unable to find top directory containing '{top_level_dirs}' within parent dirs '{list(parents)}'")
 
 
 def change_case(camelcase_str):
