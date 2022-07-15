@@ -242,13 +242,6 @@ schema.</p>
 <h2>EdgeDB using the entire IFC Schema<a class="headerlink" href="#edgedb-using-the-entire-ifc-schema" title="Permalink to this heading">#</a></h2>
 <p>To set up an EdgeDB instance using the complete IFC schema you will need to specify <code class="docutils literal notranslate"><span class="pre">ifc_schema</span></code> to define which
 version of the IFC schema you want the database schema to represent.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ifcdb</span> <span class="kn">import</span> <span class="n">EdgeIO</span>
-
-
-<span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="s2">&quot;db/dbschema&quot;</span><span class="p">,</span> <span class="n">ifc_schema</span><span class="o">=</span><span class="s2">&quot;IFC4x1&quot;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s2">&quot;testdb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>
-    <span class="n">io</span><span class="o">.</span><span class="n">setup_database</span><span class="p">(</span><span class="n">delete_existing_migrations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
 </section>
 <section id="edgedb-using-specific-ifc-entities">
 <h2>EdgeDB using specific IFC entities<a class="headerlink" href="#edgedb-using-specific-ifc-entities" title="Permalink to this heading">#</a></h2>

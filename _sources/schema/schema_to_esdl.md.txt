@@ -27,12 +27,8 @@ with EdgeIO(db_schema_dir="db/dbschema", database="testdb") as io:
 To set up an EdgeDB instance using the complete IFC schema you will need to specify `ifc_schema` to define which
 version of the IFC schema you want the database schema to represent.
 
-```python
-from ifcdb import EdgeIO
-
-
-with EdgeIO(db_schema_dir="db/dbschema", ifc_schema="IFC4x1", database="testdb") as io:
-    io.setup_database(delete_existing_migrations=True)
+```{literalinclude} resources/complete_schema.py
+:language: python
 ```
 
 ## EdgeDB using specific IFC entities

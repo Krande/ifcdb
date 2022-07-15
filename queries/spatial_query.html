@@ -345,158 +345,159 @@ will further increase size and complexity of the query string. Lastly this appro
 objects found within the nested chain of object properties.</p>
 <p>An example of a nested query is shown for a single <code class="docutils literal notranslate"><span class="pre">IfcBuildingStorey</span></code> class to illustrate just how many nested object
 link relations there can be in a typical IFC class.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="p">(</span> 
-    <span class="p">(</span>
-        <span class="n">SELECT</span> <span class="n">IfcBuildingStorey</span> <span class="p">{</span>
-            <span class="n">GlobalId</span><span class="p">,</span>
-            <span class="n">OwnerHistory</span> <span class="p">:</span> <span class="p">{</span>
-                <span class="n">OwningUser</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">ThePerson</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Identification</span><span class="p">,</span>
-                        <span class="n">FamilyName</span><span class="p">,</span>
-                        <span class="n">GivenName</span><span class="p">,</span>
-                        <span class="n">MiddleNames</span><span class="p">,</span>
-                        <span class="n">PrefixTitles</span><span class="p">,</span>
-                        <span class="n">SuffixTitles</span><span class="p">,</span>
-                        <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                            <span class="n">Role</span><span class="p">,</span>
-                            <span class="n">UserDefinedRole</span><span class="p">,</span>
-                            <span class="n">Description</span>
-                        <span class="p">},</span>
-                        <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
-                            <span class="n">Purpose</span><span class="p">,</span>
-                            <span class="n">Description</span><span class="p">,</span>
-                            <span class="n">UserDefinedPurpose</span>
-                        <span class="p">}</span>
-                    <span class="p">},</span>
-                <span class="n">TheOrganization</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">Identification</span><span class="p">,</span>
-                    <span class="n">Name</span><span class="p">,</span>
-                    <span class="n">Description</span><span class="p">,</span>
-                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Role</span><span class="p">,</span>
-                        <span class="n">UserDefinedRole</span><span class="p">,</span>
-                        <span class="n">Description</span>
-                    <span class="p">},</span>
-                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Purpose</span><span class="p">,</span>
-                        <span class="n">Description</span><span class="p">,</span>
-                        <span class="n">UserDefinedPurpose</span>
-                    <span class="p">}</span>
-                <span class="p">},</span>
-                <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">Role</span><span class="p">,</span>
-                    <span class="n">UserDefinedRole</span><span class="p">,</span>
-                    <span class="n">Description</span>
-                <span class="p">}</span>
-            <span class="p">},</span>
-            <span class="n">OwningApplication</span> <span class="p">:</span> <span class="p">{</span>
-                <span class="n">ApplicationDeveloper</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">Identification</span><span class="p">,</span>
-                    <span class="n">Name</span><span class="p">,</span>
-                    <span class="n">Description</span><span class="p">,</span>
-                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Role</span><span class="p">,</span>
-                        <span class="n">UserDefinedRole</span><span class="p">,</span>
-                        <span class="n">Description</span>
-                    <span class="p">},</span>
-                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Purpose</span><span class="p">,</span>
-                        <span class="n">Description</span><span class="p">,</span>
-                        <span class="n">UserDefinedPurpose</span>
-                    <span class="p">}</span>
-                <span class="p">},</span>
-                <span class="n">Version</span><span class="p">,</span>
-                <span class="n">ApplicationFullName</span><span class="p">,</span>
-                <span class="n">ApplicationIdentifier</span>
-            <span class="p">},</span>
-            <span class="n">State</span><span class="p">,</span>
-            <span class="n">ChangeAction</span><span class="p">,</span>
-            <span class="n">LastModifiedDate</span><span class="p">,</span>
-            <span class="n">LastModifyingUser</span> <span class="p">:</span> <span class="p">{</span>
-                <span class="n">ThePerson</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">Identification</span><span class="p">,</span>
-                    <span class="n">FamilyName</span><span class="p">,</span>
-                    <span class="n">GivenName</span><span class="p">,</span>
-                    <span class="n">MiddleNames</span><span class="p">,</span>
-                    <span class="n">PrefixTitles</span><span class="p">,</span>
-                    <span class="n">SuffixTitles</span><span class="p">,</span>
-                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Role</span><span class="p">,</span>
-                        <span class="n">UserDefinedRole</span><span class="p">,</span>
-                        <span class="n">Description</span>
-                    <span class="p">},</span>
-                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Purpose</span><span class="p">,</span>
-                        <span class="n">Description</span><span class="p">,</span>
-                        <span class="n">UserDefinedPurpose</span>
-                    <span class="p">}</span>
-                <span class="p">},</span>
-                <span class="n">TheOrganization</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">Identification</span><span class="p">,</span>
-                    <span class="n">Name</span><span class="p">,</span>
-                    <span class="n">Description</span><span class="p">,</span>
-                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Role</span><span class="p">,</span>
-                        <span class="n">UserDefinedRole</span><span class="p">,</span>
-                        <span class="n">Description</span>
-                    <span class="p">},</span>
-                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Purpose</span><span class="p">,</span>
-                        <span class="n">Description</span><span class="p">,</span>
-                        <span class="n">UserDefinedPurpose</span>
-                    <span class="p">}</span>
-                <span class="p">},</span>
-                <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">Role</span><span class="p">,</span>
-                    <span class="n">UserDefinedRole</span><span class="p">,</span>
-                    <span class="n">Description</span>
-                <span class="p">}</span>
-            <span class="p">},</span>
-            <span class="n">LastModifyingApplication</span> <span class="p">:</span> <span class="p">{</span>
-                <span class="n">ApplicationDeveloper</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">Identification</span><span class="p">,</span>
-                    <span class="n">Name</span><span class="p">,</span>
-                    <span class="n">Description</span><span class="p">,</span>
-                    <span class="n">Roles</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Role</span><span class="p">,</span>
-                        <span class="n">UserDefinedRole</span><span class="p">,</span>
-                        <span class="n">Description</span>
-                    <span class="p">},</span>
-                    <span class="n">Addresses</span> <span class="p">:</span> <span class="p">{</span>
-                        <span class="n">Purpose</span><span class="p">,</span>
-                        <span class="n">Description</span><span class="p">,</span>
-                        <span class="n">UserDefinedPurpose</span>
-                    <span class="p">}</span>
-                <span class="p">},</span>
-                <span class="n">Version</span><span class="p">,</span>
-                <span class="n">ApplicationFullName</span><span class="p">,</span>
-                <span class="n">ApplicationIdentifier</span>
-            <span class="p">},</span>
-            <span class="n">CreationDate</span>
-        <span class="p">},</span>
-        <span class="n">Name</span><span class="p">,</span>
-        <span class="n">Description</span><span class="p">,</span>
-        <span class="n">ObjectType</span><span class="p">,</span>
-        <span class="n">ObjectPlacement</span> <span class="p">:</span> <span class="p">{</span><span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}},</span>
-        <span class="n">Representation</span> <span class="p">:</span> <span class="p">{</span>
-            <span class="n">Name</span><span class="p">,</span>
-            <span class="n">Description</span><span class="p">,</span>
-            <span class="n">Representations</span> <span class="p">:</span> <span class="p">{</span>
-                <span class="n">ContextOfItems</span> <span class="p">:</span> <span class="p">{</span>
-                    <span class="n">ContextIdentifier</span><span class="p">,</span>
-                    <span class="n">ContextType</span>
-                <span class="p">},</span>
-                <span class="n">RepresentationIdentifier</span><span class="p">,</span>
-                <span class="n">RepresentationType</span><span class="p">,</span>
-                <span class="n">Items</span> <span class="p">:</span> <span class="p">{</span><span class="nb">id</span><span class="p">,</span> <span class="n">__type__</span> <span class="p">:</span> <span class="p">{</span> <span class="n">name</span> <span class="p">}}</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-        <span class="n">LongName</span><span class="p">,</span>
-        <span class="n">CompositionType</span><span class="p">,</span>
-        <span class="n">Elevation</span>
-    <span class="p">}</span> <span class="nb">filter</span> <span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">uuid</span><span class="o">&gt;</span><span class="s1">&#39;fe0e2222-f601-11ec-9720-ffa48bb2d7b1&#39;</span><span class="p">),</span>
-    <span class="o">...</span>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>SELECT (
+    (
+        SELECT IfcBuildingStorey {
+            GlobalId,
+            OwnerHistory : {
+                OwningUser : {
+                    ThePerson : {
+                        Identification,
+                        FamilyName,
+                        GivenName,
+                        MiddleNames,
+                        PrefixTitles,
+                        SuffixTitles,
+                        Roles : {
+                            Role,
+                            UserDefinedRole,
+                            Description
+                        },
+                        Addresses : {
+                            Purpose,
+                            Description,
+                            UserDefinedPurpose
+                        }
+                    },
+                TheOrganization : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Roles : {
+                    Role,
+                    UserDefinedRole,
+                    Description
+                }
+            },
+            OwningApplication : {
+                ApplicationDeveloper : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Version,
+                ApplicationFullName,
+                ApplicationIdentifier
+            },
+            State,
+            ChangeAction,
+            LastModifiedDate,
+            LastModifyingUser : {
+                ThePerson : {
+                    Identification,
+                    FamilyName,
+                    GivenName,
+                    MiddleNames,
+                    PrefixTitles,
+                    SuffixTitles,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                TheOrganization : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Roles : {
+                    Role,
+                    UserDefinedRole,
+                    Description
+                }
+            },
+            LastModifyingApplication : {
+                ApplicationDeveloper : {
+                    Identification,
+                    Name,
+                    Description,
+                    Roles : {
+                        Role,
+                        UserDefinedRole,
+                        Description
+                    },
+                    Addresses : {
+                        Purpose,
+                        Description,
+                        UserDefinedPurpose
+                    }
+                },
+                Version,
+                ApplicationFullName,
+                ApplicationIdentifier
+            },
+            CreationDate
+        },
+        Name,
+        Description,
+        ObjectType,
+        ObjectPlacement : {id, __type__ : { name }},
+        Representation : {
+            Name,
+            Description,
+            Representations : {
+                ContextOfItems : {
+                    ContextIdentifier,
+                    ContextType
+                },
+                RepresentationIdentifier,
+                RepresentationType,
+                Items : {id, __type__ : { name }}
+            }
+        },
+        LongName,
+        CompositionType,
+        Elevation
+    } filter .id = &lt;uuid&gt;&#39;fe0e2222-f601-11ec-9720-ffa48bb2d7b1&#39;),
+    ...
+)
 </pre></div>
 </div>
 <p>By close inspection it is observed in the above query that certain elements only refer to the related object’s <code class="docutils literal notranslate"><span class="pre">id</span></code> and
