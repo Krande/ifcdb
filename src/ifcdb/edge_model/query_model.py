@@ -178,6 +178,10 @@ class EdgeIOBase:
         else:
             dbschema_dir = self.db_schema_dir
 
+        schema_dir = None
+        if dbschema_dir.name != "dbschema":
+            schema_dir = dbschema_dir.name
+
         print(f"Dropping existing database '{self.database}' and creating a new in its place")
         if self.instance_name is not None:
             res = subprocess.run(
@@ -211,9 +215,11 @@ class EdgeIOBase:
                 raise NotADirectoryError()
 
             server_prefix = f"edgedb {self.cli_prefix} migration create --non-interactive"
-
+            if schema_dir is not None:
+                server_prefix += f"--schema-dir ./{schema_dir}"
             print(f'Create Migration using CLI command "{server_prefix}" @"{dbschema_dir}"')
-            subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True)
+            res = subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True, capture_output=True)
+            print(res.stderr)
             print("CLI command complete")
 
         for migration_file in os.listdir(migrations_dir):
