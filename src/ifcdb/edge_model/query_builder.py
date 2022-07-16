@@ -300,7 +300,6 @@ class LinkTraveller:
     eobj: EdgeObject
     max_depth: int | None = 0
     skip_link_classes: list[str] = None
-    skip_representation_items: bool = True
 
     walk_history: list[str] = field(default_factory=list)
 
@@ -325,9 +324,6 @@ class LinkTraveller:
             return "\n"
 
         indent = indent_str(curr_depth)
-        if eobj.name == "IfcRepresentationItem":
-            return f"{indent}id\n"
-
         ref_classes.append(eobj.name)
         self.walk_history.append(eobj.name)
         rstr = ""
@@ -335,14 +331,13 @@ class LinkTraveller:
         # Resolve Subtypes
         sub_resolver = SubTypeResolver(eobj, self, curr_depth, ref_classes, key=key)
         substr = sub_resolver.to_str()
+
         if self.eobj != eobj:
             rstr += "".join([f"{indent}{x},\n" for x in eobj.all_properties])
         if substr != "":
             rstr += substr
 
         for key, value in eobj.links.items():
-            if self.eobj.name == "IfcExtrudedAreaSolid" and key == "Location":
-                print("sd")
             rstr += indent + key
             self.curr_key = key
             if curr_depth == self.max_depth:
@@ -353,7 +348,7 @@ class LinkTraveller:
                 and self.skip_link_classes is not None
                 and value.name in self.skip_link_classes
             ):
-                rstr += ",\n"
+                rstr += f" : {{{indent}id\n,{indent}_e_type := .__type__.name\n}},"
                 continue
 
             link_str = ""
@@ -398,12 +393,7 @@ class EQBuilder:
         self.edgedb_objects = introspect_schema(self.client, self.module)
 
     def get_select_str(
-        self,
-        class_name,
-        uuids: str | list[str] = None,
-        max_depth=0,
-        skip_link_classes: list[str] = None,
-        skip_representation_items=True,
+        self, class_name, uuids: str | list[str] = None, max_depth=0, skip_link_classes: list[str] = None
     ) -> str:
         s_str = f"SELECT {class_name} {{\n"
         eobj = self.edgedb_objects[class_name]
@@ -411,12 +401,7 @@ class EQBuilder:
 
         s_str += "".join([f"{indent}{x},\n" for x in eobj.all_properties])
 
-        link_trvlr = LinkTraveller(
-            eobj,
-            max_depth,
-            skip_link_classes,
-            skip_representation_items=skip_representation_items,
-        )
+        link_trvlr = LinkTraveller(eobj, max_depth, skip_link_classes)
         s_str += link_trvlr.walk_links_to_str(eobj)
 
         if uuids is None:

@@ -356,23 +356,30 @@ class EdgeIOBase:
         return spatial_nodes
 
     def get_owner_history(self) -> dict:
-        """Returns all OwnerHistory-related objects"""
+        """Returns all OwnerHistory related objects as a flat dictionary dict[uuid:result]"""
         query_str = self.eq_builder.get_owner_history_str()
         result = json.loads(self.client.query_single_json(query_str))
-        return result
+        return flatten_uuid_source(result)
 
     def get_object_placements(self) -> dict:
         """Returns all related objects and properties needed to resolve locations of all IFC objects"""
         query_str = self.eq_builder.get_object_placements_str()
         result = json.loads(self.client.query_single_json(query_str))
+        # Make object placement dict flat
+
         return result
 
-    def get_representation_elements(
+    def get_object_shape(
         self,
         identifier: str,
         value: str,
     ):
-        skippable_classes = ["IfcOwnerHistory", "IfcObjectPlacement", "IfcRepresentationContext"]
+        skippable_classes = [
+            "IfcOwnerHistory",
+            "IfcObjectPlacement",
+            "IfcRepresentationContext",
+            "IfcRepresentationItem",
+        ]
 
         uuid, class_name = self._get_id_class_name_from_simple_filter(identifier, value)
         query_str = self.eq_builder.get_select_str(
@@ -383,6 +390,26 @@ class EdgeIOBase:
             raise ValueError(f'Unable to find any result using the input "{value}"')
 
         return result
+
+    def get_representations(self, object_shape: dict) -> dict:
+        query_str_2 = "SELECT {\n"
+        obj_num = 1
+        obj_map = dict()
+        for shapes in object_shape["Representation"]["Representations"]:
+            for item in shapes["Items"]:
+                uuid = item["id"]
+                class_name = item["_e_type"].replace("default::", "")
+                sub_str = self.eq_builder.get_select_str(class_name, uuids=uuid, max_depth=None)
+                query_str_2 += f"    obj_{obj_num} := ({sub_str}),\n"
+                obj_map[obj_num] = uuid
+                obj_num += 1
+        query_str_2 += "    }"
+        results = json.loads(self.client.query_single_json(query_str_2))
+        output_results = dict()
+        for key, value in results.items():
+            uuid = obj_map[int(float(key.replace("obj_", "")))]
+            output_results[uuid] = value
+        return output_results
 
     def _get_by_uuid_and_class_name(self, uuid, class_name, top_level_only=False):
         select_str_a = self.eq_builder.select_object_str(class_name, include_all_nested_objects=not top_level_only)
@@ -407,33 +434,22 @@ class EdgeIO(EdgeIOBase):
     # Queries
 
     def get_by_name_v2(self, name: str):
+        """Splits the query into Object Shape, OwnerHistory, Placement and Representation to be more efficient"""
         owner = self.get_owner_history()
         place = self.get_object_placements()
-        result = self.get_representation_elements("Name", name)
-
-        query_str_2 = "SELECT {\n"
-        obj_num = 1
-        obj_map = dict()
-        for shapes in result["Representation"]["Representations"]:
-            for item in shapes["Items"]:
-                uuid = item["id"]
-                class_name = item["_e_type"].replace("default::", "")
-                sub_str = self.eq_builder.get_select_str(class_name, uuids=uuid, max_depth=None)
-                query_str_2 += f"    obj_{obj_num} := ({sub_str}),\n"
-                obj_num += 1
-                obj_map[obj_num] = uuid
-        query_str_2 += "    }"
+        object_shape = self.get_object_shape("Name", name)
 
         # Resolving Representations
-        _ = json.loads(self.client.query_single_json(query_str_2))
+        representations = self.get_representations(object_shape)
+        print(representations)
 
         # Resolving Owner History
-        owner_id = result["OwnerHistory"]["id"]
+        owner_id = object_shape["OwnerHistory"]["id"]
         owner_map = {o.pop("id"): o for o in copy.deepcopy(owner["IfcOwnerHistory"])}
-        _ = insert_uuid_objects_from_source(owner, flatten_uuid_source(owner_map[owner_id]))
+        _ = insert_uuid_objects_from_source(owner, owner_map[owner_id])
 
         # Resolving Object Placement
-        obj_place_id = result["ObjectPlacement"]["id"]
+        obj_place_id = object_shape["ObjectPlacement"]["id"]
         place_map = {p.pop("id"): p for p in place["IfcLocalPlacement"]}
         _ = place_map[obj_place_id]
 
@@ -831,6 +847,8 @@ def flatten_uuid_source(source: dict) -> dict:
         if isinstance(value, list) is False:
             raise ValueError("Unknown format of source dictionary")
         for v in value:
+            if "id" not in v.keys():
+                continue
             rdict[v.pop("id")] = v
 
     # Replace nested uuids
@@ -838,9 +856,11 @@ def flatten_uuid_source(source: dict) -> dict:
     for uuid, obj in ordict.items():
         for key, value in obj.items():
             if isinstance(value, dict):
-                res = value.get('id')
+                res = value.get("id")
                 if res is None:
                     raise ValueError("")
+                if res not in rdict.keys():
+                    print("sd")
                 rdict[uuid][key] = rdict[res]
 
     return rdict
