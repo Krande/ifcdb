@@ -86,6 +86,14 @@ class EdgeIOBase:
     instance_name: str = None
     eq_builder: EQBuilder = None
 
+    # Class level variables
+    skippable_classes = [
+        "IfcOwnerHistory",
+        "IfcObjectPlacement",
+        "IfcRepresentationContext",
+        "IfcRepresentationItem",
+    ]
+
     def __post_init__(self):
         self.wrap = ifcopenshell.ifcopenshell_wrapper
 
@@ -369,21 +377,10 @@ class EdgeIOBase:
 
         return result
 
-    def get_object_shape(
-        self,
-        identifier: str,
-        value: str,
-    ):
-        skippable_classes = [
-            "IfcOwnerHistory",
-            "IfcObjectPlacement",
-            "IfcRepresentationContext",
-            "IfcRepresentationItem",
-        ]
-
+    def get_object_shape(self, identifier: str, value: str):
         uuid, class_name = self._get_id_class_name_from_simple_filter(identifier, value)
         query_str = self.eq_builder.get_select_str(
-            class_name, uuid, max_depth=None, skip_link_classes=skippable_classes
+            class_name, uuid, max_depth=None, skip_link_classes=self.skippable_classes
         )
         result = json.loads(self.client.query_single_json(query_str))
         if len(result.keys()) == 0:
@@ -429,6 +426,46 @@ class EdgeIOBase:
         return uuid, class_name
 
 
+ID_PARAMS = {"id", "_e_type"}
+
+
+def walk_path(data, path="", return_list: list[tuple] = None):
+    return_list = [] if return_list is None else return_list
+    for element, val in data.items():
+        if element == "Representation":
+            print("sd")
+        if isinstance(val, dict):
+            if len(set(val.keys()).difference(ID_PARAMS)) == 0:
+                return_list.append((val, path + element))
+                continue
+            walk_path(val, element + "/", return_list)
+        elif isinstance(val, list):
+            list_path = path + element + "/"
+            for i, item in enumerate(val):
+                if isinstance(item, dict) and len(set(item.keys()).difference(ID_PARAMS)) == 0:
+                    return_list.append((val, path + element))
+                    continue
+                walk_path(item, list_path + str(i) + "/", return_list)
+        else:
+            print(path + element, val)
+    return return_list
+
+
+def dict_value_replace(path, replacement, pointer: dict):
+    for key in path[:-1]:
+        try:
+            key = int(float(key))
+        except ValueError:
+            pass
+        pointer = pointer[key]
+
+    if isinstance(pointer[path[-1]], list):
+        pointer[path[-1]].append(replacement)
+    else:
+        pointer[path[-1]] = replacement
+    return True
+
+
 @dataclass
 class EdgeIO(EdgeIOBase):
     # Queries
@@ -439,16 +476,23 @@ class EdgeIO(EdgeIOBase):
         place = self.get_object_placements()
         object_shape = self.get_object_shape("Name", name)
 
-        # Resolving Representations
+        # Get Representations
         representations = self.get_representations(object_shape)
-        print(representations)
+        logging.debug(representations)
 
-        # Resolving Owner History
+        final_shape: dict = copy.deepcopy(object_shape)
+
+        for value, path in walk_path(object_shape):
+            dpath = path.split("/")
+            print(f'replacing "{dpath}"')
+            dict_value_replace(dpath, "test", final_shape)
+
+        # Insert Owner History into object shape
         owner_id = object_shape["OwnerHistory"]["id"]
         owner_map = {o.pop("id"): o for o in copy.deepcopy(owner["IfcOwnerHistory"])}
         _ = insert_uuid_objects_from_source(owner, owner_map[owner_id])
 
-        # Resolving Object Placement
+        # Insert Object Placement
         obj_place_id = object_shape["ObjectPlacement"]["id"]
         place_map = {p.pop("id"): p for p in place["IfcLocalPlacement"]}
         _ = place_map[obj_place_id]
