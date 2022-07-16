@@ -12,7 +12,11 @@ def copy_server_files(output_dir):
 
 
 def clean_name(n, module_name="default"):
-    return n["name"].replace(f"{module_name}::", "")
+    if isinstance(n, dict):
+        str_data = n["name"]
+    else:
+        str_data = n
+    return str_data.replace(f"{module_name}::", "")
 
 
 def walk_edge_results_and_make_uuid_map(input_dict):

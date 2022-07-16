@@ -429,25 +429,24 @@ class EdgeIOBase:
 ID_PARAMS = {"id", "_e_type"}
 
 
-def walk_path(data, path="", return_list: list[tuple] = None):
+def get_uuid_refs(data, path="", return_list: list[tuple] = None):
     return_list = [] if return_list is None else return_list
     for element, val in data.items():
-        if element == "Representation":
-            print("sd")
         if isinstance(val, dict):
             if len(set(val.keys()).difference(ID_PARAMS)) == 0:
                 return_list.append((val, path + element))
                 continue
-            walk_path(val, element + "/", return_list)
+            get_uuid_refs(val, element + "/", return_list)
         elif isinstance(val, list):
             list_path = path + element + "/"
             for i, item in enumerate(val):
                 if isinstance(item, dict) and len(set(item.keys()).difference(ID_PARAMS)) == 0:
                     return_list.append((val, path + element))
                     continue
-                walk_path(item, list_path + str(i) + "/", return_list)
+                get_uuid_refs(item, list_path + str(i) + "/", return_list)
         else:
-            print(path + element, val)
+            # logging.debug(path + element, val)
+            pass
     return return_list
 
 
@@ -482,9 +481,11 @@ class EdgeIO(EdgeIOBase):
 
         final_shape: dict = copy.deepcopy(object_shape)
 
-        for value, path in walk_path(object_shape):
+        for value, path in get_uuid_refs(object_shape):
             dpath = path.split("/")
-            print(f'replacing "{dpath}"')
+            uuid = value["id"]
+            class_name = clean_name(value["_e_type"])
+            print(uuid, class_name)
             dict_value_replace(dpath, "test", final_shape)
 
         # Insert Owner History into object shape
