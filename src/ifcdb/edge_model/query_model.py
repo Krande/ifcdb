@@ -441,7 +441,7 @@ def get_uuid_refs(data, path="", return_list: list[tuple] = None):
             list_path = path + element + "/"
             for i, item in enumerate(val):
                 if isinstance(item, dict) and len(set(item.keys()).difference(ID_PARAMS)) == 0:
-                    return_list.append((val, path + element))
+                    return_list.append((item, path + element))
                     continue
                 get_uuid_refs(item, list_path + str(i) + "/", return_list)
         else:
@@ -480,12 +480,11 @@ class EdgeIO(EdgeIOBase):
         logging.debug(representations)
 
         final_shape: dict = copy.deepcopy(object_shape)
-
-        for value, path in get_uuid_refs(object_shape):
+        uuid_refs = get_uuid_refs(object_shape)
+        for value, path in uuid_refs:
             dpath = path.split("/")
             uuid = value["id"]
             class_name = clean_name(value["_e_type"])
-            print(uuid, class_name)
             dict_value_replace(dpath, "test", final_shape)
 
         # Insert Owner History into object shape
