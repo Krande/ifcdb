@@ -1,4 +1,16 @@
+import os
 import shutil
+import subprocess
+
+
+def create_local_instance(server_name):
+    """
+    Called after the Session object has been created and
+    before performing collection and entering the run test loop.
+    """
+    edgedb_exe = os.environ.get("EDGEDB_EXE", "edgedb")
+    subprocess.run(f"{edgedb_exe} instance destroy {server_name} --force", shell=True)
+    subprocess.run(f"{edgedb_exe} instance create {server_name}", shell=True)
 
 
 def copy_server_files(output_dir):

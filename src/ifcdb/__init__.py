@@ -1,3 +1,3 @@
-from .edge_model.query_model import EdgeIO
+from .edge_model.query.model import EdgeIO
 
 __all__ = ["EdgeIO"]

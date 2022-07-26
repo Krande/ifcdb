@@ -309,6 +309,8 @@ class LinkTraveller:
     def __post_init__(self):
         if self.max_depth is None:
             self.max_depth = 999
+        if self.skip_link_classes is None:
+            self.skip_link_classes = []
 
     def walk_links_to_str(
         self, eobj: EdgeObject = None, curr_depth=0, ref_classes: list[str] = None, key: str = None
@@ -324,6 +326,9 @@ class LinkTraveller:
             return "\n"
 
         indent = indent_str(curr_depth)
+        if eobj.name in self.skip_link_classes:
+            return f"{indent}id\n,{indent}_e_type := .__type__.name\n"
+
         ref_classes.append(eobj.name)
         self.walk_history.append(eobj.name)
         rstr = ""

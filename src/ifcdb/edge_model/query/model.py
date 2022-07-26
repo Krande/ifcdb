@@ -15,10 +15,19 @@ from typing import ClassVar
 
 import edgedb
 import ifcopenshell
-from toposort import toposort, toposort_flatten
 
-from ifcdb.edge_model.query_builder import EQBuilder
-from ifcdb.edge_model.schema_gen import (
+from ifcdb.edge_model.io.ifc import IfcIO
+from ifcdb.edge_model.query.builder import EQBuilder
+from ifcdb.edge_model.query.utils import (
+    dict_value_replace,
+    flatten_uuid_source,
+    get_att_insert_str,
+    get_uuid_refs,
+    insert_uuid_objects_from_source,
+    resolve_order_of_result_entities,
+)
+from ifcdb.edge_model.schema_gen.model import (
+    ArrayEdgeModel,
     AttributeEdgeModel,
     EdgeModel,
     EntityEdgeModel,
@@ -26,9 +35,12 @@ from ifcdb.edge_model.schema_gen import (
     IntermediateClass,
     SelectEdgeModel,
     TypeEdgeModel,
-    WithNode,
 )
-from ifcdb.edge_model.utils import clean_name, walk_edge_results_and_make_uuid_map
+from ifcdb.edge_model.utils import (
+    clean_name,
+    create_local_instance,
+    walk_edge_results_and_make_uuid_map,
+)
 
 
 class INSERTS:
@@ -36,41 +48,105 @@ class INSERTS:
 
 
 @dataclass
-class IfcIO:
-    ifc_file: str | pathlib.Path
-    ifc_obj: ifcopenshell.file = None
-    edge_io: EdgeIOBase = None
-    schema: str = None
+class EntityQueryModel:
+    entity: EntityEdgeModel
 
-    def __post_init__(self):
-        self.ifc_obj = ifcopenshell.open(str(self.ifc_file))
-        self.schema = self.ifc_obj.wrapped_data.schema
+    def to_select_str(
+        self, with_map: dict[str, WithNode] = None, include_type_ref=False, include_id_ref=False, skip_properties=False
+    ) -> str | None:
+        all_atts = self.entity.get_attributes(True)
 
-    def get_ifc_dep_map(self, use_ids=True):
-        dep_map = dict()
-        for inst in self.ifc_obj:
-            id_ref = inst.id() if use_ids else inst
-            if id_ref not in dep_map.keys():
-                dep_map[id_ref] = []
-            for dep in self.ifc_obj.traverse(inst, max_levels=1)[1:]:
-                dep_ref = dep.id() if use_ids else dep
-                dep_map[id_ref if use_ids else inst].append(dep_ref)
-        return dep_map
+        if len(all_atts) == 0:
+            return None
 
-    def get_ifc_objects_by_sorted_insert_order_flat(self):
-        dep_map = self.get_ifc_dep_map()
-        return [self.ifc_obj.by_id(x) for x in toposort_flatten(dep_map, sort=True) if x != 0]
+        select_str = "{"
+        if include_id_ref:
+            select_str += "id,"
+        if include_type_ref:
+            select_str += "__type__ : { name },"
 
-    def get_ifc_objects_by_sorted_insert_order_grouped(self):
-        dep_map = self.get_ifc_dep_map()
-        return [[self.ifc_obj.by_id(x) for x in group if x != 0] for group in toposort(dep_map)]
+        for i, att in enumerate(all_atts):
+            type_ref = att.get_type_ref()
+            if isinstance(type_ref, ArrayEdgeModel):
+                type_ref = type_ref.parameter_type
 
-    def get_unique_class_entities_of_ifc_content(self, include_related=False) -> list[str]:
-        entities = list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order_flat()]))
-        if include_related is False:
-            return entities
+            if skip_properties is True and isinstance(type_ref, EntityEdgeModel) is False:
+                print(f'skipping "{att.name}"')
+                continue
+            att_select_str = f"{att.name}"
+            if isinstance(type_ref, EntityEdgeModel):
+                select_ref = self.add_entity_ref(
+                    ref_type=type_ref,
+                    with_map=with_map,
+                    include_type_ref=include_type_ref,
+                    include_id_ref=include_id_ref,
+                    skip_properties=skip_properties,
+                )
+                if skip_properties is True and select_ref == "{}":
+                    att_select_str += " : {id, __type__ : { name }}"
+                    print(f'skipping "{att.name}"')
+                    continue
+                if select_ref is None:
+                    att_select_str += " : {id, __type__ : { name }}"
+                else:
+                    att_select_str += f" : {select_ref}"
+            elif isinstance(type_ref, (str, EnumEdgeModel)):
+                pass
+            elif isinstance(type_ref, SelectEdgeModel):
+                print("sd")
+            else:
+                raise ValueError(f'Unknown type ref "{type_ref}"')
 
-        return self.edge_io.em.get_related_entities(entities)
+            select_str += att_select_str
+            select_str += "" if i == len(all_atts) - 1 else ","
+        select_str += "}"
+        return select_str
+
+    def to_insert_str(
+        self,
+        entity: ifcopenshell.entity_instance,
+        indent: str = "",
+        uuid_map: dict = None,
+        with_map: dict[str, str] = None,
+    ):
+
+        all_atts = self.entity.get_entity_atts(entity)
+        newline = "" if len(all_atts) == 1 else "\n"
+        insert_str = f"{indent}INSERT {self.entity.name} {{{newline}  "
+        for i, att in enumerate(all_atts):
+            res = get_att_insert_str(att, entity, self.entity.edge_model, uuid_map=uuid_map, with_map=with_map)
+            if res is None:
+                continue
+
+            comma_str = "" if i == len(all_atts) - 1 else ","
+            insert_str += res + comma_str
+
+        return insert_str + f"}}{newline}"
+
+    def add_entity_ref(self, ref_type, with_map, include_type_ref=False, include_id_ref=False, skip_properties=False):
+        from ifcdb.utils import change_case
+
+        props = dict(
+            with_map=with_map,
+            include_type_ref=include_type_ref,
+            skip_properties=skip_properties,
+            include_id_ref=include_id_ref,
+        )
+
+        if with_map is None:
+            ref_str = ref_type.to_select_str(**props)
+        else:
+            ref_str = change_case(self.entity.name)
+            query_str = ref_type.to_select_str(**props)
+            with_map[ref_str] = WithNode(ref_str, self.entity.name, query_str)
+        return ref_str
+
+
+@dataclass
+class WithNode:
+    name: str
+    class_name: str
+    query_str: str
 
 
 @dataclass
@@ -135,7 +211,7 @@ class EdgeIOBase:
         return False
 
     def load_ifc(self, ifc_file):
-        self.ifc_io = IfcIO(ifc_file=ifc_file, edge_io=self)
+        self.ifc_io = IfcIO(ifc_file=ifc_file)
         self.ifc_schema = self.ifc_io.schema
         if self.em is None:
             self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
@@ -151,6 +227,13 @@ class EdgeIOBase:
 
     # IFC utils
 
+    def import_ifc_entities(self):
+        return self.ifc_io.get_unique_class_entities_of_ifc_content()
+
+    def import_ifc_entities_w_related(self):
+        ifc_ents = self.ifc_io.get_unique_class_entities_of_ifc_content()
+        return self.em.get_related_entities(ifc_ents)
+
     def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=None, specific_entities=None):
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
@@ -160,7 +243,7 @@ class EdgeIOBase:
         esdl_file_path = dbschema_dir / "default.esdl"
         if from_ifc_file is not None:
             self.load_ifc(ifc_file=from_ifc_file)
-            unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
+            unique_entities = self.import_ifc_entities_w_related()
         else:
             if self.ifc_schema is None:
                 raise ValueError('No IFC file is passed. Set the "ifc_schema" variable to a valid IFC schema version')
@@ -180,7 +263,6 @@ class EdgeIOBase:
             print(class_name)
 
     def setup_database(self, dbschema_dir=None, delete_existing_migrations=False):
-        from .query_utils import create_local_instance
 
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
@@ -264,11 +346,11 @@ class EdgeIOBase:
         return chunk
 
     def write_ifc_entities_to_esdl_file(self, esdl_file_path: str | pathlib.Path, module_name: str = "default"):
-        unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
-        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
+        unique_entities = self.import_ifc_entities_w_related()
+        self.em.write_entities_to_esdl_file(unique_entities, esdl_file_path, module_name)
 
     def _insert_items_sequentially(self, ifc_file, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
-        from .query_utils import get_att_insert_str
+        from .utils import get_att_insert_str
 
         self.load_ifc(ifc_file)
         ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
@@ -426,45 +508,6 @@ class EdgeIOBase:
         return uuid, class_name
 
 
-ID_PARAMS = {"id", "_e_type"}
-
-
-def get_uuid_refs(data, path="", return_list: list[tuple] = None):
-    return_list = [] if return_list is None else return_list
-    for element, val in data.items():
-        if isinstance(val, dict):
-            if len(set(val.keys()).difference(ID_PARAMS)) == 0:
-                return_list.append((val, path + element))
-                continue
-            get_uuid_refs(val, element + "/", return_list)
-        elif isinstance(val, list):
-            list_path = path + element + "/"
-            for i, item in enumerate(val):
-                if isinstance(item, dict) and len(set(item.keys()).difference(ID_PARAMS)) == 0:
-                    return_list.append((item, path + element))
-                    continue
-                get_uuid_refs(item, list_path + str(i) + "/", return_list)
-        else:
-            # logging.debug(path + element, val)
-            pass
-    return return_list
-
-
-def dict_value_replace(path, replacement, pointer: dict):
-    for key in path[:-1]:
-        try:
-            key = int(float(key))
-        except ValueError:
-            pass
-        pointer = pointer[key]
-
-    if isinstance(pointer[path[-1]], list):
-        pointer[path[-1]].append(replacement)
-    else:
-        pointer[path[-1]] = replacement
-    return True
-
-
 @dataclass
 class EdgeIO(EdgeIOBase):
     # Queries
@@ -483,8 +526,8 @@ class EdgeIO(EdgeIOBase):
         uuid_refs = get_uuid_refs(object_shape)
         for value, path in uuid_refs:
             dpath = path.split("/")
-            uuid = value["id"]
-            class_name = clean_name(value["_e_type"])
+            # uuid = value["id"]
+            # class_name = clean_name(value["_e_type"])
             dict_value_replace(dpath, "test", final_shape)
 
         # Insert Owner History into object shape
@@ -538,7 +581,7 @@ class EdgeIO(EdgeIOBase):
         fin_select_str = "SELECT ( "
         for i, (key, value) in enumerate(uuid_map_slice.items()):
             class_name = value.class_name
-            entity_class = self.em.get_entity_by_name(class_name)
+            entity_class = EntityQueryModel(self.em.get_entity_by_name(class_name))
             select_str = entity_class.to_select_str()
             fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
         fin_select_str += ")\n"
@@ -588,7 +631,8 @@ class EdgeIO(EdgeIOBase):
         if limit_to_ifc_entities is True:
             if entities is None:
                 entities = []
-            entities += self.ifc_io.get_unique_class_entities_of_ifc_content(True)
+
+            entities += self.import_ifc_entities_w_related()
 
         select_str = "select {\n"
         if entities is None:
@@ -711,15 +755,6 @@ class EdgeIO(EdgeIOBase):
 
 
 @dataclass
-class IfcNode:
-    name: str
-    id: str
-    props: dict
-    ifc_id: ifcopenshell.entity_instance = None
-    intermediate_class: IntermediateClass = None
-
-
-@dataclass
 class SpatialNode:
     name: str
     id: str
@@ -751,62 +786,13 @@ class SpatialNode:
         return ulist
 
 
-def get_ids(obj: dict, id_list):
-    top_id = obj.get("id", None)
-    if top_id is not None:
-        id_list.append(top_id)
-    for key, value in obj.items():
-        if isinstance(value, dict):
-            get_ids(value, id_list)
-        elif isinstance(value, list):
-            for subinst in value:
-                if isinstance(subinst, dict):
-                    get_ids(subinst, id_list)
-
-
-def resolve_order_of_result_entities(results: dict, em: EdgeModel) -> list:
-    id_map = dict()
-    key_map = dict()
-    for key, value in results.items():
-        for instance in value:
-            ids = []
-            get_ids(instance, ids)
-            instance_id = instance.pop("id")
-            ids.pop(ids.index(instance_id))
-            if instance_id is None:
-                raise ValueError(f'Instance ID is missing for "{instance}"')
-
-            if instance_id in key_map.keys() or instance_id in id_map.keys():
-                existing_obj = key_map.get(instance_id)
-                existing_ifc_class = existing_obj["class"]
-                entity = em.get_entity_by_name(existing_ifc_class)
-                ancestors = [x.name for x in entity.get_ancestors()]
-                if key in ancestors:
-                    logging.debug(f'Skipping Ancestor class "{key}" of existing IFC class "{existing_ifc_class}"')
-                    continue
-                else:
-                    entity = em.get_entity_by_name(key)
-                    ancestors = [x.name for x in entity.get_ancestors()]
-                    if existing_ifc_class not in ancestors:
-                        raise ValueError(f"DB IFC classes {existing_ifc_class} & {key} share uuid but are not related")
-                    logging.debug(f'Replacing Ancestor class "{existing_ifc_class}" of existing IFC class "{key}"')
-
-            key_map[instance_id] = {"class": key, "props": instance, "id": instance_id}
-            id_map[instance_id] = ids
-
-    result = toposort_flatten(id_map, sort=True)
-    output = []
-    for x in result:
-        key_res = key_map.get(x)
-        if key_res is not None:
-            output.append(key_res)
-        else:
-            raise ValueError(f'Unable to find related object uuid "{str(x)}"')
-
-    if None in output:
-        raise ValueError("Key Map contains 'None' elements. Likely missing object dependencies in export")
-
-    return output
+@dataclass
+class IfcNode:
+    name: str
+    id: str
+    props: dict
+    ifc_id: ifcopenshell.entity_instance = None
+    intermediate_class: IntermediateClass = None
 
 
 def get_ref_id(ref_id, id_map):
@@ -883,42 +869,3 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> st
             props[key] = value
 
     return props
-
-
-def flatten_uuid_source(source: dict) -> dict:
-    rdict = dict()
-    for key, value in source.items():
-        if isinstance(value, list) is False:
-            raise ValueError("Unknown format of source dictionary")
-        for v in value:
-            if "id" not in v.keys():
-                continue
-            rdict[v.pop("id")] = v
-
-    # Replace nested uuids
-    ordict = copy.deepcopy(rdict)
-    for uuid, obj in ordict.items():
-        for key, value in obj.items():
-            if isinstance(value, dict):
-                res = value.get("id")
-                if res is None:
-                    raise ValueError("")
-                if res not in rdict.keys():
-                    print("sd")
-                rdict[uuid][key] = rdict[res]
-
-    return rdict
-
-
-def insert_uuid_objects_from_source(flat_source: dict, destination: dict):
-    new_d = dict()
-    for key, value in destination.items():
-        if isinstance(value, dict) is False:
-            new_d[key] = value
-            continue
-
-        obj_id = value.pop("id")
-        source_res = flat_source[obj_id]
-        new_d[key] = source_res
-
-    return new_d

@@ -1,4 +1,4 @@
-from ifcdb.edge_model.schema_gen import (
+from ifcdb.edge_model.schema_gen.model import (
     ArrayEdgeModel,
     AttributeEdgeModel,
     EntityEdgeModel,

@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 from ifcdb import EdgeIO
-from ifcdb.edge_model.query_utils import validate_ifc_objects
+from ifcdb.edge_model.validation_utils import validate_ifc_objects
 
 
 @pytest.mark.parametrize(
