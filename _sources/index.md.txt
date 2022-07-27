@@ -13,6 +13,14 @@ Consequently, this document will be randomly updated and for the most part appea
 ```{toctree}
 :maxdepth: 2
 :glob:
+:caption: Use Cases
+
+usecases/usecases_intro.md
+```
+
+```{toctree}
+:maxdepth: 2
+:glob:
 :caption: Schema Conversion
 
 schema/schema_to_esdl.md
