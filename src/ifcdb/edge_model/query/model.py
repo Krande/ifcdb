@@ -176,21 +176,6 @@ class EdgeIOBase:
         if self.db_schema_dir is not None:
             self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
 
-    @property
-    def conn_str(self):
-        if self.instance_name is None:
-            conn_str = f"edgedb://edgedb@localhost:{self.port}"
-        else:
-            conn_str = self.instance_name
-        return conn_str
-
-    @property
-    def cli_prefix(self):
-        if self.instance_name is None:
-            return f"--tls-security=insecure -P {self.port}"
-        else:
-            return f"-I {self.instance_name}"
-
     def create_client(self, database=None) -> edgedb.Client:
         client = edgedb.create_client(self.conn_str, tls_security="insecure", database=database)
         try:
@@ -210,31 +195,9 @@ class EdgeIOBase:
         client.execute(f"DROP DATABASE {self.database}")
         return False
 
-    def load_ifc(self, ifc_file):
-        self.ifc_io = IfcIO(ifc_file=ifc_file)
-        self.ifc_schema = self.ifc_io.schema
-        if self.em is None:
-            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
-
-    def __enter__(self):
-        self.client = self.create_client(self.database)
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.client is not None:
-            self.client.close()
-
-    # IFC utils
-
-    def import_ifc_entities(self):
-        return self.ifc_io.get_unique_class_entities_of_ifc_content()
-
-    def import_ifc_entities_w_related(self):
-        ifc_ents = self.ifc_io.get_unique_class_entities_of_ifc_content()
-        return self.em.get_related_entities(ifc_ents)
-
-    def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=None, specific_entities=None):
+    def create_schema(
+        self, dbschema_dir=None, module_name="default", from_ifc_file=None, from_ifc_schema=None, from_ifc_entities=None
+    ):
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
         else:
@@ -244,15 +207,17 @@ class EdgeIOBase:
         if from_ifc_file is not None:
             self.load_ifc(ifc_file=from_ifc_file)
             unique_entities = self.import_ifc_entities_w_related()
-        else:
-            if self.ifc_schema is None:
-                raise ValueError('No IFC file is passed. Set the "ifc_schema" variable to a valid IFC schema version')
+        elif from_ifc_schema is not None or self.ifc_schema is not None:
+            if from_ifc_schema is not None:
+                self.ifc_schema = from_ifc_schema
             if self.em is None:
                 self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
             unique_entities = self.em.get_all_entities()
+        else:
+            raise ValueError('Either pass IFC file or set the "from_ifc_schema" variable to a valid IFC schema version')
 
-        if specific_entities is not None:
-            unique_entities = specific_entities
+        if from_ifc_entities is not None:
+            unique_entities = from_ifc_entities
 
         related_entities = self.em.get_related_entities(unique_entities)
         self.em.write_entities_to_esdl_file(related_entities, esdl_file_path, module_name)
@@ -320,6 +285,26 @@ class EdgeIOBase:
         client.close()
         print("Migration complete")
         self.eq_builder = EQBuilder(self.client)
+
+    def __enter__(self):
+        self.client = self.create_client(self.database)
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.client is not None:
+            self.client.close()
+
+    # IFC utils
+    def load_ifc(self, ifc_file):
+        self.ifc_io = IfcIO(ifc_file=ifc_file)
+        self.ifc_schema = self.ifc_io.schema
+        if self.em is None:
+            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
+
+    def import_ifc_entities_w_related(self):
+        ifc_ents = self.ifc_io.get_unique_class_entities_of_ifc_content()
+        return self.em.get_related_entities(ifc_ents)
 
     def upload_ifc_w_threading(self):
         proxy_elements = list(self.ifc_io.ifc_obj.by_type("IFCBuildingElementProxy"))
@@ -506,6 +491,21 @@ class EdgeIOBase:
         class_name = clean_name(result[0]["__type__"])
 
         return uuid, class_name
+
+    @property
+    def conn_str(self):
+        if self.instance_name is None:
+            conn_str = f"edgedb://edgedb@localhost:{self.port}"
+        else:
+            conn_str = self.instance_name
+        return conn_str
+
+    @property
+    def cli_prefix(self):
+        if self.instance_name is None:
+            return f"--tls-security=insecure -P {self.port}"
+        else:
+            return f"-I {self.instance_name}"
 
 
 @dataclass

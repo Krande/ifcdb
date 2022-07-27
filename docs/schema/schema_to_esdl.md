@@ -33,12 +33,12 @@ version of the IFC schema you want the database schema to represent.
 
 ## EdgeDB using specific IFC entities
 
-To create a schema using only specific IFC entities (and all related entities) it is possible to do the following. 
+To create a schema using only specific IFC entities (and all related entities) it is possible to do the following.
 
 ```python
 from ifcdb import EdgeIO
 
 with EdgeIO(db_schema_dir="db/dbschema", ifc_schema="IFC4X1", database="testdb") as io:
-    io.create_schema(specific_entities=["IfcQuantityArea"])
+    io.create_schema(from_ifc_entities=["IfcQuantityArea"])
     io.setup_database(delete_existing_migrations=True)
 ```

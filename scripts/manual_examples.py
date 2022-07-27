@@ -162,7 +162,7 @@ def convert_to_esdl():
     from ifcdb import EdgeIO
 
     with EdgeIO(ifc_schema="IFC4X1", db_schema_dir="temp/ex1", database="ex1") as io:
-        io.create_schema(specific_entities=["IfcQuantityArea"])
+        io.create_schema(from_ifc_entities=["IfcQuantityArea"])
         io.setup_database(delete_existing_migrations=True)
 
 
