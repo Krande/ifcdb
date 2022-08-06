@@ -28,6 +28,9 @@ cli-update:
 types:
 	edgedb $(conopt) list types
 
+ui:
+	edgedb $(conopt) ui
+
 # Use WSL Edgedb
 wsl-instance:
 	edgedb instance create ifcdb --nightly
