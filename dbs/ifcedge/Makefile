@@ -36,10 +36,10 @@ wsl-instances:
 	edgedb instance list
 
 wsl-migrate-init:
-	edgedb -I ifcdb migration create --non-interactive
+	edgedb -I ifcedge migration create --non-interactive
 
 wsl-migrate:
-	edgedb -I ifcdb migrate
+	edgedb -I ifcedge migrate
 
 wsl-destroy:
 	edgedb instance destroy ifcdb
