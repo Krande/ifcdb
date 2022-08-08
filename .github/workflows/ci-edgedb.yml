@@ -38,6 +38,9 @@ jobs:
           python -m pip install --no-deps --ignore-installed .
         shell: bash -l {0}
       - uses: edgedb/setup-edgedb@v1
+        with:
+          cli-version: nightly
+          server-version: none
       - name: EdgeDB test
         run: | 
           which edgedb

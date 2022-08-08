@@ -14,11 +14,11 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
     db_name = ifc_file.replace(".ifc", "").replace("-", "_")
     ifc_path = top_dir() / "files" / ifc_file
 
-    with EdgeIO(ifc_file=ifc_path, db_schema_dir=f"db/{db_name}/dbschema", ifc_schema="IFC4x1", database=db_name) as io:
+    with EdgeIO(db_schema_dir=f"db/{db_name}/dbschema", database=db_name) as io:
         if refresh_db:
-            io.create_schema(from_ifc_file=True)
+            io.create_schema(from_ifc_file=ifc_path)
             io.setup_database(delete_existing_migrations=True)
-            io.insert_ifc()
+            io.insert_ifc(ifc_path)
 
         # Validate Data
         if validate_data:
@@ -41,12 +41,13 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
         # res_id = io.get_by_global_id("1dGALjyLuHxAG601fzsd4G")
 
         # Get "Sublevel_1_a" by GlobalId
-
-        res_name = io.get_by_name("MyBeam")
+        _ = io.get_owner_history()
+        _ = io.get_object_placements()
+        _ = io.get_by_name("MyBeam")
 
         start = time.time()
-        result_b = io.get_spatial_content_b("MyPart")
-        diff3 = time.time() - start
+        _ = io.get_spatial_content_b("Sublevel_1_a")
+        _ = time.time() - start
 
         # print(f"time 1: {diff1}, time 2: {diff2}, time 3: {diff3}")
         if create_ifc_str:

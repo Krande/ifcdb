@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -14,9 +15,19 @@ from typing import ClassVar
 
 import edgedb
 import ifcopenshell
-from toposort import toposort, toposort_flatten
 
-from ifcdb.edge_model.edge_model_base import (
+from ifcdb.edge_model.io.ifc import IfcIO
+from ifcdb.edge_model.query.builder import EQBuilder
+from ifcdb.edge_model.query.utils import (
+    dict_value_replace,
+    flatten_uuid_source,
+    get_att_insert_str,
+    get_uuid_refs,
+    insert_uuid_objects_from_source,
+    resolve_order_of_result_entities,
+)
+from ifcdb.edge_model.schema_gen.model import (
+    ArrayEdgeModel,
     AttributeEdgeModel,
     EdgeModel,
     EntityEdgeModel,
@@ -24,10 +35,12 @@ from ifcdb.edge_model.edge_model_base import (
     IntermediateClass,
     SelectEdgeModel,
     TypeEdgeModel,
-    WithNode,
 )
-from ifcdb.edge_model.query_builder import EQBuilder
-from ifcdb.edge_model.utils import clean_name, walk_edge_results_and_make_uuid_map
+from ifcdb.edge_model.utils import (
+    clean_name,
+    create_local_instance,
+    walk_edge_results_and_make_uuid_map,
+)
 
 
 class INSERTS:
@@ -35,39 +48,105 @@ class INSERTS:
 
 
 @dataclass
-class IfcIO:
-    ifc_file: str | pathlib.Path
-    ifc_obj: ifcopenshell.file = None
-    edge_io: EdgeIOBase = None
+class EntityQueryModel:
+    entity: EntityEdgeModel
 
-    def __post_init__(self):
-        self.ifc_obj = ifcopenshell.open(self.ifc_file)
+    def to_select_str(
+        self, with_map: dict[str, WithNode] = None, include_type_ref=False, include_id_ref=False, skip_properties=False
+    ) -> str | None:
+        all_atts = self.entity.get_attributes(True)
 
-    def get_ifc_dep_map(self, use_ids=True):
-        dep_map = dict()
-        for inst in self.ifc_obj:
-            id_ref = inst.id() if use_ids else inst
-            if id_ref not in dep_map.keys():
-                dep_map[id_ref] = []
-            for dep in self.ifc_obj.traverse(inst, max_levels=1)[1:]:
-                dep_ref = dep.id() if use_ids else dep
-                dep_map[id_ref if use_ids else inst].append(dep_ref)
-        return dep_map
+        if len(all_atts) == 0:
+            return None
 
-    def get_ifc_objects_by_sorted_insert_order_flat(self):
-        dep_map = self.get_ifc_dep_map()
-        return [self.ifc_obj.by_id(x) for x in toposort_flatten(dep_map, sort=True) if x != 0]
+        select_str = "{"
+        if include_id_ref:
+            select_str += "id,"
+        if include_type_ref:
+            select_str += "__type__ : { name },"
 
-    def get_ifc_objects_by_sorted_insert_order_grouped(self):
-        dep_map = self.get_ifc_dep_map()
-        return [[self.ifc_obj.by_id(x) for x in group if x != 0] for group in toposort(dep_map)]
+        for i, att in enumerate(all_atts):
+            type_ref = att.get_type_ref()
+            if isinstance(type_ref, ArrayEdgeModel):
+                type_ref = type_ref.parameter_type
 
-    def get_unique_class_entities_of_ifc_content(self, include_related=False) -> list[str]:
-        entities = list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order_flat()]))
-        if include_related is False:
-            return entities
+            if skip_properties is True and isinstance(type_ref, EntityEdgeModel) is False:
+                print(f'skipping "{att.name}"')
+                continue
+            att_select_str = f"{att.name}"
+            if isinstance(type_ref, EntityEdgeModel):
+                select_ref = self.add_entity_ref(
+                    ref_type=type_ref,
+                    with_map=with_map,
+                    include_type_ref=include_type_ref,
+                    include_id_ref=include_id_ref,
+                    skip_properties=skip_properties,
+                )
+                if skip_properties is True and select_ref == "{}":
+                    att_select_str += " : {id, __type__ : { name }}"
+                    print(f'skipping "{att.name}"')
+                    continue
+                if select_ref is None:
+                    att_select_str += " : {id, __type__ : { name }}"
+                else:
+                    att_select_str += f" : {select_ref}"
+            elif isinstance(type_ref, (str, EnumEdgeModel)):
+                pass
+            elif isinstance(type_ref, SelectEdgeModel):
+                print("sd")
+            else:
+                raise ValueError(f'Unknown type ref "{type_ref}"')
 
-        return self.edge_io.em.get_related_entities(entities)
+            select_str += att_select_str
+            select_str += "" if i == len(all_atts) - 1 else ","
+        select_str += "}"
+        return select_str
+
+    def to_insert_str(
+        self,
+        entity: ifcopenshell.entity_instance,
+        indent: str = "",
+        uuid_map: dict = None,
+        with_map: dict[str, str] = None,
+    ):
+
+        all_atts = self.entity.get_entity_atts(entity)
+        newline = "" if len(all_atts) == 1 else "\n"
+        insert_str = f"{indent}INSERT {self.entity.name} {{{newline}  "
+        for i, att in enumerate(all_atts):
+            res = get_att_insert_str(att, entity, self.entity.edge_model, uuid_map=uuid_map, with_map=with_map)
+            if res is None:
+                continue
+
+            comma_str = "" if i == len(all_atts) - 1 else ","
+            insert_str += res + comma_str
+
+        return insert_str + f"}}{newline}"
+
+    def add_entity_ref(self, ref_type, with_map, include_type_ref=False, include_id_ref=False, skip_properties=False):
+        from ifcdb.utils import change_case
+
+        props = dict(
+            with_map=with_map,
+            include_type_ref=include_type_ref,
+            skip_properties=skip_properties,
+            include_id_ref=include_id_ref,
+        )
+
+        if with_map is None:
+            ref_str = ref_type.to_select_str(**props)
+        else:
+            ref_str = change_case(self.entity.name)
+            query_str = ref_type.to_select_str(**props)
+            with_map[ref_str] = WithNode(ref_str, self.entity.name, query_str)
+        return ref_str
+
+
+@dataclass
+class WithNode:
+    name: str
+    class_name: str
+    query_str: str
 
 
 @dataclass
@@ -83,68 +162,65 @@ class EdgeIOBase:
     instance_name: str = None
     eq_builder: EQBuilder = None
 
+    # Class level variables
+    skippable_classes = [
+        "IfcOwnerHistory",
+        "IfcObjectPlacement",
+        "IfcRepresentationContext",
+        "IfcRepresentationItem",
+    ]
+
     def __post_init__(self):
         self.wrap = ifcopenshell.ifcopenshell_wrapper
-        if self.em is None:
-            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
 
         if self.db_schema_dir is not None:
             self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
 
-    @property
-    def conn_str(self):
-        if self.instance_name is None:
-            conn_str = f"edgedb://edgedb@localhost:{self.port}"
-        else:
-            conn_str = self.instance_name
-        return conn_str
-
-    @property
-    def cli_prefix(self):
-        if self.instance_name is None:
-            return f"--tls-security=insecure -P {self.port}"
-        else:
-            return f"-I {self.instance_name}"
-
-    def create_client(self) -> edgedb.Client:
-        client = edgedb.create_client(self.conn_str, tls_security="insecure", database=self.database)
+    def create_client(self, database=None) -> edgedb.Client:
+        client = edgedb.create_client(self.conn_str, tls_security="insecure", database=database)
         try:
             self.eq_builder = EQBuilder(client)
         except edgedb.errors.UnknownDatabaseError as e:
-            logging.debug(e)
+            logging.warning(e)
 
         return client
 
-    def __enter__(self):
-        if self.ifc_file is not None:
-            self.ifc_io = IfcIO(ifc_file=self.ifc_file, edge_io=self)
+    def database_exists(self):
+        client = self.create_client()
+        try:
+            client.execute(f"CREATE DATABASE {self.database}")
+        except edgedb.errors.DuplicateDatabaseDefinitionError:
+            return True
 
-        self.client = self.create_client()
+        client.execute(f"DROP DATABASE {self.database}")
+        return False
 
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.client is not None:
-            self.client.close()
-
-    # IFC utils
-
-    def create_schema(self, dbschema_dir=None, module_name="default", from_ifc_file=False, specific_entities=None):
+    def create_schema(
+        self, dbschema_dir=None, module_name="default", from_ifc_file=None, from_ifc_schema=None, from_ifc_entities=None
+    ):
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
         else:
             dbschema_dir = self.db_schema_dir
 
         esdl_file_path = dbschema_dir / "default.esdl"
-        if from_ifc_file:
-            unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
-        else:
+        if from_ifc_file is not None:
+            self.load_ifc(ifc_file=from_ifc_file)
+            unique_entities = self.import_ifc_entities_w_related()
+        elif from_ifc_schema is not None or self.ifc_schema is not None:
+            if from_ifc_schema is not None:
+                self.ifc_schema = from_ifc_schema
+            if self.em is None:
+                self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
             unique_entities = self.em.get_all_entities()
+        else:
+            raise ValueError('Either pass IFC file or set the "from_ifc_schema" variable to a valid IFC schema version')
 
-        if specific_entities is not None:
-            unique_entities = specific_entities
+        if from_ifc_entities is not None:
+            unique_entities = from_ifc_entities
 
-        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
+        related_entities = self.em.get_related_entities(unique_entities)
+        self.em.write_entities_to_esdl_file(related_entities, esdl_file_path, module_name)
 
         if len(self.em.intermediate_classes) > 0:
             print("The following intermediate classes was created to enable nested entity relationships")
@@ -152,12 +228,15 @@ class EdgeIOBase:
             print(class_name)
 
     def setup_database(self, dbschema_dir=None, delete_existing_migrations=False):
-        from .query_utils import create_local_instance
 
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
         else:
             dbschema_dir = self.db_schema_dir
+
+        schema_dir = None
+        if dbschema_dir.name != "dbschema":
+            schema_dir = dbschema_dir.name
 
         print(f"Dropping existing database '{self.database}' and creating a new in its place")
         if self.instance_name is not None:
@@ -192,9 +271,11 @@ class EdgeIOBase:
                 raise NotADirectoryError()
 
             server_prefix = f"edgedb {self.cli_prefix} migration create --non-interactive"
-
+            if schema_dir is not None:
+                server_prefix += f"--schema-dir ./{schema_dir}"
             print(f'Create Migration using CLI command "{server_prefix}" @"{dbschema_dir}"')
-            subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True)
+            res = subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True, capture_output=True)
+            print(res.stderr)
             print("CLI command complete")
 
         for migration_file in os.listdir(migrations_dir):
@@ -204,6 +285,26 @@ class EdgeIOBase:
         client.close()
         print("Migration complete")
         self.eq_builder = EQBuilder(self.client)
+
+    def __enter__(self):
+        self.client = self.create_client(self.database)
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.client is not None:
+            self.client.close()
+
+    # IFC utils
+    def load_ifc(self, ifc_file):
+        self.ifc_io = IfcIO(ifc_file=ifc_file)
+        self.ifc_schema = self.ifc_io.schema
+        if self.em is None:
+            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
+
+    def import_ifc_entities_w_related(self):
+        ifc_ents = self.ifc_io.get_unique_class_entities_of_ifc_content()
+        return self.em.get_related_entities(ifc_ents)
 
     def upload_ifc_w_threading(self):
         proxy_elements = list(self.ifc_io.ifc_obj.by_type("IFCBuildingElementProxy"))
@@ -230,12 +331,13 @@ class EdgeIOBase:
         return chunk
 
     def write_ifc_entities_to_esdl_file(self, esdl_file_path: str | pathlib.Path, module_name: str = "default"):
-        unique_entities = self.ifc_io.get_unique_class_entities_of_ifc_content(True)
-        self.em.write_entities_to_esdl_file(self.em.get_related_entities(unique_entities), esdl_file_path, module_name)
+        unique_entities = self.import_ifc_entities_w_related()
+        self.em.write_entities_to_esdl_file(unique_entities, esdl_file_path, module_name)
 
-    def _insert_items_sequentially(self, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
-        from .query_utils import get_att_insert_str
+    def _insert_items_sequentially(self, ifc_file, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
+        from .utils import get_att_insert_str
 
+        self.load_ifc(ifc_file)
         ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
@@ -280,29 +382,16 @@ class EdgeIOBase:
 
         ent_dict.update(to_be_added)
 
-    def get_spatial_hierarchy(self) -> dict[str, SpatialNode]:
-        in_str = """SELECT {
-            spatial_stru := (
-                SELECT IfcRelContainedInSpatialStructure {
-                    id,
-                    RelatingStructure : { Name, id, __type__ : { name }, OwnerHistory },
-                    RelatedElements : { Name, id, __type__ : { name }, OwnerHistory }
-                }
-            ),
-            rel_aggs := (
-                SELECT IfcRelAggregates {
-                    id,
-                    RelatingObject : { Name, id, __type__ : { name }, OwnerHistory },
-                    RelatedObjects : { Name, id, __type__ : { name }, OwnerHistory }
-                }
-            )
-        }"""
+    # Base Queries
+    def get_spatial_hierarchy(self, filter_by_name: str = None) -> dict[str, SpatialNode]:
+        in_str = self.eq_builder.get_spatial_hierarchy_str(filter_by_name=filter_by_name)
 
         def get_class_name(type_obj):
-            return type_obj["__type__"]["name"].replace("default::", "")
+            return type_obj["_e_type"].replace("default::", "")
 
         result = json.loads(self.client.query_json(in_str))
         # out_str = json.dumps(result, indent=4)
+        # print(out_str)
         rel_aggs = result[0]["rel_aggs"]
         spatial_nodes: dict[str, SpatialNode] = dict()
         for rel in rel_aggs:
@@ -341,33 +430,128 @@ class EdgeIOBase:
 
         return spatial_nodes
 
+    def get_owner_history(self) -> dict:
+        """Returns all OwnerHistory related objects as a flat dictionary dict[uuid:result]"""
+        query_str = self.eq_builder.get_owner_history_str()
+        result = json.loads(self.client.query_single_json(query_str))
+        return flatten_uuid_source(result)
 
-@dataclass
-class EdgeIO(EdgeIOBase):
-    # Queries
+    def get_object_placements(self) -> dict:
+        """Returns all related objects and properties needed to resolve locations of all IFC objects"""
+        query_str = self.eq_builder.get_object_placements_str()
+        result = json.loads(self.client.query_single_json(query_str))
+        # Make object placement dict flat
+
+        return result
+
+    def get_object_shape(self, identifier: str, value: str):
+        uuid, class_name = self._get_id_class_name_from_simple_filter(identifier, value)
+        query_str = self.eq_builder.get_select_str(
+            class_name, uuid, max_depth=None, skip_link_classes=self.skippable_classes
+        )
+        result = json.loads(self.client.query_single_json(query_str))
+        if len(result.keys()) == 0:
+            raise ValueError(f'Unable to find any result using the input "{value}"')
+
+        return result
+
+    def get_representations(self, object_shape: dict) -> dict:
+        query_str_2 = "SELECT {\n"
+        obj_num = 1
+        obj_map = dict()
+        for shapes in object_shape["Representation"]["Representations"]:
+            for item in shapes["Items"]:
+                uuid = item["id"]
+                class_name = item["_e_type"].replace("default::", "")
+                sub_str = self.eq_builder.get_select_str(class_name, uuids=uuid, max_depth=None)
+                query_str_2 += f"    obj_{obj_num} := ({sub_str}),\n"
+                obj_map[obj_num] = uuid
+                obj_num += 1
+        query_str_2 += "    }"
+        results = json.loads(self.client.query_single_json(query_str_2))
+        output_results = dict()
+        for key, value in results.items():
+            uuid = obj_map[int(float(key.replace("obj_", "")))]
+            output_results[uuid] = value
+        return output_results
+
+    def _get_by_uuid_and_class_name(self, uuid, class_name, top_level_only=False):
+        select_str_a = self.eq_builder.select_object_str(class_name, include_all_nested_objects=not top_level_only)
+        query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
+        return json.loads(self.client.query_json(query_str))
+
+    # Introspection
     def _get_id_class_name_from_simple_filter(self, identifier: str, value: str, base_object="IfcRoot"):
         query_str = f"""SELECT {base_object} {{ id, __type__ : {{ name }} }} filter .{identifier} = '{value}'"""
         result = json.loads(self.client.query_json(query_str))
         if len(result) != 1:
             raise ValueError
-        return result[0]
 
-    def _get_by_uuid_and_class_name(self, uuid, class_name):
-        res = self.eq_builder.build_object_property_tree(class_name)
-        out_str = json.dumps(res.select_str, indent=4)
-        select_str_a = self.eq_builder.select_object_str(class_name)
-        query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
-        return json.loads(self.client.query_json(query_str))
+        uuid = result[0]["id"]
+        class_name = clean_name(result[0]["__type__"])
 
-    def get_by_global_id(self, global_id: str, class_name: str = None):
-        result = self._get_id_class_name_from_simple_filter("GlobalId", global_id)
-        final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
+        return uuid, class_name
+
+    @property
+    def conn_str(self):
+        if self.instance_name is None:
+            conn_str = f"edgedb://edgedb@localhost:{self.port}"
+        else:
+            conn_str = self.instance_name
+        return conn_str
+
+    @property
+    def cli_prefix(self):
+        if self.instance_name is None:
+            return f"--tls-security=insecure -P {self.port}"
+        else:
+            return f"-I {self.instance_name}"
+
+
+@dataclass
+class EdgeIO(EdgeIOBase):
+    # Queries
+
+    def get_by_name_v2(self, name: str):
+        """Splits the query into Object Shape, OwnerHistory, Placement and Representation to be more efficient"""
+        owner = self.get_owner_history()
+        place = self.get_object_placements()
+        object_shape = self.get_object_shape("Name", name)
+
+        # Get Representations
+        representations = self.get_representations(object_shape)
+        logging.debug(representations)
+
+        final_shape: dict = copy.deepcopy(object_shape)
+        uuid_refs = get_uuid_refs(object_shape)
+        for value, path in uuid_refs:
+            dpath = path.split("/")
+            # uuid = value["id"]
+            # class_name = clean_name(value["_e_type"])
+            dict_value_replace(dpath, "test", final_shape)
+
+        # Insert Owner History into object shape
+        owner_id = object_shape["OwnerHistory"]["id"]
+        owner_map = {o.pop("id"): o for o in copy.deepcopy(owner["IfcOwnerHistory"])}
+        _ = insert_uuid_objects_from_source(owner, owner_map[owner_id])
+
+        # Insert Object Placement
+        obj_place_id = object_shape["ObjectPlacement"]["id"]
+        place_map = {p.pop("id"): p for p in place["IfcLocalPlacement"]}
+        _ = place_map[obj_place_id]
+
+        print("sd")
+
+    def get_by_global_id(self, global_id: str, class_name: str = None, top_level_only=True):
+        """Get rooted IFC element based on its 'GlobalId' property"""
+        uuid, class_name = self._get_id_class_name_from_simple_filter("GlobalId", global_id)
+        final_result = self._get_by_uuid_and_class_name(uuid, class_name, top_level_only=top_level_only)
         return final_result
 
-    def get_by_name(self, name: str):
-        result = self._get_id_class_name_from_simple_filter("Name", name)
-        final_result = self._get_by_uuid_and_class_name(result["id"], clean_name(result["__type__"]))
-        fstr = json.dumps(final_result, indent=4)
+    def get_by_name(self, name: str, class_name: str = None, top_level_only=False):
+        """Get rooted IFC element based on its 'Name' property"""
+        uuid, class_name = self._get_id_class_name_from_simple_filter("Name", name)
+        final_result = self._get_by_uuid_and_class_name(uuid, class_name, top_level_only=top_level_only)
         return final_result
 
     def get_slice_in_spatial_hierarchy(self, spatial_name: str):
@@ -397,7 +581,7 @@ class EdgeIO(EdgeIOBase):
         fin_select_str = "SELECT ( "
         for i, (key, value) in enumerate(uuid_map_slice.items()):
             class_name = value.class_name
-            entity_class = self.em.get_entity_by_name(class_name)
+            entity_class = EntityQueryModel(self.em.get_entity_by_name(class_name))
             select_str = entity_class.to_select_str()
             fin_select_str += f"(SELECT {class_name} {select_str} filter .id = <uuid>'{key}'),\n"
         fin_select_str += ")\n"
@@ -425,7 +609,7 @@ class EdgeIO(EdgeIOBase):
         select_linked_objects_str += ")\n"
 
         result = json.loads(self.client.query_json(select_linked_objects_str))
-        result_str = json.dumps(result, indent=4)
+        # result_str = json.dumps(result, indent=4)
         uuid_map_final = walk_edge_results_and_make_uuid_map(result)
 
         # Perform final query all related objects and their properties (excluding
@@ -439,7 +623,7 @@ class EdgeIO(EdgeIOBase):
 
         final_result = json.loads(self.client.query_json(final_query_str))
         final_result_str = json.dumps(final_result, indent=4)
-
+        print(final_result_str)
         return result
 
     def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:
@@ -447,7 +631,8 @@ class EdgeIO(EdgeIOBase):
         if limit_to_ifc_entities is True:
             if entities is None:
                 entities = []
-            entities += self.ifc_io.get_unique_class_entities_of_ifc_content(True)
+
+            entities += self.import_ifc_entities_w_related()
 
         select_str = "select {\n"
         if entities is None:
@@ -481,12 +666,12 @@ class EdgeIO(EdgeIOBase):
         return json.loads(client.query_json(select_str))
 
     # Insertions
-    def insert_ifc(self, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
+    def insert_ifc(self, ifc_file, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
         """Upload all IFC elements to EdgeDB instance"""
         for tx in self.client.transaction():
             with tx:
                 if method == INSERTS.SEQ:
-                    self._insert_items_sequentially(tx, specific_ifc_ids)
+                    self._insert_items_sequentially(ifc_file, tx, specific_ifc_ids)
                 else:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 
@@ -558,14 +743,15 @@ class EdgeIO(EdgeIOBase):
         f = self.to_ifcopenshell_object(specific_classes, only_ifc_entities)
         return StringIO(f.wrapped_data.to_string()).read()
 
+    def to_ifc_file(
+        self, ifc_file_path: str | pathlib.Path, specific_classes: list[str] = None, only_ifc_entities=True
+    ):
+        ifc_file_path = pathlib.Path(ifc_file_path)
+        res = self.to_ifc_str(specific_classes, only_ifc_entities)
 
-@dataclass
-class IfcNode:
-    name: str
-    id: str
-    props: dict
-    ifc_id: ifcopenshell.entity_instance = None
-    intermediate_class: IntermediateClass = None
+        os.makedirs(ifc_file_path.parent, exist_ok=True)
+        with open(str(ifc_file_path), "w") as f:
+            f.write(res)
 
 
 @dataclass
@@ -600,62 +786,13 @@ class SpatialNode:
         return ulist
 
 
-def get_ids(obj: dict, id_list):
-    top_id = obj.get("id", None)
-    if top_id is not None:
-        id_list.append(top_id)
-    for key, value in obj.items():
-        if isinstance(value, dict):
-            get_ids(value, id_list)
-        elif isinstance(value, list):
-            for subinst in value:
-                if isinstance(subinst, dict):
-                    get_ids(subinst, id_list)
-
-
-def resolve_order_of_result_entities(results: dict, em: EdgeModel) -> list:
-    id_map = dict()
-    key_map = dict()
-    for key, value in results.items():
-        for instance in value:
-            ids = []
-            get_ids(instance, ids)
-            instance_id = instance.pop("id")
-            ids.pop(ids.index(instance_id))
-            if instance_id is None:
-                raise ValueError(f'Instance ID is missing for "{instance}"')
-
-            if instance_id in key_map.keys() or instance_id in id_map.keys():
-                existing_obj = key_map.get(instance_id)
-                existing_ifc_class = existing_obj["class"]
-                entity = em.get_entity_by_name(existing_ifc_class)
-                ancestors = [x.name for x in entity.get_ancestors()]
-                if key in ancestors:
-                    logging.debug(f'Skipping Ancestor class "{key}" of existing IFC class "{existing_ifc_class}"')
-                    continue
-                else:
-                    entity = em.get_entity_by_name(key)
-                    ancestors = [x.name for x in entity.get_ancestors()]
-                    if existing_ifc_class not in ancestors:
-                        raise ValueError(f"DB IFC classes {existing_ifc_class} & {key} share uuid but are not related")
-                    logging.debug(f'Replacing Ancestor class "{existing_ifc_class}" of existing IFC class "{key}"')
-
-            key_map[instance_id] = {"class": key, "props": instance, "id": instance_id}
-            id_map[instance_id] = ids
-
-    result = toposort_flatten(id_map, sort=True)
-    output = []
-    for x in result:
-        key_res = key_map.get(x)
-        if key_res is not None:
-            output.append(key_res)
-        else:
-            raise ValueError(f'Unable to find related object uuid "{str(x)}"')
-
-    if None in output:
-        raise ValueError("Key Map contains 'None' elements. Likely missing object dependencies in export")
-
-    return output
+@dataclass
+class IfcNode:
+    name: str
+    id: str
+    props: dict
+    ifc_id: ifcopenshell.entity_instance = None
+    intermediate_class: IntermediateClass = None
 
 
 def get_ref_id(ref_id, id_map):

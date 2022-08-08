@@ -1,0 +1,51 @@
+[
+    {
+        "GlobalId": "3PXsnq_3qHxBd2w2f4ZOUQ",
+        "Description": "IPE400",
+        "Name": "MyBeam",
+        "ObjectType": "Beam",
+        "Tag": "MyBeam",
+        "PredefinedType": null,
+        "OwnerHistory": {
+            "LastModifiedDate": 1656570506,
+            "CreationDate": 1656570506,
+            "OwningUser": {
+                "id": "e9fde1da-fced-11ec-97f5-6f9f1b461637"
+            },
+            "OwningApplication": {
+                "id": "ea228a44-fced-11ec-97f5-d744ce069446"
+            },
+            "State": "READWRITE",
+            "ChangeAction": null,
+            "LastModifyingUser": {
+                "id": "e9fde1da-fced-11ec-97f5-6f9f1b461637"
+            },
+            "LastModifyingApplication": {
+                "id": "ea228a44-fced-11ec-97f5-d744ce069446"
+            },
+            "_e_type": "default::IfcOwnerHistory"
+        },
+        "ObjectPlacement": {
+            "PlacementRelTo": {
+                "id": "ee386f0e-fced-11ec-97f5-b3f35fe72359"
+            },
+            "RelativePlacement": {
+                "id": "eee83704-fced-11ec-97f5-dfb5f1ae7674"
+            },
+            "_e_type": "default::IfcLocalPlacement"
+        },
+        "Representation": {
+            "Name": null,
+            "Description": null,
+            "Representations": [
+                {
+                    "id": "ed8f000e-fced-11ec-97f5-57758b6c7591"
+                },
+                {
+                    "id": "eda27b02-fced-11ec-97f5-13a248609d5b"
+                }
+            ],
+            "_e_type": "default::IfcProductDefinitionShape"
+        }
+    }
+]

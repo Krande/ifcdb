@@ -1,9 +1,11 @@
-## Spatial Query
+# Slicing in the Spatial Hierarchy
+
+[Back to Main Page](../index.md)
 
 For reference, here is [the ESDL schema](resources/default.esdl) for this Spatial Query 
 investigation.
 
-### Motivation & Goal
+## Motivation & Goal
 `Motivation:` Large IFC models contain spatial hierarchies that can hold
 thousands of geometry elements underneath each top level. 
 Each top-level can contain elements arranged in many spatial layers each branching down into separate sublayers. 
@@ -12,7 +14,7 @@ you want is necessary in order to prevent data-size bottlenecks.
 
 `The goal:` The ability to return all elements below a specific spatial element.
 
-### Scenario
+## Scenario
 
 In this scenario the aim is to find all sub-elements of the spatial element named `Sublevel_1_a` in the 
 spatial hierarchy and create a new IFC file from it. For this purpose a test IFC file `SpatialHierarchy1.ifc` is created.
@@ -33,7 +35,7 @@ the parent `IfcSite` element `SpatialHierarchy1` &
 
 ![Desired Spatial elements](resources/spatial_query_results.png)
 
-### Query Strategy
+## Query Strategy
 
 The overall strategy is to first get the entire spatial hierarchy where it returns all the elements with 
 their respective name (`Name`), EdgeDB uuid (`id`) and ESDL/IFC class name (``__type__ : { name }``). 
@@ -41,7 +43,7 @@ their respective name (`Name`), EdgeDB uuid (`id`) and ESDL/IFC class name (``__
 Upon receiving the returned data, python is used on the client side to slice through the spatial hierarchy and 
 build additional queries to extract all relevant objects and properties within the specified spatial hierarchy. 
 
-### Query 1 -> Get the entire spatial hierarchy
+## Query 1 -> Get the entire spatial hierarchy
 
 To get all the necessary classes for describing the spatial hierarchy and their elements, 
 the following query is performed:
@@ -123,12 +125,12 @@ See [result.json](resources/result.json) for the entire output.
 ...
 ```
 
-### Query 2 -> Getting all relevant data associated to the returned list of classes
+## Query 2 -> Getting all relevant data associated to the returned list of classes
 
-With the exported [results.json](resources/results.json) python is used to find parent/children relationships of 
+With the exported [result.json](resources/result.json) python is used to find parent/children relationships of 
 the spatial hierarchy and slice out all sub-elements and related parent elements of the `Sublevel_1_a` spatial element. 
 
-#### Alternative "A" -> Loop over the returned spatial classes and build nested select queries. 
+### Alternative "A" -> Loop over the returned spatial classes and build nested select queries. 
 
 Alternative "A" is to Loop over each element and construct a nested query specifying all nested sub-objects and their 
 properties. 
@@ -143,159 +145,8 @@ objects found within the nested chain of object properties.
 An example of a nested query is shown for a single `IfcBuildingStorey` class to illustrate just how many nested object 
 link relations there can be in a typical IFC class.
 
-```
-SELECT ( 
-    (
-        SELECT IfcBuildingStorey {
-            GlobalId,
-            OwnerHistory : {
-                OwningUser : {
-                    ThePerson : {
-                        Identification,
-                        FamilyName,
-                        GivenName,
-                        MiddleNames,
-                        PrefixTitles,
-                        SuffixTitles,
-                        Roles : {
-                            Role,
-                            UserDefinedRole,
-                            Description
-                        },
-                        Addresses : {
-                            Purpose,
-                            Description,
-                            UserDefinedPurpose
-                        }
-                    },
-                TheOrganization : {
-                    Identification,
-                    Name,
-                    Description,
-                    Roles : {
-                        Role,
-                        UserDefinedRole,
-                        Description
-                    },
-                    Addresses : {
-                        Purpose,
-                        Description,
-                        UserDefinedPurpose
-                    }
-                },
-                Roles : {
-                    Role,
-                    UserDefinedRole,
-                    Description
-                }
-            },
-            OwningApplication : {
-                ApplicationDeveloper : {
-                    Identification,
-                    Name,
-                    Description,
-                    Roles : {
-                        Role,
-                        UserDefinedRole,
-                        Description
-                    },
-                    Addresses : {
-                        Purpose,
-                        Description,
-                        UserDefinedPurpose
-                    }
-                },
-                Version,
-                ApplicationFullName,
-                ApplicationIdentifier
-            },
-            State,
-            ChangeAction,
-            LastModifiedDate,
-            LastModifyingUser : {
-                ThePerson : {
-                    Identification,
-                    FamilyName,
-                    GivenName,
-                    MiddleNames,
-                    PrefixTitles,
-                    SuffixTitles,
-                    Roles : {
-                        Role,
-                        UserDefinedRole,
-                        Description
-                    },
-                    Addresses : {
-                        Purpose,
-                        Description,
-                        UserDefinedPurpose
-                    }
-                },
-                TheOrganization : {
-                    Identification,
-                    Name,
-                    Description,
-                    Roles : {
-                        Role,
-                        UserDefinedRole,
-                        Description
-                    },
-                    Addresses : {
-                        Purpose,
-                        Description,
-                        UserDefinedPurpose
-                    }
-                },
-                Roles : {
-                    Role,
-                    UserDefinedRole,
-                    Description
-                }
-            },
-            LastModifyingApplication : {
-                ApplicationDeveloper : {
-                    Identification,
-                    Name,
-                    Description,
-                    Roles : {
-                        Role,
-                        UserDefinedRole,
-                        Description
-                    },
-                    Addresses : {
-                        Purpose,
-                        Description,
-                        UserDefinedPurpose
-                    }
-                },
-                Version,
-                ApplicationFullName,
-                ApplicationIdentifier
-            },
-            CreationDate
-        },
-        Name,
-        Description,
-        ObjectType,
-        ObjectPlacement : {id, __type__ : { name }},
-        Representation : {
-            Name,
-            Description,
-            Representations : {
-                ContextOfItems : {
-                    ContextIdentifier,
-                    ContextType
-                },
-                RepresentationIdentifier,
-                RepresentationType,
-                Items : {id, __type__ : { name }}
-            }
-        },
-        LongName,
-        CompositionType,
-        Elevation
-    } filter .id = <uuid>'fe0e2222-f601-11ec-9720-ffa48bb2d7b1'),
-    ...
+```{literalinclude} resources/spatial_query_nested_large.esdl
+:language: text
 ```
 
 By close inspection it is observed in the above query that certain elements only refer to the related object's `id` and
@@ -323,7 +174,7 @@ What that means that the user has to know all property types of all
 objects and objects found in the chains of nested object properties and create rather complex queries.
 
 
-#### Alternative "B" -> Loop over the returned spatial classes and return all related uuid's before doing a 3rd query
+### Alternative "B" -> Loop over the returned spatial classes and return all related uuid's before doing a 3rd query
 
 As observed in Alternative "A" the sheer size of the insert string became impractical when attempting to insert all
 the nested object properties in a single statement.

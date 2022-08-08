@@ -1,4 +1,6 @@
-## Query Building
+# Query Building
+
+[Back to Main Page](../index.md)
 
 IfcOpenShell schema is used to build the EdgeDB schema.
 

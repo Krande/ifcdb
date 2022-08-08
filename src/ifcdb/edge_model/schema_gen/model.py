@@ -9,168 +9,15 @@ from typing import ClassVar, Dict, List, Union
 import ifcopenshell
 from toposort import toposort_flatten
 
+from .utils import (
+    get_aggregation_levels,
+    get_aggregation_type,
+    get_array_str,
+    get_base_type_name,
+    unwrap_selected_items,
+)
+
 wrap = ifcopenshell.ifcopenshell_wrapper
-
-
-@dataclass
-class WithNode:
-    name: str
-    class_name: str
-    query_str: str
-
-
-def get_aggregation_type(agg_entity: wrap.aggregation_type):
-    shape_len = agg_entity.type_of_aggregation()
-    aggregate_types = [agg_entity]
-    for agg in range(0, shape_len - 1):
-        prev_entry = aggregate_types[-1]
-        if hasattr(prev_entry, "type_of_element") is False:
-            type_result = prev_entry
-        else:
-            type_result = prev_entry.type_of_element()
-        aggregate_types.append(type_result)
-
-    last_entry = aggregate_types[-1]
-    if isinstance(last_entry, wrap.named_type):
-        content_type = last_entry
-    else:
-        content_type: wrap.named_type = last_entry.type_of_element()
-
-    result = get_base_type_name(content_type)
-
-    if isinstance(result, wrap.named_type):
-        cast_type_str = content_type.declared_type().name()
-    elif isinstance(result, wrap.enumeration_type):
-        cast_type_str = result.name()
-    else:
-        cast_type_str = result
-
-    return cast_type_str
-
-
-def get_base_type_name(
-    content_type: Union[wrap.named_type, wrap.type_declaration],
-) -> Union[wrap.entity, str, wrap.enumeration_type, wrap.select_type]:
-    cur_decl = content_type
-    while hasattr(cur_decl, "declared_type") is True:
-        cur_decl = cur_decl.declared_type()
-
-    if isinstance(cur_decl, wrap.select_type):
-        return cur_decl
-    if isinstance(cur_decl, wrap.enumeration_type):
-        return cur_decl
-    if isinstance(cur_decl, wrap.aggregation_type):
-        res = cur_decl.type_of_element()
-        cur_decl = res.declared_type()
-        while hasattr(cur_decl, "declared_type") is True:
-            cur_decl = cur_decl.declared_type()
-
-    if isinstance(cur_decl, wrap.entity):
-        return cur_decl
-
-    if isinstance(cur_decl, str):
-        cast_type = EntityEdgeModel.simple_types.get(cur_decl)
-        if cast_type is None:
-            raise ValueError(f'Cast Simple Type not found for "{cur_decl}" related to {content_type}')
-        return cast_type
-
-    raise NotImplementedError(f"Base type is unknown type {cur_decl}")
-
-
-def get_ancestors(entity: wrap.entity):
-    cur_entity = entity
-    ancestors = []
-    while cur_entity.supertype() is not None:
-        cur_entity = cur_entity.supertype()
-        ancestors.append(cur_entity)
-
-    return ancestors
-
-
-def get_attribute_entities(entity: wrap.entity):
-    att_entities = []
-    for att in entity.attributes():
-        typeof = att.type_of_attribute()
-        if isinstance(typeof, wrap.aggregation_type):
-            typeof = get_aggregation_type(typeof)
-            if isinstance(typeof, str):
-                continue
-        result = get_base_type_name(typeof)
-        if isinstance(result, str):
-            continue
-        else:
-            att_entities.append(result)
-
-    return att_entities
-
-
-def unwrap_selected_items(entity: wrap.select_type, selectable_type_entities: list[wrap.entity] = None):
-    selectable_type_entities = [] if selectable_type_entities is None else selectable_type_entities
-    for x in entity.select_list():
-        if x in selectable_type_entities:
-            continue
-        if isinstance(x, wrap.entity):
-            selectable_type_entities.append(x)
-        elif isinstance(x, wrap.select_type):
-            unwrap_selected_items(x, selectable_type_entities)
-        else:
-            if x in selectable_type_entities:
-                continue
-            selectable_type_entities.append(x)
-    return selectable_type_entities
-
-
-def get_aggregation_levels(agg_type):
-    prev_entry = agg_type
-    levels = []
-
-    while isinstance(prev_entry, wrap.aggregation_type):
-        levels.append(prev_entry)
-        prev_entry = prev_entry.type_of_element()
-    return levels
-
-
-def get_array_str(levels):
-    aggregate_parameter = levels[-1].type_of_element()
-    parameter = get_base_type_name(aggregate_parameter)
-
-    if isinstance(parameter, str):
-        cast_type_str = parameter
-    else:
-        cast_type_str = parameter.name()
-    indent = 4 * " "
-    astr = ""
-    ending = ""
-    constr_str = ""
-    for i, level in enumerate(levels):
-        b1 = level.bound1()
-        b2 = level.bound2()
-        if len(levels) > 1 and i == 0:
-            array_str = "array<"
-        else:
-            array_str = "array<" if b2 == 1 else "tuple<"
-
-        if b1 != b2 and b2 != -1 and len(levels) == 1:
-            array_str = "array<"
-            g = 3 * indent
-            g2 = 2 * indent
-            range_str = ""
-            range_l = list(range(b1, b2 + 1))
-            for j, k in enumerate(range_l, start=1):
-                range_str += f"len(__subject__) = {k}"
-                range_str += " or " if j != len(range_l) else ""
-            constr_str = f"{{\n{g}constraint expression on ({range_str})\n{g2}}}"
-            entity_str = cast_type_str
-        else:
-            max_num = max(max(b1, b2), 1)
-            entity_str = ", ".join([cast_type_str for i in range(max_num)])
-
-        if i == len(levels) - 1:
-            astr += array_str + f"{entity_str}"
-        else:
-            astr += array_str
-        ending += ">"
-    return astr + ending + constr_str
 
 
 @dataclass
@@ -514,80 +361,6 @@ class EntityEdgeModel(EntityBaseEdgeModel):
     def get_entity_atts(self, entity: ifcopenshell.entity_instance):
         return [x for x in self.get_attributes(True) if getattr(entity, x.name) is not None]
 
-    def to_select_str(
-        self, with_map: dict[str, WithNode] = None, include_type_ref=False, include_id_ref=False, skip_properties=False
-    ) -> str | None:
-        all_atts = self.get_attributes(True)
-
-        if len(all_atts) == 0:
-            return None
-
-        select_str = "{"
-        if include_id_ref:
-            select_str += "id,"
-        if include_type_ref:
-            select_str += "__type__ : { name },"
-
-        for i, att in enumerate(all_atts):
-            type_ref = att.get_type_ref()
-            if isinstance(type_ref, ArrayEdgeModel):
-                type_ref = type_ref.parameter_type
-
-            if skip_properties is True and isinstance(type_ref, EntityEdgeModel) is False:
-                print(f'skipping "{att.name}"')
-                continue
-            att_select_str = f"{att.name}"
-            if isinstance(type_ref, EntityEdgeModel):
-                select_ref = add_entity_ref(
-                    att=att,
-                    ref_type=type_ref,
-                    with_map=with_map,
-                    include_type_ref=include_type_ref,
-                    include_id_ref=include_id_ref,
-                    skip_properties=skip_properties,
-                )
-                if skip_properties is True and select_ref == "{}":
-                    att_select_str += " : {id, __type__ : { name }}"
-                    print(f'skipping "{att.name}"')
-                    continue
-                if select_ref is None:
-                    att_select_str += " : {id, __type__ : { name }}"
-                else:
-                    att_select_str += f" : {select_ref}"
-            elif isinstance(type_ref, (str, EnumEdgeModel)):
-                pass
-            elif isinstance(type_ref, SelectEdgeModel):
-                print("sd")
-            else:
-                raise ValueError(f'Unknown type ref "{type_ref}"')
-
-            select_str += att_select_str
-            select_str += "" if i == len(all_atts) - 1 else ","
-        select_str += "}"
-        return select_str
-
-    def to_insert_str(
-        self,
-        entity: ifcopenshell.entity_instance,
-        indent: str = "",
-        uuid_map: dict = None,
-        with_map: dict[str, str] = None,
-    ):
-        from ifcdb.edge_model.query_utils import get_att_insert_str
-
-        all_atts = self.get_entity_atts(entity)
-        newline = "" if len(all_atts) == 1 else "\n"
-        insert_str = f"{indent}INSERT {self.name} {{{newline}  "
-        for i, att in enumerate(all_atts):
-            res = get_att_insert_str(att, entity, self.edge_model, uuid_map=uuid_map, with_map=with_map)
-            if res is None:
-                continue
-
-            comma_str = "" if i == len(all_atts) - 1 else ","
-            insert_str += res + comma_str
-
-        return insert_str + f"}}{newline}"
-
     def to_str(self) -> str:
         att_str = self.attributes_str
         prop_prefix = "abstract " if self.entity.is_abstract() is True else ""
@@ -609,25 +382,6 @@ class EntityEdgeModel(EntityBaseEdgeModel):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name})"
-
-
-def add_entity_ref(att, ref_type, with_map, include_type_ref=False, include_id_ref=False, skip_properties=False):
-    from ifcdb.utils import change_case
-
-    props = dict(
-        with_map=with_map,
-        include_type_ref=include_type_ref,
-        skip_properties=skip_properties,
-        include_id_ref=include_id_ref,
-    )
-
-    if with_map is None:
-        ref_str = ref_type.to_select_str(**props)
-    else:
-        ref_str = change_case(att.name)
-        query_str = ref_type.to_select_str(**props)
-        with_map[ref_str] = WithNode(ref_str, att.name, query_str)
-    return ref_str
 
 
 @dataclass
