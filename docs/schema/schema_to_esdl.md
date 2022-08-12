@@ -31,6 +31,18 @@ version of the IFC schema you want the database schema to represent.
 :language: python
 ```
 
+```{note}
+At the time of writing (12.08.22), EdgeDB v2.1+c600476 is able to create the migration for the IFC schema in about 3.5 
+hours, but unfortunately unable to pass the entire IFC schema definition to postgres due to the  
+text size being too large.
+
+`INFO 207 2022-08-11T19:04:37.396 postgres: invalid message length`. 
+
+This has been adressed in https://github.com/edgedb/edgedb/issues/3946
+
+```
+ 
+
 ## EdgeDB using specific IFC entities
 
 To create a schema using only specific IFC entities (and all related entities) it is possible to do the following.
