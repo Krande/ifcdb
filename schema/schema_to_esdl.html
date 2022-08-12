@@ -246,6 +246,14 @@ schema.</p>
 <h2>EdgeDB using the entire IFC Schema<a class="headerlink" href="#edgedb-using-the-entire-ifc-schema" title="Permalink to this heading">#</a></h2>
 <p>To set up an EdgeDB instance using the complete IFC schema you will need to specify <code class="docutils literal notranslate"><span class="pre">ifc_schema</span></code> to define which
 version of the IFC schema you want the database schema to represent.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At the time of writing (12.08.22), EdgeDB v2.1+c600476 is able to create the migration for the IFC schema in about 3.5
+hours, but unfortunately unable to pass the entire IFC schema definition to postgres due to the<br />
+text size being too large.</p>
+<p><code class="docutils literal notranslate"><span class="pre">INFO</span> <span class="pre">207</span> <span class="pre">2022-08-11T19:04:37.396</span> <span class="pre">postgres:</span> <span class="pre">invalid</span> <span class="pre">message</span> <span class="pre">length</span></code>.</p>
+<p>This has been adressed in https://github.com/edgedb/edgedb/issues/3946</p>
+</div>
 </section>
 <section id="edgedb-using-specific-ifc-entities">
 <h2>EdgeDB using specific IFC entities<a class="headerlink" href="#edgedb-using-specific-ifc-entities" title="Permalink to this heading">#</a></h2>
