@@ -10,6 +10,7 @@ bl_info = {
 
 import os
 import site
+
 from .ui import register, unregister
 
 cwd = os.path.dirname(os.path.realpath(__file__))

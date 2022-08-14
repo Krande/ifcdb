@@ -1,19 +1,13 @@
-name: ifcdb-dev
+name: ifc-api
 channels:
-  - krande/label/dev
   - conda-forge
 dependencies:
-  - ifcopenshell
   - python==3.10.5
-  - pyparsing
-  - pytest
-  - toposort
   - fastapi
   - uvicorn
   - starlette
   - pip
   - pip:
       - edgedb
-      - rdflib
       - fastapi-azure-auth
       - pydantic[dotenv]

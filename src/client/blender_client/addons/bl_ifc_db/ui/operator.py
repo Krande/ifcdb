@@ -3,10 +3,8 @@ import bpy
 
 def get_ifc_store():
     # Assuming you already have blenderbim installed
-    try:
-        from blenderbim.bim.ifc import IfcStore
-    except:
-        raise ModuleNotFoundError("Installation of BlenderBIM not found. Please check your installation")
+    from blenderbim.bim.ifc import IfcStore
+
     return IfcStore
 
 

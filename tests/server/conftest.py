@@ -1,4 +1,5 @@
 import pytest
+
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
 

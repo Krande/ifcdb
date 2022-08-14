@@ -1,0 +1,15 @@
+# docker-compose.yml
+version: '3'
+services:
+  IFC-API:
+    image: ifc-api/latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      EDGEDB_TLS_CA_FILE: /code/cert.pem
+      EDGEDB_CLIENT_TLS_SECURITY: insecure
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
