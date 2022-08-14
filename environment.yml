@@ -8,6 +8,7 @@ dependencies:
   - pyparsing
   - pytest
   - toposort
+  - httpx
   - fastapi
   - uvicorn
   - starlette
