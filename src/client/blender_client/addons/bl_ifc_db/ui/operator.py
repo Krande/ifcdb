@@ -8,14 +8,60 @@ def get_ifc_store():
     return IfcStore
 
 
-class IfcDb_TestConnection_Operator(bpy.types.Operator):
-    bl_idname = "view3d.ifc_db_test_connection"
-    bl_label = "Test Connection"
-    bl_description = "Test Connection"
+def run_listener():
+    try:
+        from azure.storage.queue import QueueClient
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError(
+            "Unable to find Azure Storage Queue package. " "Please install using pip install azure-storage-queue"
+        )
+
+    QueueClient.from_connection_string(con_str, QueueNames.IN)
+
+
+def login():
+    from azure.identity import InteractiveBrowserCredential
+
+
+class IfcDb_Login_Operator(bpy.types.Operator):
+    bl_idname = "view3d.ifc_db_login"
+    bl_label = "Login"
+    bl_description = "Login"
 
     def execute(self, context):
-        # Get the current scene
-        scene = context.scene
-        print("Button Pressed")
+        print("User Login shall take place here")
+
+        return {"FINISHED"}
+
+
+class IfcDb_Pull_Operator(bpy.types.Operator):
+    bl_idname = "view3d.ifc_db_pull"
+    bl_label = "Pull"
+    bl_description = "Pull"
+
+    def execute(self, context):
+        print("Pulling of IFC data should start now")
+
+        return {"FINISHED"}
+
+
+class IfcDb_Push_Operator(bpy.types.Operator):
+    bl_idname = "view3d.ifc_db_push"
+    bl_label = "Push"
+    bl_description = "Push"
+
+    def execute(self, context):
+        print("Pushing of IFC data should start now")
+
+        return {"FINISHED"}
+
+
+class IfcDb_Live_Operator(bpy.types.Operator):
+    bl_idname = "view3d.ifc_db_live"
+    bl_label = "Go Live"
+    bl_description = "Listen to live updates from the IfcDb"
+
+    def execute(self, context):
+        run_listener()
 
         return {"FINISHED"}

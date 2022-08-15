@@ -1,14 +1,5 @@
-install:
-	conda env create -f environment.yml
-
-update:
-	conda env update --file environment.yml --prune
-
-local-itest:
-	choco install act-cli
-
-local-t:
-	act -j test
+env:
+	conda env update --file environment.dev.yml --prune
 
 docs-install:
 	conda env create -f docs/environment.docs.yml

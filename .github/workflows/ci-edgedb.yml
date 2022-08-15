@@ -31,7 +31,7 @@ jobs:
           activate-environment: ifcdb
           python-version: ${{ matrix.pyver.distver }}
           channel-priority: strict
-          environment-file: environment.yml
+          environment-file: environment.dev.yml
           auto-update-conda: true
       - name: Install python package
         run: |

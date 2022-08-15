@@ -1,0 +1,40 @@
+name: Publish-StruUtils
+
+on:
+  push:
+    paths:
+      - 'src/client/blender_client/addons/bl_ifc_db/**'
+      - '.github/workflows/ci-bl_ifc_db_client.yml'
+
+env:
+  major: 0
+  minor: 0
+  patch: 1
+  dir_name: bl_ifc_db
+  name: IfcDbClient
+  tmp_dir: _dist
+  blender_client_dir: src/client/blender_client
+
+jobs:
+  build:
+    name: Publish Package
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Renumber version
+      run: "sed -i 's/(0, 0, 99)/(${{ env.major }}, ${{ env.minor }}, ${{ env.patch }})/g' ${{env.blender_client_dir}}/addons/${{ env.dir_name }}/__init__.py"
+    - name: Add Dependencies to Package
+      run: cd ${{env.blender_client_dir}} && python add_packages_to_lib.py
+    - name: Build
+      run: cd ${{env.blender_client_dir}}/addons/${{env.tmp_dir}} && zip -r ${{env.name}}.zip ${{env.dir_name}}
+    - name: Copy2Dist
+      run: mkdir ${{env.blender_client_dir}}/addons/${{env.tmp_dir}}/dist && cp ${{env.blender_client_dir}}/addons/${{env.tmp_dir}}/${{env.name}}.zip ${{env.blender_client_dir}}/addons/${{env.tmp_dir}}/dist/${{env.name}}.zip
+    - name: Upload Zip file to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ${{env.blender_client_dir}}/addons/${{env.tmp_dir}}/${{env.name}}.zip
+        asset_name: ${{env.name}}-${{env.major}}.${{env.minor}}.${{env.patch}}.zip
+        tag: "${{env.name}}_${{env.major}}.${{env.minor}}.${{env.patch}}"
+        overwrite: true
+        body: "Package release ${{env.major}}.${{env.minor}}.${{env.patch}}"

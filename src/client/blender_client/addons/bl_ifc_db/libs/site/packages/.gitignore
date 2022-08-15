@@ -1,2 +1,6 @@
-h5py*
-OCC
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!.path

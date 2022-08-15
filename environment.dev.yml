@@ -17,4 +17,7 @@ dependencies:
       - edgedb
       - rdflib
       - fastapi-azure-auth
+      - azure-storage-queue
+      - azure-identity
       - pydantic[dotenv]
+      - fake-bpy-module-3.2

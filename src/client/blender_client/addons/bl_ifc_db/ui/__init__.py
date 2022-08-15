@@ -6,7 +6,10 @@ classes = [
     # Props
     prop.IfcDb_Connection_Props,
     # Operators
-    operator.IfcDb_TestConnection_Operator,
+    operator.IfcDb_Login_Operator,
+    operator.IfcDb_Pull_Operator,
+    operator.IfcDb_Push_Operator,
+    operator.IfcDb_Live_Operator,
     # Panels
     panel.IFC_DB_MAIN_PT_Panel,
 ]
