@@ -1,42 +1,56 @@
 from __future__ import annotations
 
-import datetime
 from http import HTTPStatus
 from typing import Iterable
 
 import edgedb
-from fastapi import APIRouter, HTTPException, Query
+from app.azure_ad import azure_scheme
+from fastapi import APIRouter, Depends, HTTPException, Query, Security
+from fastapi_azure_auth.user import User
 from pydantic import BaseModel
 
 router = APIRouter()
 client = edgedb.create_async_client()
 
 
-class RequestData(BaseModel):
-    name: str
+class IfcPerson(BaseModel):
+    FamilyName: str = None
+    GivenName: str = None
+    Identification: str = None
+    MiddleNames: tuple[str] = None
+    PrefixTitles: tuple[str] = None
+    SuffixTitles: tuple[str] = None
+    Roles: dict = None
+    Addresses: dict = None
 
 
-class ResponseData(BaseModel):
-    name: str
-    created_at: datetime.datetime
-
+IFCP_CONTENT = "FamilyName, GivenName, Identification, Roles, Addresses"
 
 ################################
 # Get users
 ################################
 
 
-@router.get("/users")
-async def get_users(name: str = Query(None, max_length=50)) -> Iterable[ResponseData]:
+@router.get("/users", dependencies=[Security(azure_scheme)])
+async def get_users(name: str = Query(None, max_length=50)) -> Iterable[IfcPerson]:
 
     if not name:
-        users = await client.query("SELECT User {name, created_at};")
+        users = await client.query(f"SELECT IfcPerson {IFCP_CONTENT};")
     else:
         users = await client.query(
-            """SELECT User {name, created_at} FILTER User.name=<str>$name""",
+            f"""SELECT IfcPerson {IFCP_CONTENT} FILTER IfcPerson.GivenName=<str>$name""",
             name=name,
         )
-    response = (ResponseData(name=user.name, created_at=user.created_at) for user in users)
+    response = (
+        IfcPerson(
+            FamilyName=user.FamilyName,
+            GivenName=user.GivenName,
+            Identification=user.Identification,
+            Roles=user.Roles,
+            Addresses=user.Addresses,
+        )
+        for user in users
+    )
     return response
 
 
@@ -45,20 +59,27 @@ async def get_users(name: str = Query(None, max_length=50)) -> Iterable[Response
 ################################
 
 
-@router.post("/users", status_code=HTTPStatus.CREATED)
-async def post_user(user: RequestData) -> ResponseData:
-
+@router.post("/users", status_code=HTTPStatus.CREATED, dependencies=[Security(azure_scheme)])
+async def post_user(user: User = Depends(azure_scheme)) -> IfcPerson:
+    print(user.dict())
     try:
         (created_user,) = await client.query(
-            """SELECT (INSERT User {name:=<str>$name}) {name, created_at};""",
-            name=user.name,
+            """SELECT (INSERT IfcPerson {FamilyName:=<str>$FamilyName, GivenName:=<str>$GivenName,
+            Identification:=<str>$Identification}) {FamilyName, GivenName, Identification, Roles, Addresses};""",
+            FamilyName=user.name,
+            GivenName=user.name,
+            Identification=user.name,
         )
     except edgedb.errors.ConstraintViolationError:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail={"error": f"Username '{user.name}' already exists."},
         )
-    response = ResponseData(name=created_user.name, created_at=created_user.created_at)
+    response = IfcPerson(
+        FamilyName=created_user.FamilyName,
+        GivenName=created_user.GivenName,
+        Identification=created_user.Identification,
+    )
     return response
 
 
@@ -67,26 +88,27 @@ async def post_user(user: RequestData) -> ResponseData:
 ################################
 
 
-@router.put("/users")
-async def put_user(user: RequestData, filter_name: str) -> Iterable[ResponseData]:
+@router.put("/users", dependencies=[Security(azure_scheme)])
+async def put_user(user: IfcPerson, identification_name: str) -> Iterable[IfcPerson]:
     try:
         updated_users = await client.query(
             """
             SELECT (
-                UPDATE User FILTER .name=<str>$filter_name
-                SET {name:=<str>$name}
-            ) {name, created_at};
+                UPDATE IfcPerson FILTER .Identification=<str>$filter_name
+                SET {FamilyName:=<str>$name}
+            ) {FamilyName, GivenName, Identification, Roles, Addresses};
             """,
-            name=user.name,
-            filter_name=filter_name,
+            family_name=user.FamilyName,
+            given_name=user.GivenName,
+            filter_name=identification_name,
         )
     except edgedb.errors.ConstraintViolationError:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={"error": f"Username '{filter_name}' already exists."},
+            detail={"error": f"Username '{identification_name}' already exists."},
         )
 
-    response = (ResponseData(name=user.name, created_at=user.created_at) for user in updated_users)
+    response = (IfcPerson(name=user.name, created_at=user.created_at) for user in updated_users)
     return response
 
 
@@ -96,14 +118,14 @@ async def put_user(user: RequestData, filter_name: str) -> Iterable[ResponseData
 
 
 @router.delete("/users")
-async def delete_user(name: str) -> Iterable[ResponseData]:
+async def delete_user(id_name: str) -> Iterable[IfcPerson]:
     try:
         deleted_users = await client.query(
             """SELECT (
-                DELETE User FILTER .name=<str>$name
-            ) {name, created_at};
+                DELETE IfcPerson FILTER .Identification=<str>$name
+            ) {FamilyName, GivenName, Identification, Roles, Addresses};
             """,
-            name=name,
+            name=id_name,
         )
     except edgedb.errors.ConstraintViolationError:
         raise HTTPException(
@@ -112,7 +134,12 @@ async def delete_user(name: str) -> Iterable[ResponseData]:
         )
 
     response = (
-        ResponseData(name=deleted_user.name, created_at=deleted_user.created_at) for deleted_user in deleted_users
+        IfcPerson(
+            FamilyName=deleted_user.FamilyName,
+            GivenName=deleted_user.GivenName,
+            Identification=deleted_user.Identification,
+        )
+        for deleted_user in deleted_users
     )
 
     return response

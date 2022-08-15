@@ -1,34 +1,16 @@
 from __future__ import annotations
 
-from typing import Union
-
 import uvicorn
 
 # For local dev you will have to add parent dir to source directory
-from app import movies, users
+from app import apiconfig, azure_ad, migrate, users
 from fastapi import APIRouter, Depends, FastAPI, Security
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
 from fastapi_azure_auth.user import User
-from pydantic import AnyHttpUrl, BaseSettings, Field
 
 router = APIRouter()
-
-
-class Settings(BaseSettings):
-    SECRET_KEY: str = Field("my super secret key", env="SECRET_KEY")
-    BACKEND_CORS_ORIGINS: list[Union[str, AnyHttpUrl]] = ["http://localhost:8000"]
-    OPENAPI_CLIENT_ID: str = Field(default="", env="OPENAPI_CLIENT_ID")
-    APP_CLIENT_ID: str = Field(default="", env="APP_CLIENT_ID")
-    TENANT_ID: str = Field(default="", env="TENANT_ID")
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-
-
-settings = Settings()
+settings = apiconfig.settings
+azure_scheme = azure_ad.azure_scheme
 
 app = FastAPI(
     swagger_ui_oauth2_redirect_url="/oauth2-redirect",
@@ -46,14 +28,6 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
-    app_client_id=settings.APP_CLIENT_ID,
-    tenant_id=settings.TENANT_ID,
-    scopes={
-        f"api://{settings.APP_CLIENT_ID}/user_impersonation": "user_impersonation",
-    },
-)
 
 
 @app.on_event("startup")
@@ -83,8 +57,8 @@ async def health_check() -> dict[str, str]:
     return {"status": "Ok"}
 
 
-app.include_router(movies.router)
 app.include_router(users.router)
+app.include_router(migrate.router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)

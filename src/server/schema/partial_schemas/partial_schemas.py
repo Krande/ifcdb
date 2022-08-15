@@ -2,12 +2,21 @@ import os
 import time
 
 from ifcdb import EdgeIO
-from ifcdb.edge_model.query_utils import (
+from ifcdb.edge_model.validation_utils import (
     validate_ifc_content,
     validate_ifc_objects,
     validate_using_ifc_diff,
 )
 from ifcdb.utils import top_dir
+
+
+def basic_schema(ifc_file: str, extra_ifc_classes: list[str]):
+    db_name = ifc_file.replace(".ifc", "").replace("-", "_")
+    ifc_path = top_dir() / "files" / ifc_file
+    with EdgeIO(db_schema_dir=f"db/{db_name}/dbschema", database=db_name) as io:
+        if io.database_exists() is False:
+            io.create_schema(from_ifc_file=ifc_path, from_ifc_entities=extra_ifc_classes)
+            io.setup_database(delete_existing_migrations=True)
 
 
 def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
@@ -60,5 +69,6 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
 if __name__ == "__main__":
     # main("cube-advanced-brep.ifc")
     # main("SpatialHierarchy1.ifc", refresh_db=False)
-    main("MyBeam.ifc", refresh_db=False)
+    # main("MyBeam.ifc", refresh_db=False)
     # main("tessellated-item.ifc")
+    basic_schema("MyBeam.ifc", ["IfcTelecomAddress", "IfcMember", "IfcColumn"])

@@ -4,4 +4,4 @@ migrations/
 __pycache__/
 _build/
 .env
-cert.pem
+*.pem
