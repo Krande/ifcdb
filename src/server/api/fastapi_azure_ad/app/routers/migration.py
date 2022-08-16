@@ -6,9 +6,9 @@ import pathlib
 from http import HTTPStatus
 
 import edgedb
+from app.dependencies import azure_scheme
 from fastapi import APIRouter, Security
 from pydantic import BaseModel
-from app.dependencies import azure_scheme
 
 router = APIRouter()
 
@@ -20,7 +20,7 @@ class MigrationData(BaseModel):
 
 @router.post("/migrate", dependencies=[Security(azure_scheme)], status_code=HTTPStatus.CREATED)
 async def initial_migration(db_name: str = None) -> MigrationData:
-    top_dir = pathlib.Path(__file__).parent.parent
+    top_dir = get_top_dir()
 
     print("Migrating schema to fresh database")
     # Extend wait time to give docker compose setup enough time to start
@@ -38,8 +38,6 @@ async def initial_migration(db_name: str = None) -> MigrationData:
         client = edgedb.create_client(database=db_name)
 
     migrations_dir = pathlib.Path(top_dir / "config/schema/basic/dbschema/migrations")
-    if migrations_dir.exists() is False:
-        client.execute('')
     for migration_file in os.listdir(migrations_dir):
         with open(migrations_dir / str(migration_file), "r") as f:
             migration_body = f.read()
@@ -48,3 +46,11 @@ async def initial_migration(db_name: str = None) -> MigrationData:
     print("Migration complete")
 
     return MigrationData(name=db_name, success=True)
+
+
+def get_top_dir() -> pathlib.Path:
+    path = pathlib.Path(__file__)
+    top_level_dirs = {"app", "config", "scripts"}
+    for p in path.parents:
+        if top_level_dirs.intersection(set(os.listdir(p))) == {"config", "app", "scripts"}:
+            return p
