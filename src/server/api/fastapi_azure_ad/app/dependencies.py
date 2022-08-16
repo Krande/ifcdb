@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.apiconfig import settings
+from app.internal.apiconfig import settings
 
 # For local dev you will have to add parent dir to source directory
 from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer

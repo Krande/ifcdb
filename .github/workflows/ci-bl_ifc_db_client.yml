@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
     - name: Renumber version
       run: "sed -i 's/(0, 0, 99)/(${{ env.major }}, ${{ env.minor }}, ${{ env.patch }})/g' ${{env.blender_client_dir}}/addons/${{ env.dir_name }}/__init__.py"
     - name: Add Dependencies to Package

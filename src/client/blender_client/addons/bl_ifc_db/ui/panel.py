@@ -11,7 +11,10 @@ class IFC_DB_MAIN_PT_Panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         layout.row()
+        props = context.scene.IfcDb_Connection_Props
+
         layout.row().operator("view3d.ifc_db_login", text="Login")
+        layout.row().prop(props, "db_name")
         layout.row().operator("view3d.ifc_db_push", text="Push")
         layout.row().operator("view3d.ifc_db_pull", text="Pull")
         layout.row().operator("view3d.ifc_db_live", text="Go Live")

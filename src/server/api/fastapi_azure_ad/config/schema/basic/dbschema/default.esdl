@@ -588,7 +588,10 @@ module default {
     }
 
     type IfcPerson  {
-        property Identification -> str;
+        required property Identification -> str {
+            # Ensure unique Identification for each Person.
+            constraint exclusive;
+        }
         property FamilyName -> str;
         property GivenName -> str;
         property MiddleNames -> tuple<str>;

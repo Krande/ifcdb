@@ -1,2 +1,3 @@
-.env
-.cert.pem
+*
+!.gitignore
+!azure_config.md
