@@ -103,3 +103,28 @@ class IfcDb_Live_Operator(bpy.types.Operator):
         run_listener()
 
         return {"FINISHED"}
+
+
+def push_objects():
+    """Simple example where this loops over geometries and exports them """
+    from blenderbim.bim.ifc import IfcStore
+    import ifcopenshell
+    # from blenderbim import tool
+    # import blenderbim.core.geometry as core
+    meshes = dict()
+    ifc_file = IfcStore.get_file()
+    for obj in IfcStore.id_map.values():
+        ifc_elem = IfcStore.get_file().by_id(obj.BIMObjectProperties.ifc_definition_id)
+        # assert isinstance(ifc_elem, ifcopenshell.entity_instance)
+        res = ifc_elem.get_info_2()
+        print(res)
+        print(ifc_elem)
+        if obj.type == "MESH":
+            # res = core.get_representation_ifc_parameters(tool.Geometry, obj=obj)
+            mesh = obj.to_mesh()
+            verts = []
+            faces = []
+            for vert in mesh.vertices.values():
+                verts.append(tuple(vert.undeformed_co))
+            for face in mesh.polygons:
+                faces.append(tuple(face.vertices))
