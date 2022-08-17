@@ -5,6 +5,7 @@ services:
     image: edgedb/edgedb:2.1
     environment:
       EDGEDB_SERVER_SECURITY: insecure_dev_mode
+      EDGEDB_SERVER_LOG_LEVEL: debug
       EDGEDB_DOCKER_LOG_LEVEL: debug
       EDGEDB_SERVER_EXTRA_ARGS: --admin-ui=enabled
       EDGEDB_SERVER_USER: ifcdbadmin

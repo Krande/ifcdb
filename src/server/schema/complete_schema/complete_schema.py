@@ -1,7 +1,7 @@
 import os
 
 from ifcdb import EdgeIO
-from ifcdb.edge_model.query_utils import (
+from ifcdb.edge_model.validation_utils import (
     validate_ifc_content,
     validate_ifc_objects,
     validate_using_ifc_diff,

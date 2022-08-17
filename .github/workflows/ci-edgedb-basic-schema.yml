@@ -1,0 +1,29 @@
+name: ci-ifc-edgedb-basic-schema
+
+on: push
+
+env:
+  WORKDIR: src/server/schema/partial_schemas/db/basic
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: CI with EdgeDB action
+    services:
+      edgedb:
+        image: edgedb/edgedb:2.1
+        env:
+          EDGEDB_SERVER_SECURITY: insecure_dev_mode
+        ports:
+          - 5656:5656
+    steps:
+      - uses: actions/checkout@v2
+      - uses: edgedb/setup-edgedb@v1
+      - name: EdgeDB Migrate create
+        run: | 
+            edgedb --tls-security=insecure -P 5656 migration create
+        working-directory: ${{ env.WORKDIR }}
+      - name: EdgeDB Migrate apply
+        run: |
+          edgedb --tls-security=insecure -P 5656 migrate
+        working-directory: ${{ env.WORKDIR }}
