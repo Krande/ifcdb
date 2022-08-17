@@ -1,4 +1,4 @@
-name: ci-ifc-edgedb-basic-schema
+name: ci-ifc-edgedb-schema
 
 on: push
 
