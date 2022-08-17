@@ -1,6 +1,9 @@
 name: Pages
 on:
   push:
+    paths:
+      - docs/**
+
 jobs:
   build:
     runs-on: ubuntu-latest
