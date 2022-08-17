@@ -13,7 +13,7 @@ jobs:
     name: EdgeDB schema - "${{ matrix.WORKDIR.name }}"
     services:
       edgedb:
-        image: "edgedb/edgedb:${{ env.SERVER_VERSION }}"
+        image: edgedb/edgedb:2.1
         env:
           EDGEDB_SERVER_SECURITY: insecure_dev_mode
           EDGEDB_SERVER_LOG_LEVEL: debug
