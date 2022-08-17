@@ -33,7 +33,7 @@ jobs:
         run: |
             rm -rf ./dbschema/migrations
             edgedb database create ${{ matrix.WORKDIR.name }}
-            echo "[${{env.SERVER_VERSION}}]" > edgedb.toml
+            echo '[edgedb]\nserver-version = "${{env.SERVER_VERSION}}"' > edgedb.toml
             edgedb $CON_PARAMS -d ${{ matrix.WORKDIR.name }} migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
