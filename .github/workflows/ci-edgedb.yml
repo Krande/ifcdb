@@ -8,7 +8,7 @@ jobs:
     name: CI with EdgeDB action
     services:
       edgedb:
-        image: edgedb/edgedb:1.4
+        image: edgedb/edgedb:2.1
         env:
           EDGEDB_SERVER_SECURITY: insecure_dev_mode
         ports:
