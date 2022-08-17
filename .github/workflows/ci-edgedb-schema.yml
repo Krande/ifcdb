@@ -30,9 +30,10 @@ jobs:
       - name: EdgeDB Migrate create
         run: |
             rm -rf ./dbschema/migrations
-            edgedb $CON_PARAMS migration create --non-interactive
+            edgedb database create ${{ matrix.WORKDIR.name }}
+            edgedb -d ${{ matrix.WORKDIR.name }} $CON_PARAMS migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
         run: |
-          edgedb $CON_PARAMS migration apply
+          edgedb -d ${{ matrix.WORKDIR.name }} $CON_PARAMS migration apply
         working-directory: ${{ matrix.WORKDIR.dir }}
