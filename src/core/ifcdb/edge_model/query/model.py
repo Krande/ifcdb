@@ -154,9 +154,9 @@ class EdgeIOBase:
     ifc_file: str | pathlib.Path = None
     ifc_io: IfcIO = None
     ifc_schema: str = None
-    db_schema_dir: str | pathlib.Path = None
+    db_schema_dir: str | pathlib.Path = "dbschema"
     em: EdgeModel = None
-    client: edgedb.Client = None
+    _client: edgedb.Client = None
     database: str = None
     port: int | None = 5656
     instance_name: str = None
@@ -195,6 +195,22 @@ class EdgeIOBase:
         client.execute(f"DROP DATABASE {self.database}")
         return False
 
+    def create_complete_schema_stepwise(
+        self,
+        dbschema_dir=None,
+        module_name="default",
+    ):
+        if dbschema_dir is not None:
+            dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
+        else:
+            dbschema_dir = self.db_schema_dir
+
+        if self.em is None:
+            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
+
+        unique_entities = self.em.get_all_entities()
+        return self.em.get_related_entities(unique_entities)
+
     def create_schema(
         self, dbschema_dir=None, module_name="default", from_ifc_file=None, from_ifc_schema=None, from_ifc_entities=None
     ):
@@ -228,7 +244,6 @@ class EdgeIOBase:
             print(class_name)
 
     def setup_database(self, dbschema_dir=None, delete_existing_migrations=False):
-
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
         else:
@@ -287,12 +302,10 @@ class EdgeIOBase:
         self.eq_builder = EQBuilder(self.client)
 
     def __enter__(self):
-        self.client = self.create_client(self.database)
-
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.client is not None:
+        if self._client is not None:
             self.client.close()
 
     # IFC utils
@@ -507,6 +520,11 @@ class EdgeIOBase:
         else:
             return f"-I {self.instance_name}"
 
+    @property
+    def client(self) -> edgedb.Client:
+        if self._client is None:
+            self._client = self.create_client(self.database)
+        return self._client
 
 @dataclass
 class EdgeIO(EdgeIOBase):
@@ -539,8 +557,6 @@ class EdgeIO(EdgeIOBase):
         obj_place_id = object_shape["ObjectPlacement"]["id"]
         place_map = {p.pop("id"): p for p in place["IfcLocalPlacement"]}
         _ = place_map[obj_place_id]
-
-        print("sd")
 
     def get_by_global_id(self, global_id: str, class_name: str = None, top_level_only=True):
         """Get rooted IFC element based on its 'GlobalId' property"""
