@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import uvicorn
-from fastapi import APIRouter, FastAPI, Security
-from fastapi.middleware.cors import CORSMiddleware
+from app.dependencies import azure_scheme
 
 # For local dev you will have to add parent dir to source directory
 from app.internal import apiconfig
-from app.routers import migration, users
-from app.dependencies import azure_scheme
+from app.routers import entities, migration, users
+from fastapi import APIRouter, FastAPI, Security
+from fastapi.middleware.cors import CORSMiddleware
 
 router = APIRouter()
 settings = apiconfig.settings
@@ -46,6 +46,7 @@ async def root():
 
 app.include_router(users.router)
 app.include_router(migration.router)
+app.include_router(entities.router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
