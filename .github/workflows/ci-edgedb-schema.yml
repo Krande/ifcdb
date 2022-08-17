@@ -5,6 +5,7 @@ on: push
 env:
   WORKDIR: src/server/schema/partial_schemas/db/basic
   CON_PARAMS: --tls-security=insecure -P 5656
+  SERVER_VERSION: 2.1
 
 jobs:
   test:
@@ -12,7 +13,7 @@ jobs:
     name: EdgeDB schema - "${{ matrix.WORKDIR.name }}"
     services:
       edgedb:
-        image: edgedb/edgedb:2.1
+        image: edgedb/edgedb:${{env.SERVER_VERSION}}
         env:
           EDGEDB_SERVER_SECURITY: insecure_dev_mode
           EDGEDB_SERVER_LOG_LEVEL: debug
@@ -32,11 +33,12 @@ jobs:
         run: |
             rm -rf ./dbschema/migrations
             edgedb database create ${{ matrix.WORKDIR.name }}
-            edgedb -d ${{ matrix.WORKDIR.name }} $CON_PARAMS migration create --non-interactive
+            echo "[${{env.SERVER_VERSION}}]" > edgedb.toml
+            edgedb $CON_PARAMS -d ${{ matrix.WORKDIR.name }} migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
         run: |
-          edgedb -d ${{ matrix.WORKDIR.name }} $CON_PARAMS migration apply
+          edgedb $CON_PARAMS -d ${{ matrix.WORKDIR.name }} migration apply
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: Dump docker logs on failure
         if: failure()
