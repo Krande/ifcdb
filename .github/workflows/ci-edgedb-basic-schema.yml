@@ -22,7 +22,7 @@ jobs:
       matrix:
         WORKDIR: [
           { name: basic, dir: "src/server/schema/partial_schemas/db/basic" },
-          { name: basic, dir: "src/server/schema/complete_schema" }
+          { name: complete, dir: "src/server/schema/complete_schema" }
         ]
     steps:
       - uses: actions/checkout@v2
