@@ -31,15 +31,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: edgedb/setup-edgedb@v1
-      - name: EdgeDB Migrate create
+      - name: EdgeDB Clear previous migration and Create a new database
         run: |
           rm -rf ./dbschema/migrations
-          edgedb database create ${{ matrix.WORKDIR.name }}
-          echo '[edgedb]\nserver-version = "${{env.SERVER_VERSION}}"' > edgedb.toml
+          edgedb $CON_PARAMS database create ${{ matrix.WORKDIR.name }}
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Migrate create
         run: |
-            edgedb ${{ env.CON_PARAMS }} migration create --non-interactive
+            edgedb $CON_PARAMS migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
         run: |
