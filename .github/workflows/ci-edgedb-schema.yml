@@ -41,3 +41,15 @@ jobs:
       - name: Dump docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v1
+      - name: Make zip file from the final migrations and schema
+        run: |
+          zip -r ${{ matrix.WORKDIR.name }}.zip ${{ matrix.WORKDIR.dir }}
+      - name: Upload Zip file to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.WORKDIR.name }}.zip
+          asset_name: ${{ matrix.WORKDIR.name }}.zip
+          tag: "${{ matrix.WORKDIR.name }}.zip"
+          overwrite: true
+          body: "${{ matrix.WORKDIR.name }}.zip"
