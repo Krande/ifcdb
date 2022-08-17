@@ -23,10 +23,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        update-environment: true
     - name: Renumber version
       run: "sed -i 's/(0, 0, 99)/(${{ env.major }}, ${{ env.minor }}, ${{ env.patch }})/g' ${{env.blender_client_dir}}/addons/${{ env.dir_name }}/__init__.py"
     - name: Add Dependencies to Package
       run: cd ${{env.blender_client_dir}} && python add_packages_to_lib.py
+      env:
+        pythonLocation: $pythonLocation
     - name: Build
       run: cd ${{env.blender_client_dir}}/addons/${{env.tmp_dir}} && zip -r ${{env.name}}.zip ${{env.dir_name}}
     - name: Copy2Dist
