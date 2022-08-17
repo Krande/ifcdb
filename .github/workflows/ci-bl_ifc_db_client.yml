@@ -1,4 +1,4 @@
-name: Publish-StruUtils
+name: Publish-bl_ifcdb_client
 
 on:
   push:
@@ -14,6 +14,7 @@ env:
   name: IfcDbClient
   tmp_dir: _dist
   blender_client_dir: src/client/blender_client
+
 
 jobs:
   build:
