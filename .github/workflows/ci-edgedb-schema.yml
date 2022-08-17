@@ -26,19 +26,24 @@ jobs:
           { name: basic, dir: "src/server/schema/partial_schemas/db/basic" },
           { name: complete, dir: "src/server/schema/complete_schema" }
         ]
+    env:
+      EDGEDB_DATABASE: "${{ matrix.WORKDIR.name }}"
     steps:
       - uses: actions/checkout@v2
       - uses: edgedb/setup-edgedb@v1
       - name: EdgeDB Migrate create
         run: |
-            rm -rf ./dbschema/migrations
-            edgedb database create ${{ matrix.WORKDIR.name }}
-            echo '[edgedb]\nserver-version = "${{env.SERVER_VERSION}}"' > edgedb.toml
-            edgedb ${{ env.CON_PARAMS }} --database=${{ matrix.WORKDIR.name }} migration create --non-interactive
+          rm -rf ./dbschema/migrations
+          edgedb database create ${{ matrix.WORKDIR.name }}
+          echo '[edgedb]\nserver-version = "${{env.SERVER_VERSION}}"' > edgedb.toml
+        working-directory: ${{ matrix.WORKDIR.dir }}
+      - name: EdgeDB Migrate create
+        run: |
+            edgedb ${{ env.CON_PARAMS }} migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
         run: |
-          edgedb $CON_PARAMS --database=${{ matrix.WORKDIR.name }} migration apply
+          edgedb $CON_PARAMS migration apply
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: Dump docker logs on failure
         if: failure()
