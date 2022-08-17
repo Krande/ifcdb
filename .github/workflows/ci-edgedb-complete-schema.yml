@@ -18,11 +18,12 @@ jobs:
           - 5656:5656
     steps:
       - uses: actions/checkout@v2
+#      - uses: edgedb/setup-edgedb@v1
+#      - name: EdgeDB Migrate create
+#        run: |
+#            edgedb --tls-security=insecure -P 5656 migration create
+#        working-directory: ${{ env.WORKDIR }}
       - uses: edgedb/setup-edgedb@v1
-      - name: EdgeDB Migrate create
-        run: | 
-            edgedb --tls-security=insecure -P 5656 migration create
-        working-directory: ${{ env.WORKDIR }}
       - name: EdgeDB Migrate apply
         run: |
           edgedb --tls-security=insecure -P 5656 migrate
