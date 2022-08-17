@@ -4,11 +4,12 @@ on: push
 
 env:
   WORKDIR: src/server/schema/partial_schemas/db/basic
+  CON_PARAMS: --tls-security=insecure -P 5656
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: CI with EdgeDB action
+    name: EdgeDB schema - "${{ matrix.WORKDIR.name }}"
     services:
       edgedb:
         image: edgedb/edgedb:2.1
@@ -16,14 +17,21 @@ jobs:
           EDGEDB_SERVER_SECURITY: insecure_dev_mode
         ports:
           - 5656:5656
+    strategy:
+      fail-fast: false
+      matrix:
+        WORKDIR: [
+          { name: basic, dir: "src/server/schema/partial_schemas/db/basic" },
+          { name: basic, dir: "src/server/schema/complete_schema" }
+        ]
     steps:
       - uses: actions/checkout@v2
       - uses: edgedb/setup-edgedb@v1
-#      - name: EdgeDB Migrate create
-#        run: |
-#            edgedb --tls-security=insecure -P 5656 migration create
-#        working-directory: ${{ env.WORKDIR }}
-      - name: EdgeDB Migrate apply
+      - name: EdgeDB Migrate create
         run: |
-          edgedb --tls-security=insecure -P 5656 migrate
-        working-directory: ${{ env.WORKDIR }}
+            edgedb $CON_PARAMS migration create --non-interactive
+        working-directory: ${{ matrix.WORKDIR.dir }}
+      - name: EdgeDB Apply Migration
+        run: |
+          edgedb $CON_PARAMS migration apply
+        working-directory: ${{ matrix.WORKDIR.dir }}

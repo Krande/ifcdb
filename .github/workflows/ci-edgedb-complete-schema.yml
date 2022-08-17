@@ -4,6 +4,7 @@ on: push
 
 env:
   WORKDIR: src/server/schema/complete_schema
+  CON_PARAMS: --tls-security=insecure -P 5656
 
 jobs:
   test:
@@ -21,10 +22,10 @@ jobs:
 #      - uses: edgedb/setup-edgedb@v1
 #      - name: EdgeDB Migrate create
 #        run: |
-#            edgedb --tls-security=insecure -P 5656 migration create
+#            edgedb --tls-security=insecure -P 5656 migration create --non-interactive
 #        working-directory: ${{ env.WORKDIR }}
       - uses: edgedb/setup-edgedb@v1
-      - name: EdgeDB Migrate apply
+      - name: EdgeDB Apply Migration
         run: |
-          edgedb --tls-security=insecure -P 5656 migrate
+          edgedb --tls-security=insecure -P 5656 migration apply
         working-directory: ${{ env.WORKDIR }}
