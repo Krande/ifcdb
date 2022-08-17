@@ -34,11 +34,11 @@ jobs:
             rm -rf ./dbschema/migrations
             edgedb database create ${{ matrix.WORKDIR.name }}
             echo '[edgedb]\nserver-version = "${{env.SERVER_VERSION}}"' > edgedb.toml
-            edgedb $CON_PARAMS -d=${{ matrix.WORKDIR.name }} migration create --non-interactive
+            edgedb ${{ env.CON_PARAMS }} --database=${{ matrix.WORKDIR.name }} migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
         run: |
-          edgedb $CON_PARAMS -d=${{ matrix.WORKDIR.name }} migration apply
+          edgedb $CON_PARAMS --database=${{ matrix.WORKDIR.name }} migration apply
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: Dump docker logs on failure
         if: failure()
