@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
-import requests
 
 import bpy
+import requests
 
 
 def get_ifc_store():
@@ -22,14 +24,29 @@ def run_listener():
     QueueClient.from_connection_string(os.environ.get("AZ_QUEUE_CONN_STR"), os.environ.get("AZ_QUEUE_NAME"))
 
 
+def create_session(context) -> requests.Session | None:
+    props = context.scene.IfcDb_Connection_Props
+    token = props.conn_jwt_token
+    if token == "":
+        print("No token found. Logging User into Azure")
+        props.conn_jwt_token = login_and_get_access_token()
+        token = props.conn_jwt_token
+
+    s = requests.Session()
+    s.headers = {"Authorization": f"Bearer {token}"}
+
+    return s
+
+
 def login_and_get_access_token() -> str:
     from azure.identity import InteractiveBrowserCredential
 
     cred = InteractiveBrowserCredential(
         client_id=os.environ.get("AZ_BL_API_CLIENT_ID"), tenant_id=os.environ.get("AZ_TENANT_ID")
     )
-
-    return cred.get_token(f'api://{os.environ.get("AZ_CLIENT_ID")}/.default').token
+    token = cred.get_token(f'api://{os.environ.get("AZ_CLIENT_ID")}/.default').token
+    print('Succesfully Logged into Azure')
+    return token
 
 
 class IfcDb_Login_Operator(bpy.types.Operator):
@@ -52,15 +69,12 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
     def execute(self, context):
         print("Pulling of IFC data should start now")
         props = context.scene.IfcDb_Connection_Props
-        token = props.conn_jwt_token
-        if token == "":
-            print("Please Log in first")
-            return {"FINISHED"}
         api_url = props.conn_api_url
+        s = create_session(context)
+        if s is None:
+            return {"FINISHED"}
 
-        r = requests.get(
-            f"{api_url}/users", headers={"Authorization": f"Bearer {token}"}, params={"dbname": props.db_name}
-        )
+        r = s.get(f"{api_url}/users", params={"dbname": props.db_name})
         print("REST RESPONSE: " + r.text)
 
         return {"FINISHED"}
@@ -74,16 +88,10 @@ class IfcDb_Push_Operator(bpy.types.Operator):
     def execute(self, context):
         print("Pushing of IFC data should start now")
         props = context.scene.IfcDb_Connection_Props
-        token = props.conn_jwt_token
-        if token == "":
-            print("Please Log in first")
-            return {"FINISHED"}
-
         api_url = props.conn_api_url
-        print(f'Pushing User as IfcPerson to "{props.db_name}"')
-        r = requests.post(
-            f"{api_url}/users", headers={"Authorization": f"Bearer {token}"}, params={"dbname": props.db_name}
-        )
+
+        s = create_session(context)
+        r = s.post(f"{api_url}/users", params={"dbname": props.db_name})
         print("REST RESPONSE: " + r.text)
 
         return {"FINISHED"}
@@ -95,20 +103,18 @@ class IfcDb_Live_Operator(bpy.types.Operator):
     bl_description = "Listen to live updates from the IfcDb"
 
     def execute(self, context):
-        props = context.scene.IfcDb_Connection_Props
-        token = props.conn_jwt_token
-        if token == "":
-            print("Please Log in first")
-            return {"FINISHED"}
+        # props = context.scene.IfcDb_Connection_Props
+        # s = create_session(context)
         run_listener()
 
         return {"FINISHED"}
 
 
 def push_objects():
-    """Simple example where this loops over geometries and exports them """
-    from blenderbim.bim.ifc import IfcStore
+    """Simple example where this loops over geometries and exports them"""
     import ifcopenshell
+    from blenderbim.bim.ifc import IfcStore
+
     # from blenderbim import tool
     # import blenderbim.core.geometry as core
     meshes = dict()
