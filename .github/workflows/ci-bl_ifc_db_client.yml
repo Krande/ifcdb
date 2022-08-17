@@ -31,7 +31,7 @@ jobs:
     - name: Add Dependencies to Package
       run: cd ${{env.blender_client_dir}} && python add_packages_to_lib.py
       env:
-        pythonLocation: ${{env.$pythonLocation}}
+        pythonLocation: ${{env.pythonLocation}}
     - name: Build
       run: cd ${{env.blender_client_dir}}/addons/${{env.tmp_dir}} && zip -r ${{env.name}}.zip ${{env.dir_name}}
     - name: Copy2Dist
