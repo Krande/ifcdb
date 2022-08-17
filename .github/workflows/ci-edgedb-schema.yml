@@ -1,6 +1,9 @@
 name: ci-ifc-edgedb-schema
 
-on: push
+on:
+  push:
+    paths:
+      - src/server/schema/**
 
 env:
   WORKDIR: src/server/schema/partial_schemas/db/basic
@@ -55,7 +58,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ matrix.WORKDIR.name }}.zip
-          asset_name: ${{ matrix.WORKDIR.name }}.zip
-          tag: "${{ matrix.WORKDIR.name }}.zip"
+          asset_name: IFC-schema-${{ matrix.WORKDIR.name }}.zip
+          tag: "IFC-schema-${{ matrix.WORKDIR.name }}"
           overwrite: true
-          body: "${{ matrix.WORKDIR.name }}.zip"
+          body: "IFC-schema-${{ matrix.WORKDIR.name }}"

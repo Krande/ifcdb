@@ -12,6 +12,7 @@ classes = [
     operator.IfcDb_Live_Operator,
     # Panels
     panel.IFC_DB_MAIN_PT_Panel,
+    panel.IFC_DB_CLIENT_preferences
 ]
 
 
