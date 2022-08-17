@@ -29,6 +29,7 @@ jobs:
       - uses: edgedb/setup-edgedb@v1
       - name: EdgeDB Migrate create
         run: |
+            rm -rf ./dbschema/migrations
             edgedb $CON_PARAMS migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
