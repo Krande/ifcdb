@@ -28,13 +28,14 @@ jobs:
         WORKDIR: [
           { name: basic, dir: "src/server/schema/partial_schemas/db/basic", use_python: false },
 #          { name: complete, dir: "src/server/schema/complete_schema", use_python: false }
-          { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: false }
+          { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: true }
         ]
     env:
       EDGEDB_DATABASE: "${{ matrix.WORKDIR.name }}"
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2  # https://github.com/conda-incubator/setup-miniconda
+        if: ${{ matrix.WORKDIR.use_python == 'true' }}
         with:
           activate-environment: ifcdb
           python-version: 3.10.5
