@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - src/server/schema/**
-
+      - .github/workflows/ci-edgedb-schema.yml
 env:
   WORKDIR: src/server/schema/partial_schemas/db/basic
   CON_PARAMS: --tls-security=insecure -P 5656
