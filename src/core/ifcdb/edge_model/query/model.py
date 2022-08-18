@@ -224,7 +224,7 @@ class EdgeIOBase:
 
         chunks = []
         for i in range(0, len(all_ents), batch_size):
-            chunks.append(all_ents[i: i + batch_size])
+            chunks.append(all_ents[i : i + batch_size])
 
         current_schema = []
         start = time.time()
@@ -268,7 +268,10 @@ class EdgeIOBase:
             print(class_name)
 
     def migration_create(self, dbschema_dir):
-        server_prefix = f"edgedb {self.cli_prefix} migration create --non-interactive"
+        dsn = os.getenv("EDGEDB_DSN")
+        cli_prefix = self.cli_prefix if dsn is None else ""
+
+        server_prefix = f"edgedb {cli_prefix} migration create --non-interactive"
 
         schema_dir = None
         if dbschema_dir.name != "dbschema":
@@ -286,7 +289,9 @@ class EdgeIOBase:
         print("CLI command 'migration create' complete")
 
     def migration_apply(self, dbschema_dir):
-        server_prefix = f"edgedb {self.cli_prefix} migration apply"
+        dsn = os.getenv("EDGEDB_DSN")
+        cli_prefix = self.cli_prefix if dsn is None else ""
+        server_prefix = f"edgedb {cli_prefix} migration apply"
 
         schema_dir = None
         if dbschema_dir.name != "dbschema":
