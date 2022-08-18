@@ -149,15 +149,20 @@ class WithNode:
     query_str: str
 
 
+class MigrationCreateError(Exception):
+    pass
+
+
 @dataclass
 class EdgeIOBase:
     ifc_file: str | pathlib.Path = None
     ifc_io: IfcIO = None
     ifc_schema: str = None
     db_schema_dir: str | pathlib.Path = "dbschema"
-    em: EdgeModel = None
+    _em: EdgeModel = None
     _client: edgedb.Client = None
     database: str = None
+    credentials_file: str = None
     port: int | None = 5656
     instance_name: str = None
     eq_builder: EQBuilder = None
@@ -177,7 +182,13 @@ class EdgeIOBase:
             self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
 
     def create_client(self, database=None) -> edgedb.Client:
-        client = edgedb.create_client(self.conn_str, tls_security="insecure", database=database)
+        props = dict(tls_security="insecure")
+        if self.credentials_file is not None:
+            props["credentials_file"] = self.credentials_file
+        else:
+            props.update(dict(dsn=self.conn_str, database=database))
+
+        client = edgedb.create_client(**props)
         try:
             self.eq_builder = EQBuilder(client)
         except edgedb.errors.UnknownDatabaseError as e:
@@ -195,21 +206,36 @@ class EdgeIOBase:
         client.execute(f"DROP DATABASE {self.database}")
         return False
 
-    def create_complete_schema_stepwise(
-        self,
-        dbschema_dir=None,
-        module_name="default",
-    ):
+    def stepwise_migration(self, entities: list[str] = None, dbschema_dir=None, module_name="default", batch_size=100):
         if dbschema_dir is not None:
             dbschema_dir = pathlib.Path(dbschema_dir).resolve().absolute()
         else:
             dbschema_dir = self.db_schema_dir
 
-        if self.em is None:
-            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
+        esdl_file_path = dbschema_dir / "default.esdl"
 
-        unique_entities = self.em.get_all_entities()
-        return self.em.get_related_entities(unique_entities)
+        self.em.modify_circular_deps = True
+        if entities is None:
+            unique_entities = self.em.get_all_entities()
+        else:
+            unique_entities = entities
+
+        all_ents = self.em.get_related_entities(unique_entities)
+
+        chunks = []
+        for i in range(0, len(all_ents), batch_size):
+            chunks.append(all_ents[i: i + batch_size])
+
+        current_schema = []
+        start = time.time()
+        for i, chunk in enumerate(chunks, start=1):
+            current_schema += chunk
+            self.em.write_entities_to_esdl_file(current_schema, esdl_file_path, module_name)
+            self.migration_create(dbschema_dir)
+            self.migration_apply(dbschema_dir)
+            t_fin = time.time()
+            print(f"Finished with step {i} of {len(chunks)} in {t_fin-start:.1f} seconds")
+            start = t_fin
 
     def create_schema(
         self, dbschema_dir=None, module_name="default", from_ifc_file=None, from_ifc_schema=None, from_ifc_entities=None
@@ -226,8 +252,6 @@ class EdgeIOBase:
         elif from_ifc_schema is not None or self.ifc_schema is not None:
             if from_ifc_schema is not None:
                 self.ifc_schema = from_ifc_schema
-            if self.em is None:
-                self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
             unique_entities = self.em.get_all_entities()
         else:
             raise ValueError('Either pass IFC file or set the "from_ifc_schema" variable to a valid IFC schema version')
@@ -242,6 +266,40 @@ class EdgeIOBase:
             print("The following intermediate classes was created to enable nested entity relationships")
         for class_name in self.em.intermediate_classes:
             print(class_name)
+
+    def migration_create(self, dbschema_dir):
+        server_prefix = f"edgedb {self.cli_prefix} migration create --non-interactive"
+
+        schema_dir = None
+        if dbschema_dir.name != "dbschema":
+            schema_dir = dbschema_dir.name
+
+        if schema_dir is not None:
+            server_prefix += f"--schema-dir ./{schema_dir}"
+
+        print(f'Create Migration using CLI command "{server_prefix}" @"{dbschema_dir}"')
+        res = subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")
+        if res.stderr != "":
+            print(res.stderr)
+            if "error: " in res.stderr:
+                raise MigrationCreateError
+        print("CLI command 'migration create' complete")
+
+    def migration_apply(self, dbschema_dir):
+        server_prefix = f"edgedb {self.cli_prefix} migration apply"
+
+        schema_dir = None
+        if dbschema_dir.name != "dbschema":
+            schema_dir = dbschema_dir.name
+
+        if schema_dir is not None:
+            server_prefix += f"--schema-dir ./{schema_dir}"
+
+        print(f'Applying Migration using CLI command "{server_prefix}" @"{dbschema_dir}"')
+        res = subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")
+        if res.stderr != "":
+            print(res.stderr)
+        print("CLI command 'migration apply' complete")
 
     def setup_database(self, dbschema_dir=None, delete_existing_migrations=False):
         if dbschema_dir is not None:
@@ -312,8 +370,6 @@ class EdgeIOBase:
     def load_ifc(self, ifc_file):
         self.ifc_io = IfcIO(ifc_file=ifc_file)
         self.ifc_schema = self.ifc_io.schema
-        if self.em is None:
-            self.em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
 
     def import_ifc_entities_w_related(self):
         ifc_ents = self.ifc_io.get_unique_class_entities_of_ifc_content()
@@ -515,7 +571,9 @@ class EdgeIOBase:
 
     @property
     def cli_prefix(self):
-        if self.instance_name is None:
+        if self.credentials_file is not None:
+            return f"--credentials-file={self.credentials_file} --tls-security=insecure"
+        elif self.instance_name is None:
             return f"--tls-security=insecure -P {self.port}"
         else:
             return f"-I {self.instance_name}"
@@ -525,6 +583,13 @@ class EdgeIOBase:
         if self._client is None:
             self._client = self.create_client(self.database)
         return self._client
+
+    @property
+    def em(self) -> EdgeModel:
+        if self._em is None:
+            self._em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
+        return self._em
+
 
 @dataclass
 class EdgeIO(EdgeIOBase):

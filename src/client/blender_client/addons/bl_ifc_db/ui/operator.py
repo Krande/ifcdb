@@ -121,8 +121,8 @@ def push_objects():
     ifc_file = IfcStore.get_file()
     for obj in IfcStore.id_map.values():
         ifc_elem = IfcStore.get_file().by_id(obj.BIMObjectProperties.ifc_definition_id)
-        # assert isinstance(ifc_elem, ifcopenshell.entity_instance)
-        res = ifc_elem.get_info_2()
+        assert isinstance(ifc_elem, ifcopenshell.entity_instance)
+        res = ifc_elem.get_info_2(recursive=True)
         print(res)
         print(ifc_elem)
         if obj.type == "MESH":

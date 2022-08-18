@@ -26,24 +26,39 @@ jobs:
       fail-fast: false
       matrix:
         WORKDIR: [
-          { name: basic, dir: "src/server/schema/partial_schemas/db/basic" },
-          { name: complete, dir: "src/server/schema/complete_schema" }
+          { name: basic, dir: "src/server/schema/partial_schemas/db/basic", use_python: false },
+#          { name: complete, dir: "src/server/schema/complete_schema", use_python: false }
+          { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: false }
         ]
     env:
       EDGEDB_DATABASE: "${{ matrix.WORKDIR.name }}"
     steps:
       - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2  # https://github.com/conda-incubator/setup-miniconda
+        with:
+          activate-environment: ifcdb
+          python-version: 3.10.5
+          channel-priority: strict
+          environment-file: environment.dev.yml
+          auto-update-conda: true
       - uses: edgedb/setup-edgedb@v1
+      - name: EdgeDB Run using python
+        if: ${{ matrix.WORKDIR.name == 'true' }}
+        run: |
+          python ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Clear previous migration and Create a new database
+        if: ${{ matrix.WORKDIR.name == 'false' }}
         run: |
           rm -rf ./dbschema/migrations
           edgedb $CON_PARAMS database create ${{ matrix.WORKDIR.name }}
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Migrate create
+        if: ${{ matrix.WORKDIR.name == 'false' }}
         run: |
-            edgedb $CON_PARAMS migration create --non-interactive
+          edgedb $CON_PARAMS migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
+        if: ${{ matrix.WORKDIR.name == 'false' }}
         run: |
           edgedb $CON_PARAMS migration apply
         working-directory: ${{ matrix.WORKDIR.dir }}

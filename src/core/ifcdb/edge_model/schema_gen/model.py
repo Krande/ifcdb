@@ -36,8 +36,7 @@ class IntermediateClass:
         ptype = self.source_attribute.array_ref().parameter_type
         return f"{ptype.name}s"
 
-    @property
-    def type_str(self):
+    def to_str(self):
         ptype = self.source_attribute.array_ref().parameter_type
         return f"""\n    type {self.name} {{ required multi link {self.att_name} -> {ptype.name} }}\n"""
 
@@ -271,31 +270,28 @@ class EntityEdgeModel(EntityBaseEdgeModel):
         return {attref.name(): derived for derived, attref in zip(derived, attributes)}
 
     def get_attributes(self, include_inherited_attributes=False) -> list[AttributeEdgeModel]:
-        if self._attributes is None or include_inherited_attributes is True:
-            atts = []
-            att_list = (
-                self.entity.attributes() if include_inherited_attributes is False else self.entity.all_attributes()
-            )
+        atts = []
+        att_list = self.entity.attributes() if include_inherited_attributes is False else self.entity.all_attributes()
 
-            dmap = {x.name(): False for x in att_list}
-            for child_entity in self.get_children():
-                child_dmap = child_entity.get_derive_map()
-                if child_dmap is None:
+        dmap = {x.name(): False for x in att_list}
+        for child_entity in self.get_children():
+            child_dmap = child_entity.get_derive_map()
+            if child_dmap is None:
+                continue
+            for key, value in child_dmap.items():
+                if value is False and key in dmap.keys():
                     continue
-                for key, value in child_dmap.items():
-                    if value is False and key in dmap.keys():
-                        continue
-                    dmap[key] = value
+                dmap[key] = value
 
-            for att in att_list:
-                att_name = att.name()
-                if self.edge_model.modify_circular_deps is True:
-                    if self._skip_due_to_circular_deps(att_name):
-                        continue
-                derived_data = dmap.get(att_name, None)
-                atts.append(AttributeEdgeModel(self.edge_model, att, derived=derived_data))
-            self._attributes = atts
-        return self._attributes
+        for att in att_list:
+            att_name = att.name()
+            if self.edge_model.modify_circular_deps is True:
+                if self._skip_due_to_circular_deps(att_name):
+                    continue
+            derived_data = dmap.get(att_name, None)
+            atts.append(AttributeEdgeModel(self.edge_model, att, derived=derived_data))
+
+        return atts
 
     def get_ancestors(self) -> list[EntityEdgeModel]:
         parents = []
@@ -373,7 +369,7 @@ class EntityEdgeModel(EntityBaseEdgeModel):
             if att.needs_intermediate_class_str is True:
                 imc = att.get_intermediate_array_class()
                 if imc.written_to_file is False:
-                    intermediate_classes_str += imc.type_str
+                    intermediate_classes_str += imc.to_str()
                     imc.written_to_file = True
         return f"""{intermediate_classes_str}
     {prop_prefix}type {name} {parent_str} {{
@@ -410,11 +406,14 @@ class EnumEdgeModel(EntityBaseEdgeModel):
 class TypeEdgeModel(EntityBaseEdgeModel):
     entity: wrap.type_declaration = field(repr=False)
 
-    def is_aggregate(self):
+    def get_cur_decl(self):
         cur_decl = self.entity
         while hasattr(cur_decl, "declared_type") is True:
             cur_decl = cur_decl.declared_type()
+        return cur_decl
 
+    def is_aggregate(self):
+        cur_decl = self.get_cur_decl()
         return isinstance(cur_decl, wrap.aggregation_type)
 
     def to_insert_str(
@@ -512,11 +511,12 @@ class EdgeModel:
 
     def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree
-
         entity_model = self.get_entity_by_name(entity_name)
-        res = entity_model.entity
-
-        name = res.name()
+        if isinstance(entity_model, IntermediateClass):
+            name = entity_model.name
+        else:
+            res = entity_model.entity
+            name = res.name()
 
         if name not in dep_tree.keys():
             dep_tree[name] = []
@@ -528,9 +528,15 @@ class EdgeModel:
                     dep_tree[name].append(ancestor_name)
                     if search_recursively is True:
                         self._find_dependencies(ancestor_name, dep_tree)
-
             for att in entity_model.get_attributes():
-                entity = att.get_type_ref()
+                if att.needs_intermediate_class_str is True:
+                    entity = self.get_entity_by_name(att.intermediate_class_name)
+                    entity_name = entity.name
+                    if entity_name not in dep_tree[name]:
+                        dep_tree[name].append(entity_name)
+                    continue
+                else:
+                    entity = att.get_type_ref()
                 if isinstance(entity, ArrayEdgeModel):
                     entity = entity.parameter_type
 
@@ -551,6 +557,21 @@ class EdgeModel:
                     if search_recursively is True:
                         self._find_dependencies(entity_name, dep_tree)
 
+        elif isinstance(entity_model, TypeEdgeModel):
+            en = entity_model.get_cur_decl()
+            if isinstance(en, wrap.aggregation_type):
+                res = en.type_of_element()
+                entity = res.declared_type()
+                if not isinstance(entity, str):
+                    entity_name = entity.name()
+                    if isinstance(entity_name, str) and entity_name not in dep_tree[name]:
+                        dep_tree[name].append(entity_name)
+                        if search_recursively is True:
+                            self._find_dependencies(entity_name, dep_tree)
+        elif isinstance(entity_model, EnumEdgeModel):
+            pass
+        else:
+            print(f'Skipping "{name}" -> {entity_model}')
         return dep_tree
 
     def get_all_types(self):
@@ -648,6 +669,8 @@ class EdgeModel:
 
     def entity_to_edge_str(self, entity: str) -> str:
         res = self.get_entity_by_name(entity)
+        if isinstance(res, IntermediateClass):
+            res.written_to_file = True
         return res.to_str()
 
     def get_entity_insert_str(

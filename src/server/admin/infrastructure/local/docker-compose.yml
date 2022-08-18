@@ -5,6 +5,9 @@ services:
     environment:
       EDGEDB_SERVER_SECURITY: insecure_dev_mode
       EDGEDB_DOCKER_LOG_LEVEL: debug
+      EDGEDB_SERVER_EXTRA_ARGS: --admin-ui=enabled
+      EDGEDB_SERVER_USER: ifcdbadmin
+      EDGEDB_SERVER_PASSWORD: secret
     volumes:
       - "./dbschema:/dbschema"
     ports:
