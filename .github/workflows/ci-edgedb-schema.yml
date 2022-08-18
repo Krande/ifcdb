@@ -43,22 +43,22 @@ jobs:
           auto-update-conda: true
       - uses: edgedb/setup-edgedb@v1
       - name: EdgeDB Run using python
-        if: ${{ matrix.WORKDIR.name == 'true' }}
+        if: ${{ matrix.WORKDIR.use_python == 'true' }}
         run: |
           python ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Clear previous migration and Create a new database
-        if: ${{ matrix.WORKDIR.name == 'false' }}
+        if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
           rm -rf ./dbschema/migrations
           edgedb $CON_PARAMS database create ${{ matrix.WORKDIR.name }}
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Migrate create
-        if: ${{ matrix.WORKDIR.name == 'false' }}
+        if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
           edgedb $CON_PARAMS migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
-        if: ${{ matrix.WORKDIR.name == 'false' }}
+        if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
           edgedb $CON_PARAMS migration apply
         working-directory: ${{ matrix.WORKDIR.dir }}
