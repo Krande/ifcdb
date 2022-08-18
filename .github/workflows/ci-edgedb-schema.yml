@@ -48,7 +48,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python -m pip install --no-deps --ignore-installed .
-      - name: EdgeDB Run using python
+      - name: EdgeDB Perform Migrations using python
         if: ${{ matrix.WORKDIR.use_python == 'true' }}
         shell: bash -l {0}
         run: |

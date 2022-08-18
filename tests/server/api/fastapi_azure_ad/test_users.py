@@ -1,33 +1,20 @@
-"""
-Currently these tests use the same database that the app uses.
-In a real application, you'd want to patch the 'client' to use a
-separate database.
-
-"""
-
-from http import HTTPStatus
-
-import pytest
-from app.main import fast_api
 from httpx import AsyncClient
-
-BASE_URL = "http://localhost:5000"
-
-
-@pytest.mark.anyio
-async def test_get_users():
-    async with AsyncClient(app=fast_api, base_url=BASE_URL) as client:
-        response = await client.get("/users")
-    assert response.status_code == HTTPStatus.OK
+import pytest
 
 
-# Post test doesn't work for some weird bug, most likely an edgedb client bug.
+@pytest.mark.asyncio
+async def test_auth_view(client: AsyncClient):
+    response = await client.get("api/v1/hello")
+    assert response.status_code == 200
 
-# @pytest.mark.anyio
-# async def test_post_user():
-#     async with AsyncClient(app=fast_api, base_url=BASE_URL) as client:
-#         response = await client.post(
-#             "/users", json={"name": "test"}
-#         )
-#     assert response.status_code == HTTPStatus.CREATED
-#     assert response.json()["name"] == "test"
+
+@pytest.mark.asyncio
+async def test_auth_view_not_admin(normal_user_client: AsyncClient):
+    response = await normal_user_client.get("api/v1/hello-admin")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_auth_view_admin(admin_user_client: AsyncClient):
+    response = await admin_user_client.get("api/v1/hello-admin")
+    assert response.status_code == 200

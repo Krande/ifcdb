@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import os
-
 import bpy
+import os
 import requests
 
-
-def get_ifc_store():
-    # Assuming you already have blenderbim installed
-    from blenderbim.bim.ifc import IfcStore
-
-    return IfcStore
+import blenderbim.core.project as core
+import blenderbim.tool as tool
+from blenderbim.bim.ifc import IfcStore
 
 
 def run_listener():
@@ -45,7 +41,7 @@ def login_and_get_access_token() -> str:
         client_id=os.environ.get("AZ_BL_API_CLIENT_ID"), tenant_id=os.environ.get("AZ_TENANT_ID")
     )
     token = cred.get_token(f'api://{os.environ.get("AZ_CLIENT_ID")}/.default').token
-    print('Succesfully Logged into Azure')
+    print("Successfully Logged into Azure")
     return token
 
 
@@ -55,10 +51,37 @@ class IfcDb_Login_Operator(bpy.types.Operator):
     bl_description = "Login"
 
     def execute(self, context):
-        print("User Login shall take place here")
-        scene = context.scene
-        scene.IfcDb_Connection_Props.conn_jwt_token = login_and_get_access_token()
+        props = context.scene.IfcDb_Connection_Props
+
+        s = create_session(context)
+        # Use token to query the REST /users endpoint to add user as IfcPerson to IfcDb and return the class as json
+        r = s.post(f"{props.conn_api_url}/users", params={"dbname": props.db_name})
+        user_data = r.json()
+
+        # Initialize a project
+        IfcStore.begin_transaction(self)
+        IfcStore.add_transaction_operation(self, rollback=self.rollback, commit=lambda data: True)
+        self._execute(context)
+        self.transaction_data = {"file": tool.Ifc.get()}
+        IfcStore.add_transaction_operation(self, rollback=lambda data: True, commit=self.commit)
+        IfcStore.end_transaction(self)
+
+        ifc = IfcStore.get_file()
+        person = ifc.createIfcPerson(**user_data)
+        bpy.context.scene.BIMOwnerProperties.active_person_id = person.id()
+
         return {"FINISHED"}
+
+    def _execute(self, context):
+        props = context.scene.BIMProjectProperties
+        template = None if props.template_file == "0" else props.template_file
+        core.create_project(tool.Ifc, tool.Project, schema=props.export_schema, template=template)
+
+    def rollback(self, data):
+        IfcStore.file = None
+
+    def commit(self, data):
+        IfcStore.file = data["file"]
 
 
 class IfcDb_Pull_Operator(bpy.types.Operator):
