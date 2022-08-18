@@ -45,12 +45,13 @@ jobs:
       - uses: edgedb/setup-edgedb@v1
       - name: Install python package
         if: ${{ matrix.WORKDIR.use_python == 'true' }}
+        shell: bash -l {0}
         run: |
           python -m pip install --no-deps --ignore-installed .
       - name: EdgeDB Run using python
         if: ${{ matrix.WORKDIR.use_python == 'true' }}
+        shell: bash -l {0}
         run: |
-          
           python ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Clear previous migration and Create a new database
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
