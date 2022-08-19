@@ -160,7 +160,7 @@ class EdgeIOBase:
     ifc_schema: str = None
     db_schema_dir: str | pathlib.Path = "dbschema"
     _em: EdgeModel = None
-    _client: edgedb.Client = None
+    _client: edgedb.Client | edgedb.AsyncIOClient = None
     database: str = None
     credentials_file: str = None
     port: int | None = 5656
@@ -388,7 +388,7 @@ class EdgeIOBase:
             self.client.close()
 
     # IFC utils
-    def load_ifc(self, from_path: str, from_str: str):
+    def load_ifc(self, from_path: str=None, from_str: str=None):
         self.ifc_io = IfcIO(ifc_file=from_path, ifc_str=from_str)
         self.ifc_schema = self.ifc_io.schema
 
@@ -427,13 +427,12 @@ class EdgeIOBase:
     def _insert_items_sequentially(self, ifc_items: [ifcopenshell.entity_instance],  tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
         from .utils import get_att_insert_str
 
-
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
             if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
                 continue
-            entity = self.em.get_entity_by_name(item.is_a())
 
+            entity = self.em.get_entity_by_name(item.is_a())
             all_atts = entity.get_entity_atts(item)
             print(f'inserting ifc item ({i} of {len(ifc_items)}) "{item}"')
             # INSERT block

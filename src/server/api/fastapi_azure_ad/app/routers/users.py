@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from typing import Iterable
 
 from app.dependencies import azure_scheme
+from app.internal.database import get_client
 
 router = APIRouter()
 
@@ -33,7 +34,7 @@ IFCP_CONTENT = "FamilyName, GivenName, Identification, Roles, Addresses"
 
 @router.get("/users", dependencies=[Security(azure_scheme)])
 async def get_users(name: str = Query(None, max_length=50),user: User = Depends(azure_scheme), dbname: str = None) -> Iterable[IfcPerson]:
-    client = edgedb.create_async_client(database=dbname)
+    client = get_client(database=dbname)
     if not name:
         users = await client.query(f"SELECT IfcPerson {IFCP_CONTENT};")
     else:
@@ -61,7 +62,7 @@ async def get_users(name: str = Query(None, max_length=50),user: User = Depends(
 
 @router.post("/users", status_code=HTTPStatus.CREATED, dependencies=[Security(azure_scheme)])
 async def post_user(user: User = Depends(azure_scheme), dbname: str = None) -> IfcPerson:
-    client = edgedb.create_async_client(database=dbname)
+    client = get_client(database=dbname)
 
     (created_user,) = await client.query(
         """SELECT (
@@ -97,7 +98,7 @@ async def post_user(user: User = Depends(azure_scheme), dbname: str = None) -> I
 
 @router.put("/users", dependencies=[Security(azure_scheme)])
 async def put_user(user: IfcPerson, identification_name: str, dbname: str = None) -> Iterable[IfcPerson]:
-    client = edgedb.create_async_client(database=dbname)
+    client = get_client(database=dbname)
     try:
         updated_users = await client.query(
             """
@@ -127,7 +128,7 @@ async def put_user(user: IfcPerson, identification_name: str, dbname: str = None
 
 @router.delete("/users", dependencies=[Security(azure_scheme)])
 async def delete_user(id_name: str, dbname: str = None) -> Iterable[IfcPerson]:
-    client = edgedb.create_async_client(database=dbname)
+    client = get_client(database=dbname)
     try:
         deleted_users = await client.query(
             """SELECT (
