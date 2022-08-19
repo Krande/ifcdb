@@ -221,9 +221,9 @@ class EdgeIOBase:
             unique_entities = entities
 
         all_ents = self.em.get_related_entities(unique_entities)
-        # Filter out all Enum's as they are not used in the EdgeDB representation anyways
+        # Filter out all Enum's as they are not used in the EdgeDB representation
         def filter_out_enums(name: str):
-            if "Enum" in name and name != "IfcNullStyle":
+            if name.endswith("Enum"):
                 return False
             return True
 
@@ -258,7 +258,7 @@ class EdgeIOBase:
 
         esdl_file_path = dbschema_dir / "default.esdl"
         if from_ifc_file is not None:
-            self.load_ifc(ifc_file=from_ifc_file)
+            self.load_ifc(from_path=from_ifc_file)
             unique_entities = self.import_ifc_entities_w_related()
         elif from_ifc_schema is not None or self.ifc_schema is not None:
             if from_ifc_schema is not None:
@@ -388,8 +388,8 @@ class EdgeIOBase:
             self.client.close()
 
     # IFC utils
-    def load_ifc(self, ifc_file):
-        self.ifc_io = IfcIO(ifc_file=ifc_file)
+    def load_ifc(self, from_path: str, from_str: str):
+        self.ifc_io = IfcIO(ifc_file=from_path, ifc_str=from_str)
         self.ifc_schema = self.ifc_io.schema
 
     def import_ifc_entities_w_related(self):
@@ -424,11 +424,10 @@ class EdgeIOBase:
         unique_entities = self.import_ifc_entities_w_related()
         self.em.write_entities_to_esdl_file(unique_entities, esdl_file_path, module_name)
 
-    def _insert_items_sequentially(self, ifc_file, tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
+    def _insert_items_sequentially(self, ifc_items: [ifcopenshell.entity_instance],  tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
         from .utils import get_att_insert_str
 
-        self.load_ifc(ifc_file)
-        ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
+
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
             if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
@@ -768,12 +767,15 @@ class EdgeIO(EdgeIOBase):
         return json.loads(client.query_json(select_str))
 
     # Insertions
-    def insert_ifc(self, ifc_file, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
+    def insert_ifc(self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
         """Upload all IFC elements to EdgeDB instance"""
+        self.load_ifc(from_path=ifc_file_path, from_str=ifc_file_str)
+
         for tx in self.client.transaction():
             with tx:
                 if method == INSERTS.SEQ:
-                    self._insert_items_sequentially(ifc_file, tx, specific_ifc_ids)
+                    ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
+                    self._insert_items_sequentially(ifc_items, tx, specific_ifc_ids)
                 else:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 

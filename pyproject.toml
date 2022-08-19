@@ -27,3 +27,6 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
+
+[pytest]
+pythonpath = "src/server/api/fastapi_azure_ad"

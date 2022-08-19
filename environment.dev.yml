@@ -7,7 +7,6 @@ dependencies:
   - python==3.10.5
   - pyparsing
   - pytest
-  - pytest-asyncio
   - toposort
   - httpx
   - fastapi
@@ -22,3 +21,4 @@ dependencies:
       - azure-identity
       - pydantic[dotenv]
       - fake-bpy-module-3.2
+      - anyio[trio]

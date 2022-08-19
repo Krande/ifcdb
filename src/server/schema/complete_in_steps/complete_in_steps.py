@@ -15,7 +15,7 @@ def main():
     if database is not None:
         props["database"] = database
 
-    migrate_props = dict(batch_size=50)
+    migrate_props = dict(batch_size=600)
     if batch_size is not None:
         migrate_props["batch_size"] = int(batch_size)
 

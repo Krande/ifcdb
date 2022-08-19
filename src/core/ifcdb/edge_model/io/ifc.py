@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pathlib
 from dataclasses import dataclass
 
@@ -7,12 +8,16 @@ from toposort import toposort, toposort_flatten
 
 @dataclass
 class IfcIO:
-    ifc_file: str | pathlib.Path
+    ifc_file: str | pathlib.Path = None
+    ifc_str: str = None
     ifc_obj: ifcopenshell.file = None
     schema: str = None
 
     def __post_init__(self):
-        self.ifc_obj = ifcopenshell.open(str(self.ifc_file))
+        if self.ifc_file is not None:
+            self.ifc_obj = ifcopenshell.open(str(self.ifc_file))
+        else:
+            self.ifc_obj = ifcopenshell.file.from_string(self.ifc_str)
         self.schema = self.ifc_obj.wrapped_data.schema
 
     def get_ifc_dep_map(self, use_ids=True):
