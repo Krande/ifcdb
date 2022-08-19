@@ -1,5 +1,7 @@
 name: ci-ifc-edgedb-schema
 
+# Bump
+
 on:
   push:
     paths:
