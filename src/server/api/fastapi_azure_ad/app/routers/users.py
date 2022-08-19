@@ -32,7 +32,7 @@ IFCP_CONTENT = "FamilyName, GivenName, Identification, Roles, Addresses"
 
 
 @router.get("/users", dependencies=[Security(azure_scheme)])
-async def get_users(name: str = Query(None, max_length=50), dbname: str = None) -> Iterable[IfcPerson]:
+async def get_users(name: str = Query(None, max_length=50),user: User = Depends(azure_scheme), dbname: str = None) -> Iterable[IfcPerson]:
     client = edgedb.create_async_client(database=dbname)
     if not name:
         users = await client.query(f"SELECT IfcPerson {IFCP_CONTENT};")
