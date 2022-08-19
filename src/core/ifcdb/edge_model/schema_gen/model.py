@@ -534,6 +534,8 @@ class EdgeModel:
                     entity_name = entity.name
                     if entity_name not in dep_tree[name]:
                         dep_tree[name].append(entity_name)
+                        if search_recursively is True:
+                            self._find_dependencies(entity_name, dep_tree)
                     continue
                 else:
                     entity = att.get_type_ref()
@@ -570,6 +572,16 @@ class EdgeModel:
                             self._find_dependencies(entity_name, dep_tree)
         elif isinstance(entity_model, EnumEdgeModel):
             pass
+        elif isinstance(entity_model, IntermediateClass):
+            att_type = entity_model.source_attribute.att.type_of_attribute()
+            if isinstance(att_type, wrap.aggregation_type):
+                res = get_aggregation_type(att_type)
+                if isinstance(res, wrap.entity):
+                    entity_name = res.name()
+                    if entity_name not in dep_tree[name]:
+                        dep_tree[name].append(entity_name)
+                        if search_recursively is True:
+                            self._find_dependencies(entity_name, dep_tree)
         else:
             print(f'Skipping "{name}" -> {entity_model}')
         return dep_tree

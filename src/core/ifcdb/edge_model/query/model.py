@@ -221,15 +221,21 @@ class EdgeIOBase:
             unique_entities = entities
 
         all_ents = self.em.get_related_entities(unique_entities)
+        # Filter out all Enum's as they are not used in the EdgeDB representation anyways
+        def filter_out_enums(name: str):
+            if "Enum" in name and name != "IfcNullStyle":
+                return False
+            return True
 
+        filtered_ents = list(filter(filter_out_enums, all_ents))
         chunks = []
-        for i in range(0, len(all_ents), batch_size):
-            chunks.append(all_ents[i : i + batch_size])
+        for i in range(0, len(filtered_ents), batch_size):
+            chunks.append(filtered_ents[i : i + batch_size])
 
         current_schema = []
         start = time.time()
-        tmp_dir = dbschema_dir / '_temp_dir'
-        os.makedirs(tmp_dir)
+        tmp_dir = dbschema_dir / "_temp_dir"
+        os.makedirs(tmp_dir, exist_ok=True)
         for i, chunk in enumerate(chunks, start=1):
             current_schema += chunk
             self.em.write_entities_to_esdl_file(current_schema, esdl_file_path, module_name)
@@ -238,7 +244,9 @@ class EdgeIOBase:
             t_fin = time.time()
             print(f"Finished with step {i} of {len(chunks)} in {t_fin-start:.1f} s adding {len(chunk)} entities")
             start = t_fin
-            shutil.copy(esdl_file_path, tmp_dir / f'esdl_file.{i}')
+            shutil.copy(esdl_file_path, tmp_dir / f"esdl_file.{i}")
+            with open(tmp_dir / f"chunk_{i}.txt", "w") as f:
+                f.write("\n".join(chunk))
 
     def create_schema(
         self, dbschema_dir=None, module_name="default", from_ifc_file=None, from_ifc_schema=None, from_ifc_entities=None
@@ -270,7 +278,7 @@ class EdgeIOBase:
         for class_name in self.em.intermediate_classes:
             print(class_name)
 
-    def migration_create(self, dbschema_dir):
+    def migration_create(self, dbschema_dir, debug_logs=False):
         dsn = os.getenv("EDGEDB_DSN")
         cli_prefix = self.cli_prefix if dsn is None else ""
 
@@ -282,8 +290,10 @@ class EdgeIOBase:
 
         if schema_dir is not None:
             server_prefix += f"--schema-dir ./{schema_dir}"
-
-        print(f'Create Migration using CLI command "{server_prefix}" @"{dbschema_dir}"')
+        start_print = "Create Migration using CLI command"
+        if debug_logs:
+            start_print += f' "{server_prefix}" @"{dbschema_dir}"'
+        print(start_print)
         res = subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")
         if res.stderr != "":
             print(res.stderr)
@@ -291,7 +301,7 @@ class EdgeIOBase:
                 raise MigrationCreateError
         print("CLI command 'migration create' complete")
 
-    def migration_apply(self, dbschema_dir):
+    def migration_apply(self, dbschema_dir, debug_logs=False):
         dsn = os.getenv("EDGEDB_DSN")
         cli_prefix = self.cli_prefix if dsn is None else ""
         server_prefix = f"edgedb {cli_prefix} migration apply"
@@ -302,8 +312,11 @@ class EdgeIOBase:
 
         if schema_dir is not None:
             server_prefix += f"--schema-dir ./{schema_dir}"
+        start_print = f"Applying Migration using CLI command"
 
-        print(f'Applying Migration using CLI command "{server_prefix}" @"{dbschema_dir}"')
+        if debug_logs:
+            start_print += f' "{server_prefix}" @"{dbschema_dir}"'
+        print(start_print)
         res = subprocess.run(server_prefix, cwd=dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")
         if res.stderr != "":
             print(res.stderr)
