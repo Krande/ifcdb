@@ -17,7 +17,7 @@ def main():
 
     migrate_props = dict(batch_size=50)
     if batch_size is not None:
-        migrate_props["batch_size"] = batch_size
+        migrate_props["batch_size"] = int(batch_size)
 
     io = EdgeIO(**props)
     io.stepwise_migration(**migrate_props)
