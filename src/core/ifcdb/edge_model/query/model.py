@@ -228,14 +228,17 @@ class EdgeIOBase:
 
         current_schema = []
         start = time.time()
+        tmp_dir = dbschema_dir / '_temp_dir'
+        os.makedirs(tmp_dir)
         for i, chunk in enumerate(chunks, start=1):
             current_schema += chunk
             self.em.write_entities_to_esdl_file(current_schema, esdl_file_path, module_name)
             self.migration_create(dbschema_dir)
             self.migration_apply(dbschema_dir)
             t_fin = time.time()
-            print(f"Finished with step {i} of {len(chunks)} in {t_fin-start:.1f} seconds")
+            print(f"Finished with step {i} of {len(chunks)} in {t_fin-start:.1f} s adding {len(chunk)} entities")
             start = t_fin
+            shutil.copy(esdl_file_path, tmp_dir / f'esdl_file.{i}')
 
     def create_schema(
         self, dbschema_dir=None, module_name="default", from_ifc_file=None, from_ifc_schema=None, from_ifc_entities=None

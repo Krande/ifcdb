@@ -9,6 +9,7 @@ env:
   WORKDIR: src/server/schema/partial_schemas/db/basic
   CON_PARAMS: --tls-security=insecure -P 5656
   SERVER_VERSION: 2.1
+  PYTHONBUFFERED: 1
 
 jobs:
   test:
@@ -53,6 +54,8 @@ jobs:
         shell: bash -l {0}
         run: |
           python ${{ matrix.WORKDIR.dir }}
+        env:
+          IFCDB_BATCH_SIZE: 50
       - name: EdgeDB Clear previous migration and Create a new database
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
