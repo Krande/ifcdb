@@ -31,7 +31,7 @@ def wrap() -> ifcopenshell.ifcopenshell_wrapper:
 
 
 @pytest.fixture
-def em_ifc4x1(wrap) -> SchemaGen:
+def sg_ifc4x1(wrap) -> SchemaGen:
     return SchemaGen(schema=wrap.schema_by_name("IFC4x1"))
 
 

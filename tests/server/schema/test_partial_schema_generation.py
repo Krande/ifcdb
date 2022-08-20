@@ -1,13 +1,14 @@
 from ifcdb.edge_model.schema_gen.model import (
+    SchemaGen,
     ArrayEdgeModel,
     AttributeEdgeModel,
     EntityEdgeModel,
 )
 
 
-def test_ifc_set_and_list(em_ifc4x1):
-    entity_list: EntityEdgeModel = em_ifc4x1.get_entity_by_name("IfcIndexedPolyCurve")
-    entity_set: EntityEdgeModel = em_ifc4x1.get_entity_by_name("IfcComplexProperty")
+def test_ifc_set_and_list(sg_ifc4x1: SchemaGen):
+    entity_list: EntityEdgeModel = sg_ifc4x1.get_entity_by_name("IfcIndexedPolyCurve")
+    entity_set: EntityEdgeModel = sg_ifc4x1.get_entity_by_name("IfcComplexProperty")
     att_str_list = {a.name: a for a in entity_list.get_attributes()}
     att_str_set = {a.name: a for a in entity_set.get_attributes()}
     list_att: AttributeEdgeModel = att_str_list["Segments"]
@@ -17,8 +18,8 @@ def test_ifc_set_and_list(em_ifc4x1):
     assert set_att.array_ref().list_type == ArrayEdgeModel.SET
 
 
-def test_ifc_buildingelementproxy(em_ifc4x1):
-    res = em_ifc4x1.get_related_entities("IfcBuildingElementProxy")
+def test_ifc_buildingelementproxy(sg_ifc4x1: SchemaGen):
+    res = sg_ifc4x1.get_related_entities("IfcBuildingElementProxy")
     related_entities = set(res)
 
     should_be = {
@@ -51,9 +52,9 @@ def test_ifc_buildingelementproxy(em_ifc4x1):
     assert len(should_be.intersection(related_entities)) == len(related_entities)
 
 
-def test_ifc_unit_assigment(em_ifc4x1):
+def test_ifc_unit_assigment(sg_ifc4x1: SchemaGen):
     class_name = "IfcUnitAssignment"
-    related_entities = [em_ifc4x1.get_entity_by_name(x) for x in em_ifc4x1.get_related_entities(class_name)]
+    related_entities = [sg_ifc4x1.get_entity_by_name(x) for x in sg_ifc4x1.get_related_entities(class_name)]
     for rele in related_entities:
         x = rele.to_str()
         print(x)
