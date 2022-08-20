@@ -3,7 +3,7 @@ import pathlib
 import ifcopenshell
 import pytest
 
-from ifcdb.edge_model.schema_gen.model import EdgeModel
+from ifcdb.edge_model.schema_gen.model import SchemaGen
 from ifcdb.pymodel.base import ExpReader
 
 
@@ -31,8 +31,8 @@ def wrap() -> ifcopenshell.ifcopenshell_wrapper:
 
 
 @pytest.fixture
-def em_ifc4x1(wrap) -> EdgeModel:
-    return EdgeModel(schema=wrap.schema_by_name("IFC4x1"))
+def em_ifc4x1(wrap) -> SchemaGen:
+    return SchemaGen(schema=wrap.schema_by_name("IFC4x1"))
 
 
 @pytest.fixture

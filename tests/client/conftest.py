@@ -3,13 +3,6 @@ import pytest
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
 
-SERVER_NAME = "ifc_test_server"
-
-
-@pytest.fixture
-def server_name():
-    return SERVER_NAME
-
 
 @pytest.fixture
 def my_beam_4x1_db():

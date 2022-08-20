@@ -29,10 +29,10 @@ from ifcdb.edge_model.query.utils import (
 from ifcdb.edge_model.schema_gen.model import (
     ArrayEdgeModel,
     AttributeEdgeModel,
-    EdgeModel,
     EntityEdgeModel,
     EnumEdgeModel,
     IntermediateClass,
+    SchemaGen,
     SelectEdgeModel,
     TypeEdgeModel,
 )
@@ -159,7 +159,7 @@ class EdgeIOBase:
     ifc_io: IfcIO = None
     ifc_schema: str = None
     db_schema_dir: str | pathlib.Path = "dbschema"
-    _em: EdgeModel = None
+    _em: SchemaGen = None
     _client: edgedb.Client | edgedb.AsyncIOClient = None
     database: str = None
     credentials_file: str = None
@@ -221,6 +221,7 @@ class EdgeIOBase:
             unique_entities = entities
 
         all_ents = self.em.get_related_entities(unique_entities)
+
         # Filter out all Enum's as they are not used in the EdgeDB representation
         def filter_out_enums(name: str):
             if name.endswith("Enum"):
@@ -312,7 +313,7 @@ class EdgeIOBase:
 
         if schema_dir is not None:
             server_prefix += f"--schema-dir ./{schema_dir}"
-        start_print = f"Applying Migration using CLI command"
+        start_print = "Applying Migration using CLI command"
 
         if debug_logs:
             start_print += f' "{server_prefix}" @"{dbschema_dir}"'
@@ -388,7 +389,7 @@ class EdgeIOBase:
             self.client.close()
 
     # IFC utils
-    def load_ifc(self, from_path: str=None, from_str: str=None):
+    def load_ifc(self, from_path: str = None, from_str: str = None):
         self.ifc_io = IfcIO(ifc_file=from_path, ifc_str=from_str)
         self.ifc_schema = self.ifc_io.schema
 
@@ -424,7 +425,9 @@ class EdgeIOBase:
         unique_entities = self.import_ifc_entities_w_related()
         self.em.write_entities_to_esdl_file(unique_entities, esdl_file_path, module_name)
 
-    def _insert_items_sequentially(self, ifc_items: [ifcopenshell.entity_instance],  tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None):
+    def _insert_items_sequentially(
+        self, ifc_items: [ifcopenshell.entity_instance], tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None
+    ):
         from .utils import get_att_insert_str
 
         uuid_map = dict()
@@ -598,15 +601,15 @@ class EdgeIOBase:
             return f"-I {self.instance_name}"
 
     @property
-    def client(self) -> edgedb.Client:
+    def client(self) -> edgedb.Client | edgedb.AsyncIOClient:
         if self._client is None:
             self._client = self.create_client(self.database)
         return self._client
 
     @property
-    def em(self) -> EdgeModel:
+    def em(self) -> SchemaGen:
         if self._em is None:
-            self._em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
+            self._em = SchemaGen(schema=self.wrap.schema_by_name(self.ifc_schema))
         return self._em
 
 
@@ -766,17 +769,28 @@ class EdgeIO(EdgeIOBase):
         return json.loads(client.query_json(select_str))
 
     # Insertions
+    async def insert_ifc_async(
+        self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None
+    ):
+        self.load_ifc(from_path=ifc_file_path, from_str=ifc_file_str)
+        async for tx in self.client.transaction():
+            async with tx:
+                await self._perform_method(tx, method, specific_ifc_ids)
+
     def insert_ifc(self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, specific_ifc_ids: list[int] = None):
         """Upload all IFC elements to EdgeDB instance"""
         self.load_ifc(from_path=ifc_file_path, from_str=ifc_file_str)
 
         for tx in self.client.transaction():
             with tx:
-                if method == INSERTS.SEQ:
-                    ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-                    self._insert_items_sequentially(ifc_items, tx, specific_ifc_ids)
-                else:
-                    raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
+                self._perform_method(tx, method, specific_ifc_ids)
+
+    def _perform_method(self, tx, method, specific_ifc_ids):
+        if method == INSERTS.SEQ:
+            ifc_items = self.ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
+            self._insert_items_sequentially(ifc_items, tx, specific_ifc_ids)
+        else:
+            raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 
     # Exports
     def to_ifcopenshell_object(
@@ -919,7 +933,7 @@ def get_ref_id(ref_id, id_map):
     return n.ifc_id
 
 
-def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> str | dict:
+def get_props(ifc_class: str, db_props: dict, id_map: dict, em: SchemaGen) -> str | dict:
     entity = em.get_entity_by_name(ifc_class)
     atts = None
     if isinstance(entity, EntityEdgeModel):

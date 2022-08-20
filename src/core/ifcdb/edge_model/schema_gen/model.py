@@ -44,7 +44,7 @@ class IntermediateClass:
 # Attribute References
 @dataclass
 class AttributeEdgeModel:
-    edge_model: EdgeModel = field(repr=False)
+    edge_model: SchemaGen = field(repr=False)
     att: wrap.attribute = field(repr=False)
     derived: bool
 
@@ -169,7 +169,7 @@ class AttributeEdgeModel:
 @dataclass
 class ArrayEdgeModel:
     entity: wrap.attribute = field(repr=False)
-    edge_model: EdgeModel = field(repr=False)
+    edge_model: SchemaGen = field(repr=False)
 
     LIST: ClassVar[str] = "list"
     SET: ClassVar[str] = "set"
@@ -221,7 +221,7 @@ class ArrayEdgeModel:
 # Entities and types
 @dataclass
 class EntityBaseEdgeModel:
-    edge_model: EdgeModel = field(repr=False)
+    edge_model: SchemaGen = field(repr=False)
     entity: Union[wrap.entity, wrap.select_type, wrap.enumeration_type, wrap.type_declaration] = field(repr=False)
 
     @property
@@ -480,7 +480,7 @@ class SelectEdgeModel(EntityBaseEdgeModel):
 
 
 @dataclass
-class EdgeModel:
+class SchemaGen:
     schema: wrap.schema_definition
     enum_types: Dict[str, EnumEdgeModel] = field(default=None, repr=False)
     base_types: Dict[str, TypeEdgeModel] = field(default=None, repr=False)

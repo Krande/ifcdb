@@ -10,7 +10,7 @@ from toposort import toposort_flatten
 from ifcdb.edge_model.schema_gen.model import (
     ArrayEdgeModel,
     AttributeEdgeModel,
-    EdgeModel,
+    SchemaGen,
     SelectEdgeModel,
 )
 
@@ -20,7 +20,7 @@ _INSERT_COUNTER = count(start=1)
 def get_att_insert_str(
     att: AttributeEdgeModel,
     entity: ifcopenshell.entity_instance,
-    em: EdgeModel,
+    em: SchemaGen,
     uuid_map: dict = None,
     with_map: dict[str, str] = None,
 ) -> str | None:
@@ -90,7 +90,7 @@ def get_att_insert_str(
     return f"{name} := {value_str}"
 
 
-def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
+def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: SchemaGen) -> str:
     uuid_obj = uuid_map.get(res, None)
 
     if uuid_obj is None:
@@ -174,7 +174,7 @@ def get_ids(obj: dict, id_list):
                     get_ids(subinst, id_list)
 
 
-def resolve_order_of_result_entities(results: dict, em: EdgeModel) -> list:
+def resolve_order_of_result_entities(results: dict, em: SchemaGen) -> list:
     id_map = dict()
     key_map = dict()
     for key, value in results.items():

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from http import HTTPStatus
+from typing import Iterable
 
 import edgedb
+from app.dependencies import azure_scheme
+from app.internal.database import get_client
 from fastapi import APIRouter, Depends, HTTPException, Query, Security
 from fastapi_azure_auth.user import User
 from pydantic import BaseModel
-from typing import Iterable
-
-from app.dependencies import azure_scheme
-from app.internal.database import get_client
 
 router = APIRouter()
 
@@ -33,7 +32,9 @@ IFCP_CONTENT = "FamilyName, GivenName, Identification, Roles, Addresses"
 
 
 @router.get("/users", dependencies=[Security(azure_scheme)])
-async def get_users(name: str = Query(None, max_length=50),user: User = Depends(azure_scheme), dbname: str = None) -> Iterable[IfcPerson]:
+async def get_users(
+    name: str = Query(None, max_length=50), user: User = Depends(azure_scheme), dbname: str = None
+) -> Iterable[IfcPerson]:
     client = get_client(database=dbname)
     if not name:
         users = await client.query(f"SELECT IfcPerson {IFCP_CONTENT};")
@@ -67,10 +68,10 @@ async def post_user(user: User = Depends(azure_scheme), dbname: str = None) -> I
     (created_user,) = await client.query(
         """SELECT (
     INSERT IfcPerson {
-        FamilyName:=<str>$FamilyName, 
+        FamilyName:=<str>$FamilyName,
         GivenName:=<str>$GivenName,
         Identification:=<str>$Identification
-    } 
+    }
     unless conflict on .Identification else (
         update IfcPerson
         set {
