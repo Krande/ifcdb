@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import ifcopenshell
 import pytest
-from dataclasses import dataclass
 from httpx import AsyncClient
 
-from ifcdb.edge_model.io.ifc import IfcIO
+from ifcdb.io.ifc import IfcIO
 
 
 @dataclass

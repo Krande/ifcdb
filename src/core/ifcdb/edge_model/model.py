@@ -44,7 +44,7 @@ class IntermediateClass:
 # Attribute References
 @dataclass
 class AttributeEdgeModel:
-    edge_model: SchemaGen = field(repr=False)
+    edge_model: EdgeModel = field(repr=False)
     att: wrap.attribute = field(repr=False)
     derived: bool
 
@@ -169,7 +169,7 @@ class AttributeEdgeModel:
 @dataclass
 class ArrayEdgeModel:
     entity: wrap.attribute = field(repr=False)
-    edge_model: SchemaGen = field(repr=False)
+    edge_model: EdgeModel = field(repr=False)
 
     LIST: ClassVar[str] = "list"
     SET: ClassVar[str] = "set"
@@ -221,7 +221,7 @@ class ArrayEdgeModel:
 # Entities and types
 @dataclass
 class EntityBaseEdgeModel:
-    edge_model: SchemaGen = field(repr=False)
+    edge_model: EdgeModel = field(repr=False)
     entity: Union[wrap.entity, wrap.select_type, wrap.enumeration_type, wrap.type_declaration] = field(repr=False)
 
     @property
@@ -480,7 +480,7 @@ class SelectEdgeModel(EntityBaseEdgeModel):
 
 
 @dataclass
-class SchemaGen:
+class EdgeModel:
     schema: wrap.schema_definition
     enum_types: Dict[str, EnumEdgeModel] = field(default=None, repr=False)
     base_types: Dict[str, TypeEdgeModel] = field(default=None, repr=False)
@@ -698,7 +698,7 @@ class SchemaGen:
     def write_entities_to_esdl_file(
         self, entities: list[str], esdl_file_path, module_name="default", include_server_files=False
     ):
-        from ifcdb.edge_model.utils import copy_server_files
+        from ifcdb.admin_utils import copy_server_files
 
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)

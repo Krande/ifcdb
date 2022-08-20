@@ -3,12 +3,19 @@ from __future__ import annotations
 import pytest
 from httpx import AsyncClient
 
-from ifcdb.edge_model.io.ifc import IfcIO
+from ifcdb import EdgeIO
+from ifcdb.io.ifc import IfcIO
 
 
 @pytest.fixture
-def cube_ifc_str(ifc_files_dir):
+def cube_ifc_str(ifc_files_dir, mock_db_name):
     ifc_io = IfcIO(ifc_files_dir / "MyCube.ifc")
+
+    with EdgeIO(db_schema_dir=f"temp/{mock_db_name}/dbschema", ifc_schema="IFC4x1", database=mock_db_name) as io:
+        io.create_schema(from_ifc_file=ifc_io.ifc_file)
+        io.setup_database(delete_existing_migrations=True)
+        io.insert_ifc(ifc_io.ifc_file)
+
     return ifc_io.ifc_obj.wrapped_data.to_string()
 
 

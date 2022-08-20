@@ -16,30 +16,30 @@ from typing import ClassVar
 import edgedb
 import ifcopenshell
 
-from ifcdb.edge_model.io.ifc import IfcIO
-from ifcdb.edge_model.query.builder import EQBuilder
-from ifcdb.edge_model.query.utils import (
+from ifcdb.admin_utils import (
+    clean_name,
+    create_local_instance,
+    walk_edge_results_and_make_uuid_map,
+)
+from ifcdb.edge_model.model import (
+    ArrayEdgeModel,
+    AttributeEdgeModel,
+    EdgeModel,
+    EntityEdgeModel,
+    EnumEdgeModel,
+    IntermediateClass,
+    SelectEdgeModel,
+    TypeEdgeModel,
+)
+from ifcdb.io.ifc import IfcIO
+from ifcdb.query.builder import EQBuilder
+from ifcdb.query.utils import (
     dict_value_replace,
     flatten_uuid_source,
     get_att_insert_str,
     get_uuid_refs,
     insert_uuid_objects_from_source,
     resolve_order_of_result_entities,
-)
-from ifcdb.edge_model.schema_gen.model import (
-    ArrayEdgeModel,
-    AttributeEdgeModel,
-    EntityEdgeModel,
-    EnumEdgeModel,
-    IntermediateClass,
-    SchemaGen,
-    SelectEdgeModel,
-    TypeEdgeModel,
-)
-from ifcdb.edge_model.utils import (
-    clean_name,
-    create_local_instance,
-    walk_edge_results_and_make_uuid_map,
 )
 
 
@@ -159,7 +159,7 @@ class EdgeIOBase:
     ifc_io: IfcIO = None
     ifc_schema: str = None
     db_schema_dir: str | pathlib.Path = "dbschema"
-    _em: SchemaGen = None
+    _em: EdgeModel = None
     _client: edgedb.Client | edgedb.AsyncIOClient = None
     database: str = None
     credentials_file: str = None
@@ -586,7 +586,7 @@ class EdgeIOBase:
     @property
     def conn_str(self):
         if self.instance_name is None:
-            conn_str = f"edgedb://edgedb@localhost:{self.port}"
+            conn_str = f"edgedb://ifcdbadmin:secret@localhost:{self.port}"
         else:
             conn_str = self.instance_name
         return conn_str
@@ -607,9 +607,9 @@ class EdgeIOBase:
         return self._client
 
     @property
-    def em(self) -> SchemaGen:
+    def em(self) -> EdgeModel:
         if self._em is None:
-            self._em = SchemaGen(schema=self.wrap.schema_by_name(self.ifc_schema))
+            self._em = EdgeModel(schema=self.wrap.schema_by_name(self.ifc_schema))
         return self._em
 
 
@@ -933,7 +933,7 @@ def get_ref_id(ref_id, id_map):
     return n.ifc_id
 
 
-def get_props(ifc_class: str, db_props: dict, id_map: dict, em: SchemaGen) -> str | dict:
+def get_props(ifc_class: str, db_props: dict, id_map: dict, em: EdgeModel) -> str | dict:
     entity = em.get_entity_by_name(ifc_class)
     atts = None
     if isinstance(entity, EntityEdgeModel):

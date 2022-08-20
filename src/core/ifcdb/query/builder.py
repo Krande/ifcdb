@@ -8,7 +8,7 @@ from itertools import chain
 
 import edgedb
 
-from ifcdb.edge_model.utils import clean_name
+from ifcdb.admin_utils import clean_name
 
 
 def introspect_schema(client, module_name):

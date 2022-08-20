@@ -1,4 +1,4 @@
-from .edge_model.query.model import EdgeIO
-from .edge_model.schema_gen.model import SchemaGen
+from .edge_model.model import EdgeModel
+from .query.model import EdgeIO
 
-__all__ = ["EdgeIO", "SchemaGen"]
+__all__ = ["EdgeIO", "EdgeModel"]
