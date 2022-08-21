@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Security
 from fastapi_azure_auth.user import User
 
 from ifcdb.io.ifc import IfcIO
-from ifcdb.query.inserts.sequentially import SeqInsert
+from ifcdb.database.inserts.sequentially import SeqInsert
 
 router = APIRouter()
 

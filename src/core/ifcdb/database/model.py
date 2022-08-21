@@ -32,8 +32,8 @@ from ifcdb.edge_model.model import (
     TypeEdgeModel,
 )
 from ifcdb.io.ifc import IfcIO
-from ifcdb.query.builder import EQBuilder
-from ifcdb.query.utils import (
+from ifcdb.database.builder import EQBuilder
+from ifcdb.database.utils import (
     dict_value_replace,
     flatten_uuid_source,
     get_att_insert_str,
@@ -281,6 +281,7 @@ class EdgeIOBase:
 
     def migration_create(self, dbschema_dir, debug_logs=False):
         dsn = os.getenv("EDGEDB_DSN")
+        print(f"DSN: {dsn}")
         cli_prefix = self.cli_prefix if dsn is None else ""
 
         server_prefix = f"edgedb {cli_prefix} migration create --non-interactive"

@@ -7,7 +7,7 @@ import edgedb
 import ifcopenshell
 
 from ifcdb.edge_model.model import EdgeModel
-from ifcdb.query.utils import get_att_insert_str
+from ifcdb.database.utils import get_att_insert_str
 
 
 @dataclass
