@@ -57,3 +57,6 @@ jobs:
         env:
           EDGEDB_DSN: edgedb://ifcdbadmin:secret@localhost
           EDGEDB_CLIENT_TLS_SECURITY: insecure
+      - name: Dump docker logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v1

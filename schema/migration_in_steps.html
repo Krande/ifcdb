@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Necessary modifications to the IFC schema" href="modifications.html" /><link rel="prev" title="Converting IFC schema to EdgeDB schema (ESDL)" href="schema_to_esdl.html" />
 
     <meta name="generator" content="sphinx-5.1.1, furo 2022.06.21"/>
         <title>Migrating the entire IFC schema into EdgeDB - IFC as a Database</title>
@@ -160,8 +160,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../usecases/usecases_intro.html">Use Cases</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schema Conversion</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="schema_to_esdl.html">Converting IFC schema to EdgeDB schema (ESDL)</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Migrating the entire IFC schema into EdgeDB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#memory-alloc-error">Memory Alloc error</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modifications.html">Necessary modifications to the IFC schema</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Inserting Elements</span></p>
@@ -233,14 +235,62 @@ was proposed to split the schema into chunks and run the EdgeDB migrations in st
 <li><p>[]: 50</p></li>
 </ul>
 </section>
+<section id="memory-alloc-error">
+<h1>Memory Alloc error<a class="headerlink" href="#memory-alloc-error" title="Permalink to this heading">#</a></h1>
+<p>This is the most common error</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>edgedb error: InternalServerError: invalid memory alloc request size 1073741824
+  Hint: This is most likely a bug in EdgeDB. Please consider opening an issue ticket at https://github.com/edgedb/edgedb/issues/new?template=bug_report.md
+  Server traceback:
+      edb.errors.InternalServerError: invalid memory alloc request size 1073741824
+</pre></div>
+</div>
+<p>Docker logs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>       <span class="n">UNION</span> <span class="n">ALL</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>                   <span class="p">(</span><span class="n">SELECT</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>                      <span class="s2">&quot;7bbf54bd-1f10-11ed-93d8-852933d4ec89&quot;</span><span class="o">.</span><span class="n">target</span> <span class="n">AS</span> <span class="n">target</span><span class="p">,</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>       <span class="s2">&quot;7bbf54bd-1f10-11ed-93d8-852933d4ec89&quot;</span><span class="o">.</span><span class="n">source</span> <span class="n">AS</span> <span class="n">source</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>                    <span class="n">FROM</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>                      <span class="n">edgedbpub</span><span class="o">.</span><span class="s2">&quot;7bbf54bd-1f10-11ed-93d8-852933d4ec89&quot;</span> <span class="n">AS</span> <span class="s2">&quot;7bbf54bd-1f10-11ed-93d8-852933d4ec89&quot;</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>                   <span class="p">)</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span> 
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>       <span class="n">UNION</span> <span class="n">ALL</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.160</span> <span class="n">postgres</span><span class="p">:</span>                   <span class="p">(</span><span class="n">SELECT</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.161</span> <span class="n">postgres</span><span class="p">:</span>                      <span class="s2">&quot;7c326fbf-1f10-11ed-bee8-c1006d193598&quot;</span><span class="o">.</span><span class="n">target</span> <span class="n">AS</span> <span class="n">target</span><span class="p">,</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.161</span> <span class="n">postgres</span><span class="p">:</span>       <span class="s2">&quot;7c326fbf-1f10-11ed-bee8-c1006d193598&quot;</span><span class="o">.</span><span class="n">source</span> <span class="n">AS</span> <span class="n">source</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.161</span> <span class="n">postgres</span><span class="p">:</span>                    <span class="n">FROM</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.161</span> <span class="n">postgres</span><span class="p">:</span>                      <span class="n">edgedbpub</span><span class="o">.</span><span class="s2">&quot;7c326fbf-1f10-11ed-bee8-c1006d193598&quot;</span> <span class="n">AS</span> <span class="s2">&quot;7c326fbf-1f10-11ed-bee8-c1006d193598&quot;</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.161</span> <span class="n">postgres</span><span class="p">:</span>                   <span class="p">)</span>
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.161</span> <span class="n">postgres</span><span class="p">:</span> 
+<span class="n">edgedb_1</span> <span class="o">|</span> <span class="n">INFO</span> <span class="mi">204</span> <span class="mi">2022</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">18</span><span class="n">T16</span><span class="p">:</span><span class="mi">44</span><span class="p">:</span><span class="mf">07.161</span> <span class="n">postgres</span><span class="p">:</span>       <span class="n">UNION</span> <span class="n">ALL</span>
+</pre></div>
+</div>
+</section>
 
         </article>
       </div>
       <footer>
         
         <div class="related-pages">
-          
-          
+          <a class="next-page" href="modifications.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Necessary modifications to the IFC schema</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="schema_to_esdl.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Converting IFC schema to EdgeDB schema (ESDL)</div>
+                
+              </div>
+            </a>
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
