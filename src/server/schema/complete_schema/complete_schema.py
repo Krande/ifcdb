@@ -19,9 +19,9 @@ def main(ifc_file, validate_data=False):
 
         # Validate Data
         if validate_data:
-            validate_using_ifc_diff(io.ifc_io.ifc_obj, io.to_ifcopenshell_object(), "temp/export.json")
-            validate_ifc_objects(io.ifc_io.ifc_obj, io.to_ifcopenshell_object())
-            validate_ifc_content(io.ifc_io.ifc_obj, io.get_all(limit_to_ifc_entities=True))
+            validate_using_ifc_diff(io._ifc_io.ifc_obj, io.to_ifcopenshell_object(), "temp/export.json")
+            validate_ifc_objects(io._ifc_io.ifc_obj, io.to_ifcopenshell_object())
+            validate_ifc_content(io._ifc_io.ifc_obj, io.get_all(limit_to_ifc_entities=True))
 
         # result_all = io.get_all(limit_to_ifc_entities=True)
         # result = io.get_spatial_content_b('Sublevel_1_a')

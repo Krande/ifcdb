@@ -1,4 +1,4 @@
-from ifcdb.database.admin import DbMigration
+from ifcdb import DbMigration
 from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables from .env.

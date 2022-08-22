@@ -30,6 +30,6 @@ async def post_file_str(ifc_file_str: str, user: User = Depends(azure_scheme), d
             for item, insert_str in sq.create_insert_str():
                 single_json = tx.query_single_json(insert_str)
                 query_res = json.loads(single_json)
-                sq.uuid_map[item] = query_res["id"]
+                sq._uuid_map[item] = query_res["id"]
 
     return "SUCCESS"

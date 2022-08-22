@@ -2,21 +2,23 @@ import os
 import time
 
 from ifcdb import EdgeIO
-from ifcdb.edge_model.validation_utils import (
+from ifcdb.validation_utils import (
     validate_ifc_content,
     validate_ifc_objects,
     validate_using_ifc_diff,
 )
 from ifcdb.utils import top_dir
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
 
 
 def basic_schema(ifc_file: str, extra_ifc_classes: list[str]):
     db_name = ifc_file.replace(".ifc", "").replace("-", "_")
     ifc_path = top_dir() / "files" / ifc_file
     with EdgeIO(db_schema_dir=f"db/{db_name}/dbschema", database=db_name) as io:
-        if io.database_exists() is False:
-            io.create_schema(from_ifc_file=ifc_path, from_ifc_entities=extra_ifc_classes)
-            io.setup_database(delete_existing_migrations=True)
+        io.create_schema_from_ifc_file(ifc_path=ifc_path, extra_entities=extra_ifc_classes)
+        io.setup_database(delete_existing_migrations=True)
 
 
 def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
@@ -25,15 +27,15 @@ def main(ifc_file, refresh_db=False, validate_data=False, create_ifc_str=False):
 
     with EdgeIO(db_schema_dir=f"db/{db_name}/dbschema", database=db_name) as io:
         if refresh_db:
-            io.create_schema(from_ifc_file=ifc_path)
+            io.create_schema_from_ifc_file(ifc_path=ifc_path)
             io.setup_database(delete_existing_migrations=True)
             io.insert_ifc(ifc_path)
 
         # Validate Data
         if validate_data:
-            validate_using_ifc_diff(io.ifc_io.ifc_obj, io.to_ifcopenshell_object(), "temp/export.json")
-            validate_ifc_objects(io.ifc_io.ifc_obj, io.to_ifcopenshell_object())
-            validate_ifc_content(io.ifc_io.ifc_obj, io.get_all(limit_to_ifc_entities=True))
+            validate_using_ifc_diff(io._ifc_io.ifc_obj, io.to_ifcopenshell_object(), "temp/export.json")
+            validate_ifc_objects(io._ifc_io.ifc_obj, io.to_ifcopenshell_object())
+            validate_ifc_content(io._ifc_io.ifc_obj, io.get_all(limit_to_ifc_entities=True))
 
         # # Do a "warm up" query first
         # result_all = io.get_all(limit_to_ifc_entities=True)
@@ -71,4 +73,4 @@ if __name__ == "__main__":
     # main("SpatialHierarchy1.ifc", refresh_db=False)
     # main("MyBeam.ifc", refresh_db=False)
     # main("tessellated-item.ifc")
-    basic_schema("MyBeam.ifc", ["IfcTelecomAddress", "IfcMember", "IfcColumn"])
+    basic_schema("MyCube.ifc", ["IfcTelecomAddress", "IfcMember", "IfcColumn"])

@@ -26,11 +26,11 @@ def test_roundtrip_ifc_files_validation(ifc_files_dir, ifc_file_name):
 
     with EdgeIO(db_schema_dir=db_schema_dir, database=db_name) as io:
         # Set up Schema & Database
-        io.create_schema(from_ifc_file=ifc_file)
+        io.create_schema_from_ifc_file(ifc_path=ifc_file)
         io.setup_database(delete_existing_migrations=True)
 
         # Insert IFC elements
         io.insert_ifc(ifc_file)
 
         # Query & Validate Data using IfcOpenShell
-        validate_ifc_objects(io.ifc_io.ifc_obj, io.to_ifcopenshell_object())
+        validate_ifc_objects(io._ifc_io.ifc_obj, io.to_ifcopenshell_object())

@@ -7,20 +7,20 @@ from itertools import count
 import ifcopenshell
 from toposort import toposort_flatten
 
-from ifcdb.edge_model.model import (
-    ArrayEdgeModel,
-    AttributeEdgeModel,
-    EdgeModel,
-    SelectEdgeModel,
+from ifcdb.schema.model import (
+    ArrayModel,
+    AttributeModel,
+    IfcSchemaModel,
+    SelectModel,
 )
 
 _INSERT_COUNTER = count(start=1)
 
 
 def get_att_insert_str(
-    att: AttributeEdgeModel,
+    att: AttributeModel,
     entity: ifcopenshell.entity_instance,
-    em: EdgeModel,
+    em: IfcSchemaModel,
     uuid_map: dict = None,
     with_map: dict[str, str] = None,
 ) -> str | None:
@@ -38,13 +38,13 @@ def get_att_insert_str(
         value_str = f"'{res}'"
     elif (
         isinstance(res, tuple)
-        and isinstance(att_ref, ArrayEdgeModel)
+        and isinstance(att_ref, ArrayModel)
         and isinstance(res[0], ifcopenshell.entity_instance)
     ):
         value_str = "{"
         value_str += ",".join([insert_ifc_entity(r, uuid_map, att_ref, with_map, em) for r in res])
         value_str += "}"
-    elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel):
+    elif isinstance(res, tuple) and isinstance(att_ref, ArrayModel):
         levels = att_ref.get_levels()
         num_levels = len(levels)
         curr_level = levels[-1]
@@ -78,7 +78,7 @@ def get_att_insert_str(
             if b1 != b2 and b2 != -1:
                 res = list(res)
             value_str = res
-    elif isinstance(res, tuple) and isinstance(att_ref, ArrayEdgeModel) is False:
+    elif isinstance(res, tuple) and isinstance(att_ref, ArrayModel) is False:
         value_str = res
     elif isinstance(res, (int, float)):
         value_str = res
@@ -90,7 +90,7 @@ def get_att_insert_str(
     return f"{name} := {value_str}"
 
 
-def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
+def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: IfcSchemaModel) -> str:
     uuid_obj = uuid_map.get(res, None)
 
     if uuid_obj is None:
@@ -100,16 +100,16 @@ def insert_ifc_entity(res, uuid_map, att_ref, with_map, em: EdgeModel) -> str:
         entity_str = f'(SELECT {res_name} filter .id = <uuid>"{uuid_obj}")'
 
     res_id = res.id()
-    if isinstance(att_ref, ArrayEdgeModel):
+    if isinstance(att_ref, ArrayModel):
         ptype = att_ref.parameter_type
-        if isinstance(ptype, SelectEdgeModel):
+        if isinstance(ptype, SelectModel):
             aname = ptype.name
             unique_ref_name_a = f"ifc_{res_id + 100000}"
             with_map[unique_ref_name_a] = entity_str
             ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
         else:
             ref_str = entity_str
-    elif isinstance(att_ref, SelectEdgeModel):
+    elif isinstance(att_ref, SelectModel):
         aname = att_ref.name
         unique_ref_name_a = f"ifc_{res_id + 100000}"
         with_map[unique_ref_name_a] = entity_str
@@ -174,7 +174,7 @@ def get_ids(obj: dict, id_list):
                     get_ids(subinst, id_list)
 
 
-def resolve_order_of_result_entities(results: dict, em: EdgeModel) -> list:
+def resolve_order_of_result_entities(results: dict, em: IfcSchemaModel) -> list:
     id_map = dict()
     key_map = dict()
     for key, value in results.items():

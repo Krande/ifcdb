@@ -5,8 +5,8 @@ import pytest
 
 @pytest.fixture
 def io(my_beam_4x1_db):
-    my_beam_4x1_db.create_client(my_beam_4x1_db.database)
-    my_beam_4x1_db.eq_builder.load_db_objects()
+    my_beam_4x1_db.default_client(my_beam_4x1_db.database)
+    my_beam_4x1_db._eq_builder.load_db_objects()
     return my_beam_4x1_db
 
 
@@ -14,7 +14,7 @@ def test_get_ifc_class_select_zero_depth(io):
     name = "MyBeam"
 
     uuid, class_name = io._get_id_class_name_from_simple_filter("Name", name)
-    query_str = io.eq_builder.get_select_str(class_name, uuid, max_depth=0)
+    query_str = io._eq_builder.get_select_str(class_name, uuid, max_depth=0)
     result = json.loads(io.client.query_json(query_str))[0]
 
     res = {

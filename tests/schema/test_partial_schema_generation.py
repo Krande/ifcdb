@@ -1,25 +1,24 @@
-from ifcdb.edge_model.model import (
-    ArrayEdgeModel,
-    AttributeEdgeModel,
-    EdgeModel,
-    EntityEdgeModel,
+from ifcdb.schema.model import (
+    ArrayModel,
+    AttributeModel,
+    EntityModel,
 )
 
 
-def test_ifc_set_and_list(sg_ifc4x1: EdgeModel):
-    entity_list: EntityEdgeModel = sg_ifc4x1.get_entity_by_name("IfcIndexedPolyCurve")
-    entity_set: EntityEdgeModel = sg_ifc4x1.get_entity_by_name("IfcComplexProperty")
+def test_ifc_set_and_list(sm_ifc4x1):
+    entity_list: EntityModel = sm_ifc4x1.get_entity_by_name("IfcIndexedPolyCurve")
+    entity_set: EntityModel = sm_ifc4x1.get_entity_by_name("IfcComplexProperty")
     att_str_list = {a.name: a for a in entity_list.get_attributes()}
     att_str_set = {a.name: a for a in entity_set.get_attributes()}
-    list_att: AttributeEdgeModel = att_str_list["Segments"]
-    set_att: AttributeEdgeModel = att_str_set["HasProperties"]
+    list_att: AttributeModel = att_str_list["Segments"]
+    set_att: AttributeModel = att_str_set["HasProperties"]
 
-    assert list_att.array_ref().list_type == ArrayEdgeModel.LIST
-    assert set_att.array_ref().list_type == ArrayEdgeModel.SET
+    assert list_att.array_ref().list_type == ArrayModel.LIST
+    assert set_att.array_ref().list_type == ArrayModel.SET
 
 
-def test_ifc_buildingelementproxy(sg_ifc4x1: EdgeModel):
-    res = sg_ifc4x1.get_related_entities("IfcBuildingElementProxy")
+def test_ifc_buildingelementproxy(sm_ifc4x1):
+    res = sm_ifc4x1.get_related_entities("IfcBuildingElementProxy")
     related_entities = set(res)
 
     should_be = {
@@ -52,9 +51,9 @@ def test_ifc_buildingelementproxy(sg_ifc4x1: EdgeModel):
     assert len(should_be.intersection(related_entities)) == len(related_entities)
 
 
-def test_ifc_unit_assigment(sg_ifc4x1: EdgeModel):
+def test_ifc_unit_assigment(sm_ifc4x1):
     class_name = "IfcUnitAssignment"
-    related_entities = [sg_ifc4x1.get_entity_by_name(x) for x in sg_ifc4x1.get_related_entities(class_name)]
+    related_entities = [sm_ifc4x1.get_entity_by_name(x) for x in sm_ifc4x1.get_related_entities(class_name)]
     for rele in related_entities:
         x = rele.to_str()
         print(x)

@@ -3,8 +3,11 @@ import pathlib
 import ifcopenshell
 import pytest
 
-from ifcdb.edge_model.model import EdgeModel
+from ifcdb.schema.model import IfcSchemaModel
 from ifcdb.pymodel.base import ExpReader
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
 
 
 @pytest.fixture
@@ -31,8 +34,8 @@ def wrap() -> ifcopenshell.ifcopenshell_wrapper:
 
 
 @pytest.fixture
-def sg_ifc4x1(wrap) -> EdgeModel:
-    return EdgeModel(schema=wrap.schema_by_name("IFC4x1"))
+def sm_ifc4x1(wrap) -> IfcSchemaModel:
+    return IfcSchemaModel(schema_version="IFC4x1")
 
 
 @pytest.fixture
