@@ -34,6 +34,12 @@ class DbConfig:
         # All database creation/deletion/modification should happen using a client pointing to the "base" db.
         self.client = edgedb.create_client()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.client.close()
+
     def database_exists(self):
         try:
             self.client.execute(DB_CREATE.format(database=self.database))

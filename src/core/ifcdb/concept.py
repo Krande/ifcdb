@@ -71,7 +71,6 @@ class EdgeIOBase:
         if self.client is None:
             self.client = self.default_client()
 
-        self._db_config = DbConfig(self.database)
         self._db_migrate = DbMigration(database=self.database, dbschema_dir=self.db_schema_dir)
         self._sm = IfcSchemaModel(self.ifc_schema)
 
@@ -92,7 +91,14 @@ class EdgeIOBase:
         return client
 
     def database_exists(self):
-        return self._db_config.database_exists()
+        with DbConfig(self.database) as db_config:
+            return db_config.database_exists()
+
+    def setup_database(self, delete_existing_migrations=False):
+        with DbConfig(self.database) as db_config:
+            db_config.setup_database()
+        self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
+        self._eq_builder = EQBuilder(self.client)
 
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
         self._db_migrate.migrate_stepwise(ifc_schema_ver, entities, batch_size, **kwargs)
@@ -120,11 +126,6 @@ class EdgeIOBase:
             unique_entities = entities
         related_entities = self._sm.get_related_entities(unique_entities)
         self._sm.to_esdl_file(esdl_file_path, related_entities, module_name)
-
-    def setup_database(self, delete_existing_migrations=False):
-        self._db_config.setup_database()
-        self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
-        self._eq_builder = EQBuilder(self.client)
 
     # IFC utils
     def load_ifc(self, from_path: str = None, from_str: str = None):
@@ -162,7 +163,6 @@ class EdgeIOBase:
     def _insert_items_sequentially(
         self, ifc_items: [ifcopenshell.entity_instance], tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None
     ):
-
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
             if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
