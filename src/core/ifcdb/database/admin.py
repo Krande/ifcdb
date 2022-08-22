@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Type
 import os
 import pathlib
 import shutil
 import subprocess
 import time
 from dataclasses import dataclass
+from typing import Type
 
 import edgedb
 
@@ -17,8 +17,10 @@ from ifcdb.schema.model import IfcSchemaModel
 class MigrationCreateError(Exception):
     pass
 
+
 class MigrationApplyError(Exception):
     pass
+
 
 DB_CREATE = "CREATE DATABASE {database}"
 DB_DROP = "DROP DATABASE {database}"
@@ -26,8 +28,11 @@ DB_DROP = "DROP DATABASE {database}"
 
 @dataclass
 class DbConfig:
-    client: edgedb.Client | edgedb.AsyncIOClient
     database: str = None
+
+    def __post_init__(self):
+        # All database creation/deletion/modification should happen using a client pointing to the "base" db.
+        self.client = edgedb.create_client()
 
     def database_exists(self):
         try:
@@ -152,9 +157,7 @@ class DbMigration:
         print("CLI command 'migration apply' complete")
 
     def _run_edgedb_cli(self, cmd_str, error_type: Type[Exception]):
-        res = subprocess.run(
-            cmd_str, cwd=self.dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8"
-        )
+        res = subprocess.run(cmd_str, cwd=self.dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")
         if res.stderr != "":
             print(res.stderr)
             if "error: " in res.stderr:

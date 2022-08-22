@@ -1,7 +1,7 @@
 version: "3"
 services:
   edgedb:
-    image: edgedb/edgedb
+    image: edgedb/edgedb:2.1
     environment:
       EDGEDB_SERVER_SECURITY: insecure_dev_mode
       EDGEDB_DOCKER_LOG_LEVEL: debug
