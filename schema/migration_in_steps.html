@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Necessary modifications to the IFC schema" href="modifications.html" /><link rel="prev" title="Use Cases" href="../usecases/usecases_intro.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
 
     <meta name="generator" content="sphinx-5.1.1, furo 2022.06.21"/>
-        <title>Converting IFC schema to EdgeDB schema (ESDL) - IFC as a Database</title>
+        <title>Migrating the entire IFC schema into EdgeDB - IFC as a Database</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -135,7 +135,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -160,8 +160,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../usecases/usecases_intro.html">Use Cases</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schema Conversion</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Converting IFC schema to EdgeDB schema (ESDL)</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="schema_to_esdl.html">Converting IFC schema to EdgeDB schema (ESDL)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modifications.html">Necessary modifications to the IFC schema</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Inserting Elements</span></p>
@@ -215,57 +215,23 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
-          <section id="converting-ifc-schema-to-edgedb-schema-esdl">
-<h1>Converting IFC schema to EdgeDB schema (ESDL)<a class="headerlink" href="#converting-ifc-schema-to-edgedb-schema-esdl" title="Permalink to this heading">#</a></h1>
-<p>The EdgeIO class uses the built-in IFC-schema in IfcOpenShell to construct .esdl files which represents the EdgeDB
-schema.</p>
-<p>The following sections describes how to construct the IFC schema using python and the <code class="docutils literal notranslate"><span class="pre">EdgeIO</span></code> class.</p>
-<section id="edgedb-using-partial-ifc-schema">
-<h2>EdgeDB using partial IFC Schema<a class="headerlink" href="#edgedb-using-partial-ifc-schema" title="Permalink to this heading">#</a></h2>
-<p>Choose to base your EdgeDB instance on IFC elements only relevant to a specific IFC file
-(useful during development of the EdgeDB schema generator)</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pathlib</span>
-<span class="kn">from</span> <span class="nn">ifcdb</span> <span class="kn">import</span> <span class="n">EdgeIO</span>
-
-
-<span class="n">ifc_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;files/tessellated-item.ifc&quot;</span><span class="p">)</span>
-
-<span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="s2">&quot;db/dbschema&quot;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s2">&quot;testdb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>  
-    <span class="n">io</span><span class="o">.</span><span class="n">create_schema_from_ifc_file</span><span class="p">(</span><span class="n">ifc_path</span><span class="o">=</span><span class="n">ifc_path</span><span class="p">)</span>
-    <span class="n">io</span><span class="o">.</span><span class="n">setup_database</span><span class="p">(</span><span class="n">delete_existing_migrations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="edgedb-using-the-entire-ifc-schema">
-<h2>EdgeDB using the entire IFC Schema<a class="headerlink" href="#edgedb-using-the-entire-ifc-schema" title="Permalink to this heading">#</a></h2>
-<p>To set up an EdgeDB instance using the complete IFC schema you will need to specify <code class="docutils literal notranslate"><span class="pre">ifc_schema</span></code> to define which
-version of the IFC schema you want the database schema to represent.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>At the time of writing (12.08.22), EdgeDB v2.1+c600476 is able to create the migration for the IFC schema in about 3.5
-hours, but unfortunately unable to pass the entire IFC schema definition to postgres due to the<br />
-text size being too large.</p>
-<p><code class="docutils literal notranslate"><span class="pre">INFO</span> <span class="pre">207</span> <span class="pre">2022-08-11T19:04:37.396</span> <span class="pre">postgres:</span> <span class="pre">invalid</span> <span class="pre">message</span> <span class="pre">length</span></code>.</p>
-<p>This has been adressed in https://github.com/edgedb/edgedb/issues/3946</p>
-</div>
-</section>
-<section id="edgedb-using-specific-ifc-entities">
-<h2>EdgeDB using specific IFC entities<a class="headerlink" href="#edgedb-using-specific-ifc-entities" title="Permalink to this heading">#</a></h2>
-<p>To create a schema using only specific IFC entities (and all related entities) it is possible to do the following.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ifcdb</span> <span class="kn">import</span> <span class="n">EdgeIO</span>
-
-<span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="s2">&quot;db/dbschema&quot;</span><span class="p">,</span> <span class="n">ifc_schema</span><span class="o">=</span><span class="s2">&quot;IFC4X1&quot;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s2">&quot;testdb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>
-    <span class="n">io</span><span class="o">.</span><span class="n">create_schema</span><span class="p">(</span><span class="n">entities</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;IfcQuantityArea&quot;</span><span class="p">])</span>
-    <span class="n">io</span><span class="o">.</span><span class="n">setup_database</span><span class="p">(</span><span class="n">delete_existing_migrations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
+          <section id="migrating-the-entire-ifc-schema-into-edgedb">
+<h1>Migrating the entire IFC schema into EdgeDB<a class="headerlink" href="#migrating-the-entire-ifc-schema-into-edgedb" title="Permalink to this heading">#</a></h1>
+<p>As a consequence of the issue raised in https://github.com/edgedb/edgedb/issues/3946 a solution
+was proposed to split the schema into chunks and run the EdgeDB migrations in steps.</p>
+<p>The following migration increments are subject to testing</p>
+<ul class="simple">
+<li><p>[x]: 600 -&gt; Memory Alloc error</p></li>
+<li><p>[x]: 300 -&gt; Memory Alloc error</p></li>
+<li><p>[]: 100</p></li>
+<li><p>[]: 50</p></li>
+</ul>
 </section>
 
         </article>
@@ -273,26 +239,8 @@ text size being too large.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="modifications.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">Necessary modifications to the IFC schema</div>
-              </div>
-              <svg><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="../usecases/usecases_intro.html">
-              <svg><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">Use Cases</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -313,29 +261,8 @@ text size being too large.</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            Contents
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">Converting IFC schema to EdgeDB schema (ESDL)</a><ul>
-<li><a class="reference internal" href="#edgedb-using-partial-ifc-schema">EdgeDB using partial IFC Schema</a></li>
-<li><a class="reference internal" href="#edgedb-using-the-entire-ifc-schema">EdgeDB using the entire IFC Schema</a></li>
-<li><a class="reference internal" href="#edgedb-using-specific-ifc-entities">EdgeDB using specific IFC entities</a></li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>

@@ -18,7 +18,7 @@ from ifcdb import EdgeIO
 ifc_path = pathlib.Path("files/tessellated-item.ifc")
 
 with EdgeIO(db_schema_dir="db/dbschema", database="testdb") as io:  
-    io.create_schema(from_ifc_file=ifc_path)
+    io.create_schema_from_ifc_file(ifc_path=ifc_path)
     io.setup_database(delete_existing_migrations=True)
 ```
 
@@ -51,6 +51,6 @@ To create a schema using only specific IFC entities (and all related entities) i
 from ifcdb import EdgeIO
 
 with EdgeIO(db_schema_dir="db/dbschema", ifc_schema="IFC4X1", database="testdb") as io:
-    io.create_schema(from_ifc_entities=["IfcQuantityArea"])
+    io.create_schema(entities=["IfcQuantityArea"])
     io.setup_database(delete_existing_migrations=True)
 ```
