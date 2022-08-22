@@ -24,6 +24,7 @@ usecases/usecases_intro.md
 :caption: Schema Conversion
 
 schema/schema_to_esdl.md
+schema/migration_in_steps.md
 schema/modifications.md
 ```
 

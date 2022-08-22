@@ -9,20 +9,18 @@ the EdgeDB schema currently is being used.
 The following pattern for EdgeDB allows you to roundtrip your IFC file
 
 ````python
-import os
 import pathlib
 from ifcdb import EdgeIO
 
-
 ifc_path = pathlib.Path("files/tessellated-item.ifc")
 
-with EdgeIO(db_schema_dir="db/dbschema", database="testdb") as io:  
-    io.create_schema(from_ifc_file=ifc_path)
+with EdgeIO(db_schema_dir="db/dbschema", database="testdb") as io:
+    io.create_schema_from_ifc_file(ifc_path=ifc_path)
     io.setup_database(delete_existing_migrations=True)
     io.insert_ifc(ifc_path)
     # Do all kinds of query experiments here
-    
-    # Or just read the entire EdgeDB IFC content into an IFC file str using ifcopenshell like this
+
+    # When you are done just read the entire EdgeDB IFC content into an IFC file str using ifcopenshell like this
     res = io.to_ifc_file(f"temp/{ifc_path.stem}-roundtripped.ifc")
 ````
 

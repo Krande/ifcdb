@@ -8,6 +8,11 @@ from app.main import app as fastapi_app
 
 
 @pytest.fixture
+def anyio_backend():
+    return "trio"
+
+
+@pytest.fixture
 async def normal_user_client():
     async def mock_normal_user(request: Request):
         user = User(

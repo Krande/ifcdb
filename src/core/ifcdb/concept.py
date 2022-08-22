@@ -17,7 +17,7 @@ from ifcdb.admin_utils import (
     walk_edge_results_and_make_uuid_map,
 )
 from ifcdb.database.admin import DbConfig, DbMigration
-from ifcdb.database.builder import EQBuilder
+from ifcdb.database.builder import EQBuilder, introspect_schema
 from ifcdb.database.model import (
     SpatialNode,
     INSERTS,
@@ -48,13 +48,12 @@ from ifcdb.schema.model import (
 @dataclass
 class EdgeIOBase:
 
-    client: edgedb.Client | edgedb.AsyncIOClient = None
     database: str = None
+    client: edgedb.Client | edgedb.AsyncIOClient = None
     db_schema_dir: str | pathlib.Path = "dbschema"
     ifc_schema: str = "IFC4x1"
 
     _sm: IfcSchemaModel = None
-    _ifc_io: IfcIO = None
     _eq_builder: EQBuilder = None
     _db_config: DbConfig = None
     _db_migrate: DbMigration = None
@@ -161,10 +160,6 @@ class EdgeIOBase:
         logging.info(f'Insert complete in "{diff:.1f}" seconds')
 
         return chunk
-
-    def write_ifc_entities_to_esdl_file(self, esdl_file_path: str | pathlib.Path, module_name: str = "default"):
-        unique_entities = self.import_ifc_entities_w_related()
-        self._sm.to_esdl_str(unique_entities, esdl_file_path, module_name)
 
     def _insert_items_sequentially(
         self, ifc_items: [ifcopenshell.entity_instance], tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None
@@ -440,13 +435,13 @@ class EdgeIO(EdgeIOBase):
         print(final_result_str)
         return result
 
-    def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:
+    def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None, module_name="default") -> dict:
         """This will query the EdgeDB for all known IFC entities."""
+        db_entities = list(introspect_schema(self.client, module_name).keys())
         if limit_to_ifc_entities is True:
             if entities is None:
                 entities = []
-
-            entities += self.import_ifc_entities_w_related()
+            entities += db_entities
 
         select_str = "select {\n"
         if entities is None:
