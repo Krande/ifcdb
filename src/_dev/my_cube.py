@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import ifcopenshell
 from dataclasses import dataclass
-from pydantic import BaseModel
 
 
 @dataclass

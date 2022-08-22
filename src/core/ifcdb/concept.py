@@ -86,6 +86,10 @@ class EdgeIOBase:
 
     def default_client(self) -> edgedb.Client:
         client = edgedb.create_client()
+        return client
+
+    def db_client(self) -> edgedb.Client:
+        client = edgedb.create_client(database=self.database)
         try:
             self._eq_builder = EQBuilder(client)
         except edgedb.errors.UnknownDatabaseError as e:
@@ -435,9 +439,12 @@ class EdgeIO(EdgeIOBase):
         print(final_result_str)
         return result
 
-    def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None, module_name="default") -> dict:
+    def get_all(
+        self, entities: list[str] = None, limit_to_ifc_entities=False, client=None, module_name="default"
+    ) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
-        db_entities = list(introspect_schema(self.client, module_name).keys())
+        self.client = self.db_client()
+        db_entities = list(self._eq_builder.edgedb_objects.keys())
         if limit_to_ifc_entities is True:
             if entities is None:
                 entities = []

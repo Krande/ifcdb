@@ -10,9 +10,9 @@ from ifcdb.validation_utils import validate_ifc_objects
 @pytest.mark.parametrize(
     "ifc_file_name",
     [
-        "tessellated-item.ifc",
-        "cube-advanced-brep.ifc",
-        "SpatialHierarchy1.ifc",
+        # "tessellated-item.ifc",
+        # "cube-advanced-brep.ifc",
+        # "SpatialHierarchy1.ifc",
         "MyBeamWithHoles.ifc",
     ],
 )
