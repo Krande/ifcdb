@@ -17,4 +17,4 @@ build:
 	docker build -t ifc-api/latest -f api.Dockerfile .
 
 migrate:
-	edgedb migration apply --credentials-file ./credentials.json --schema-dir ./src/server/schema/complete_in_steps
+	edgedb migration apply --credentials-file ./credentials.json --schema-dir ./src/server/schema/complete_in_steps/dbschema
