@@ -8,6 +8,7 @@ from httpx import AsyncClient
 
 from ifcdb.io.ifc import IfcIO
 
+
 @pytest.fixture
 def mock_db_name():
     return "MyCube2"
@@ -48,12 +49,12 @@ def to_generic(ifc_elem: ifcopenshell.entity_instance) -> IfcGeneric:
 
 
 @pytest.fixture
-def cube_data(ifc_files_dir):
+def cube_ifc_data(ifc_files_dir) -> list[IfcGeneric]:
     ifc_io = IfcIO(ifc_files_dir / "MyCube.ifc")
-    return ifc_io.ifc_obj.wrapped_data.to_string()
+    return [to_generic(f) for f in ifc_io.ifc_obj]
 
 
 @pytest.mark.anyio
-async def test_auth_view_not_admin(normal_user_client: AsyncClient, cube_ifc_str, mock_db_name):
-    response = await normal_user_client.post("/entities", params={"dbname": mock_db_name, "ifc_file": cube_ifc_str})
+async def test_auth_view_not_admin(normal_user_client: AsyncClient, cube_ifc_data, mock_db_name):
+    response = await normal_user_client.post("/entities", params={"dbname": mock_db_name, "ifc_file": cube_ifc_data})
     assert response.status_code == 401

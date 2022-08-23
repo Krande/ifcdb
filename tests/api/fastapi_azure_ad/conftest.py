@@ -1,15 +1,14 @@
 import pytest
-from httpx import AsyncClient
-
 from app.dependencies import azure_scheme
+from app.main import app as fastapi_app
 from fastapi import Request
 from fastapi_azure_auth.user import User
-from app.main import app as fastapi_app
+from httpx import AsyncClient
 
 
 @pytest.fixture
 def anyio_backend():
-    return "trio"
+    return "asyncio"
 
 
 @pytest.fixture

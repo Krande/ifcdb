@@ -9,12 +9,17 @@ def top_dir() -> pathlib.Path:
         cwd = pathlib.Path.cwd()
         this_dir = cwd.parent.resolve().absolute()
         parents = list(this_dir.parents)
+    list_of_subdirs = []
     for parent in parents:
         subdirs = set([x.name for x in parent.iterdir() if x.is_dir()])
         if subdirs.issuperset(top_level_dirs):
             return parent
+        list_of_subdirs.append(subdirs)
 
-    raise ValueError(f"Unable to find top directory containing '{top_level_dirs}' within parent dirs '{list(parents)}'")
+    raise ValueError(
+        f"Unable to find top directory containing '{top_level_dirs}' within parent dirs '{list(parents)}'"
+        f" with subdirs; '{list_of_subdirs}'"
+    )
 
 
 def change_case(camelcase_str):
