@@ -28,7 +28,7 @@ jobs:
       matrix:
         WORKDIR: [
           { name: basic, dir: "src/server/schema/partial_schemas/db/basic", use_python: "false" },
-          { name: mixed, dir: "src/server/schema/partial_schemas/db/mixed", use_python: "false" },
+          { name: mixed, dir: "src/server/schema/mixed", use_python: "false" },
           { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: "true" }
         ]
     env:
