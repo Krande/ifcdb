@@ -8,10 +8,8 @@ on:
       - src/server/schema/**
       - .github/workflows/ci-edgedb-schema.yml
 env:
-  WORKDIR: src/server/schema/partial_schemas/db/basic
-  CON_PARAMS: --tls-security=insecure -P 5656
-  SERVER_VERSION: 2.1
-  PYTHONBUFFERED: 1
+  EDGEDB_DSN: edgedb://edgedb@localhost
+  EDGEDB_CLIENT_TLS_SECURITY: insecure
 
 jobs:
   test:
@@ -30,7 +28,7 @@ jobs:
       matrix:
         WORKDIR: [
           { name: basic, dir: "src/server/schema/partial_schemas/db/basic", use_python: "false" },
-#          { name: complete, dir: "src/server/schema/complete_schema", use_python: false }
+          { name: mixed, dir: "src/server/schema/partial_schemas/db/mixed", use_python: "false" },
           { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: "true" }
         ]
     env:
