@@ -45,21 +45,24 @@ class DbConfig:
             self.client.execute(DB_CREATE.format(database=self.database))
         except edgedb.errors.DuplicateDatabaseDefinitionError:
             return True
-
-        self.client.execute(DB_DROP.format(database=self.database))
+        self.delete_database()
         return False
 
-    def setup_database(self):
+    def create_database(self):
         print(f"Dropping existing database '{self.database}' and creating a new in its place")
 
         try:
             print(f"Dropping database {self.database}")
-            self.client.execute(DB_DROP.format(database=self.database))
+            self.delete_database()
         except edgedb.errors.UnknownDatabaseError as e:
             logging.debug(e)
 
         print(f"Creating database {self.database}")
         self.client.execute(DB_CREATE.format(database=self.database))
+
+    def delete_database(self, database: str = None):
+        db = self.database if database is None else database
+        self.client.execute(DB_DROP.format(database=db))
 
 
 @dataclass

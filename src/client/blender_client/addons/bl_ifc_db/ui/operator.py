@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 import bpy
+import ifcopenshell.api
 import os
 import requests
+from bpy.app.handlers import persistent
 
 import blenderbim.core.project as core
 import blenderbim.tool as tool
 from blenderbim.bim.ifc import IfcStore
+from blenderbim.bim.module.model import product
+
+
+@persistent
+def load_post(*args):
+    ifcopenshell.api.add_post_listener(
+        "geometry.add_representation", "BlenderBIM.Product.GenerateBox", product.generate_box
+    )
 
 
 def run_listener():
@@ -97,7 +107,7 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
         if s is None:
             return {"FINISHED"}
 
-        r = s.get(f"{api_url}/users", params={"dbname": props.db_name})
+        r = s.get(f"{api_url}/file", params={"dbname": props.db_name})
         print("REST RESPONSE: " + r.text)
 
         return {"FINISHED"}
@@ -114,7 +124,11 @@ class IfcDb_Push_Operator(bpy.types.Operator):
         api_url = props.conn_api_url
 
         s = create_session(context)
-        r = s.post(f"{api_url}/users", params={"dbname": props.db_name})
+
+        ifc: ifcopenshell.file = IfcStore.get_file()
+        ifc_str = ifc.wrapped_data.to_string()
+        print(api_url)
+        r = s.post(f"{api_url}/file", params={"dbname": props.db_name, "ifc_file_str": ifc_str})
         print("REST RESPONSE: " + r.text)
 
         return {"FINISHED"}

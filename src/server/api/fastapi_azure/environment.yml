@@ -1,11 +1,14 @@
 name: ifc-api
 channels:
+  - krande/label/dev
   - conda-forge
 dependencies:
   - python==3.10.5
+  - ifcopenshell
   - fastapi
   - uvicorn
   - starlette
+  - toposort
   - pip
   - pip:
       - edgedb

@@ -1,22 +1,25 @@
 from __future__ import annotations
 
-import json
 from http import HTTPStatus
 
-from app.dependencies import azure_scheme
-from app.internal.database import get_client
+import json
 from fastapi import APIRouter, Depends, Security
 from fastapi_azure_auth.user import User
 
-from ifcdb.io.ifc import IfcIO
+from app.dependencies import azure_scheme
+from app.internal.database import get_client
+from ifcdb import EdgeIO
 from ifcdb.database.inserts.sequentially import SeqInsert
+from ifcdb.io.ifc import IfcIO
 
 router = APIRouter()
 
 
 @router.get("/file", status_code=HTTPStatus.CREATED, dependencies=[Security(azure_scheme)])
-async def get_file_str(user: User = Depends(azure_scheme), dbname: str = None, id_filter: list[str] = None) -> str:
-    return "Not Implemented"
+async def get_file_str(dbname: str,class_filter: list[str] = None) -> str:
+    client = get_client(database=dbname)
+    with EdgeIO(client=client, database=dbname) as io:
+        return io.to_ifc_str(specific_classes=class_filter)
 
 
 @router.post("/file", status_code=HTTPStatus.CREATED, dependencies=[Security(azure_scheme)])

@@ -2,6 +2,11 @@ import pytest
 from httpx import AsyncClient
 
 
+@pytest.fixture
+def mock_db_name():
+    return "UserDb"
+
+
 @pytest.mark.anyio
 async def test_auth_view(client: AsyncClient, mock_db_name):
     response = await client.get("/users", params={"dbname": mock_db_name})

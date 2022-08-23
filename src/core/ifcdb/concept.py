@@ -83,11 +83,6 @@ class EdgeIOBase:
 
     def default_client(self) -> edgedb.Client:
         client = edgedb.create_client(database=self.database)
-        try:
-            self._eq_builder = EQBuilder(client)
-        except edgedb.errors.UnknownDatabaseError as e:
-            logging.warning(e)
-
         return client
 
     def database_exists(self):
@@ -96,7 +91,7 @@ class EdgeIOBase:
 
     def setup_database(self, delete_existing_migrations=False):
         with DbConfig(self.database) as db_config:
-            db_config.setup_database()
+            db_config.create_database()
         self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
         self._eq_builder = EQBuilder(self.client)
 
@@ -208,7 +203,7 @@ class EdgeIOBase:
 
     # Base Queries
     def get_spatial_hierarchy(self, filter_by_name: str = None) -> dict[str, SpatialNode]:
-        in_str = self._eq_builder.get_spatial_hierarchy_str(filter_by_name=filter_by_name)
+        in_str = self.eq_builder.get_spatial_hierarchy_str(filter_by_name=filter_by_name)
 
         def get_class_name(type_obj):
             return type_obj["_e_type"].replace("default::", "")
@@ -256,13 +251,13 @@ class EdgeIOBase:
 
     def get_owner_history(self) -> dict:
         """Returns all OwnerHistory related objects as a flat dictionary dict[uuid:result]"""
-        query_str = self._eq_builder.get_owner_history_str()
+        query_str = self.eq_builder.get_owner_history_str()
         result = json.loads(self.client.query_single_json(query_str))
         return flatten_uuid_source(result)
 
     def get_object_placements(self) -> dict:
         """Returns all related objects and properties needed to resolve locations of all IFC objects"""
-        query_str = self._eq_builder.get_object_placements_str()
+        query_str = self.eq_builder.get_object_placements_str()
         result = json.loads(self.client.query_single_json(query_str))
         # Make object placement dict flat
 
@@ -270,7 +265,7 @@ class EdgeIOBase:
 
     def get_object_shape(self, identifier: str, value: str):
         uuid, class_name = self._get_id_class_name_from_simple_filter(identifier, value)
-        query_str = self._eq_builder.get_select_str(
+        query_str = self.eq_builder.get_select_str(
             class_name, uuid, max_depth=None, skip_link_classes=self.skippable_classes
         )
         result = json.loads(self.client.query_single_json(query_str))
@@ -287,7 +282,7 @@ class EdgeIOBase:
             for item in shapes["Items"]:
                 uuid = item["id"]
                 class_name = item["_e_type"].replace("default::", "")
-                sub_str = self._eq_builder.get_select_str(class_name, uuids=uuid, max_depth=None)
+                sub_str = self.eq_builder.get_select_str(class_name, uuids=uuid, max_depth=None)
                 query_str_2 += f"    obj_{obj_num} := ({sub_str}),\n"
                 obj_map[obj_num] = uuid
                 obj_num += 1
@@ -300,7 +295,7 @@ class EdgeIOBase:
         return output_results
 
     def _get_by_uuid_and_class_name(self, uuid, class_name, top_level_only=False):
-        select_str_a = self._eq_builder.select_object_str(class_name, include_all_nested_objects=not top_level_only)
+        select_str_a = self.eq_builder.select_object_str(class_name, include_all_nested_objects=not top_level_only)
         query_str = f"SELECT {class_name} {{ {select_str_a} }} filter .id = <uuid>'{uuid}'"
         return json.loads(self.client.query_json(query_str))
 
@@ -316,6 +311,15 @@ class EdgeIOBase:
 
         return uuid, class_name
 
+    @property
+    def eq_builder(self):
+        if self._eq_builder is None:
+
+            try:
+                self._eq_builder = EQBuilder(self.client)
+            except edgedb.errors.UnknownDatabaseError as e:
+                logging.warning(e)
+        return self._eq_builder
 
 @dataclass
 class EdgeIO(EdgeIOBase):
@@ -411,7 +415,7 @@ class EdgeIO(EdgeIOBase):
         select_linked_objects_str = "SELECT (\n"
         for i, (key, value) in enumerate(slice_values):
             class_name = value.class_name
-            select_str = self._eq_builder.select_linked_objects_query_str(class_name)
+            select_str = self.eq_builder.select_linked_objects_query_str(class_name)
             select_linked_objects_str += f"(SELECT {class_name} {{\n{select_str}\n}} filter .id = <uuid>'{key}'),\n"
         select_linked_objects_str += ")\n"
 
@@ -423,7 +427,7 @@ class EdgeIO(EdgeIOBase):
         final_query_str = "SELECT {\n"
         for class_name, uuids in uuid_map_final.items():
             uuids_str = ",".join([f"'{x}'" for x in uuids])
-            select_str = self._eq_builder.select_object_str(class_name, include_all_nested_objects=False)
+            select_str = self.eq_builder.select_object_str(class_name, include_all_nested_objects=False)
             final_query_str += f"{class_name} := "
             final_query_str += f"(SELECT {class_name} {{\n{select_str}\n}} filter .id = <uuid>{{{uuids_str}}}),\n"
         final_query_str += "}"
@@ -438,7 +442,7 @@ class EdgeIO(EdgeIOBase):
     ) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
 
-        db_entities = list(self._eq_builder.edgedb_objects.keys())
+        db_entities = list(self.eq_builder.edgedb_objects.keys())
         if limit_to_ifc_entities is True:
             if entities is None:
                 entities = []

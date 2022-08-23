@@ -8,6 +8,10 @@ from httpx import AsyncClient
 
 from ifcdb.io.ifc import IfcIO
 
+@pytest.fixture
+def mock_db_name():
+    return "MyCube2"
+
 
 @dataclass
 class IfcGeneric:

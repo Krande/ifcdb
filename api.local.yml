@@ -1,18 +1,16 @@
 # docker-compose.yml
 version: '3'
 services:
-  IFC-API-Azure:
+  IFC-API-Local:
     image: ifc-api/latest
     build:
-      context: .
+      context: ../krande-IfcOpenShell/src/blenderbim
       dockerfile: Dockerfile
     pull_policy: build
-    volumes:
-      - "./config/azure:/code/certs"
     environment:
-      EDGEDB_TLS_CA_FILE: /code/certs/cert.pem
       EDGEDB_CLIENT_TLS_SECURITY: insecure
+      EDGEDB_DSN: edgedb://ifcdbadmin:secret@edgedb-local:5656/edgedb
     ports:
       - "8000:8000"
     env_file:
-      - config/azure/azure.env
+      - src/server/api/fastapi_azure/config/local/local.env
