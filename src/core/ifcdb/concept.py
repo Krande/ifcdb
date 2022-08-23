@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import copy
-import edgedb
-import ifcopenshell
 import json
 import logging
 import os
@@ -12,33 +10,33 @@ from dataclasses import dataclass
 from io import StringIO
 from multiprocessing.pool import ThreadPool
 
-from ifcdb.admin_utils import (
-    clean_name,
-    walk_edge_results_and_make_uuid_map,
-)
+import edgedb
+import ifcopenshell
+
+from ifcdb.admin_utils import clean_name, walk_edge_results_and_make_uuid_map
 from ifcdb.database.admin import DbConfig, DbMigration
-from ifcdb.database.builder import EQBuilder, introspect_schema
+from ifcdb.database.builder import EQBuilder
 from ifcdb.database.model import (
-    SpatialNode,
     INSERTS,
-    WithNode,
     EntityQueryModel,
     IfcNode,
+    SpatialNode,
+    WithNode,
     get_props,
 )
 from ifcdb.database.utils import (
-    get_att_insert_str,
     dict_value_replace,
     flatten_uuid_source,
+    get_att_insert_str,
     get_uuid_refs,
     insert_uuid_objects_from_source,
     resolve_order_of_result_entities,
 )
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import (
-    IfcSchemaModel,
     EntityModel,
     EnumModel,
+    IfcSchemaModel,
     IntermediateClass,
     SelectModel,
     TypeModel,
@@ -48,7 +46,7 @@ from ifcdb.schema.model import (
 @dataclass
 class EdgeIOBase:
 
-    database: str = None
+    database: str
     client: edgedb.Client | edgedb.AsyncIOClient = None
     db_schema_dir: str | pathlib.Path = "dbschema"
     ifc_schema: str = "IFC4x1"
@@ -73,7 +71,6 @@ class EdgeIOBase:
         if self.client is None:
             self.client = self.default_client()
 
-        self._db_config = DbConfig(self.client, self.database)
         self._db_migrate = DbMigration(database=self.database, dbschema_dir=self.db_schema_dir)
         self._sm = IfcSchemaModel(self.ifc_schema)
 
@@ -85,10 +82,6 @@ class EdgeIOBase:
             self.client.close()
 
     def default_client(self) -> edgedb.Client:
-        client = edgedb.create_client()
-        return client
-
-    def db_client(self) -> edgedb.Client:
         client = edgedb.create_client(database=self.database)
         try:
             self._eq_builder = EQBuilder(client)
@@ -98,7 +91,14 @@ class EdgeIOBase:
         return client
 
     def database_exists(self):
-        return self._db_config.database_exists()
+        with DbConfig(self.database) as db_config:
+            return db_config.database_exists()
+
+    def setup_database(self, delete_existing_migrations=False):
+        with DbConfig(self.database) as db_config:
+            db_config.setup_database()
+        self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
+        self._eq_builder = EQBuilder(self.client)
 
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
         self._db_migrate.migrate_stepwise(ifc_schema_ver, entities, batch_size, **kwargs)
@@ -126,11 +126,6 @@ class EdgeIOBase:
             unique_entities = entities
         related_entities = self._sm.get_related_entities(unique_entities)
         self._sm.to_esdl_file(esdl_file_path, related_entities, module_name)
-
-    def setup_database(self, delete_existing_migrations=False):
-        self._db_config.setup_database()
-        self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
-        self._eq_builder = EQBuilder(self.client)
 
     # IFC utils
     def load_ifc(self, from_path: str = None, from_str: str = None):
@@ -168,7 +163,6 @@ class EdgeIOBase:
     def _insert_items_sequentially(
         self, ifc_items: [ifcopenshell.entity_instance], tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None
     ):
-
         uuid_map = dict()
         for i, item in enumerate(ifc_items, start=1):
             if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
@@ -443,7 +437,7 @@ class EdgeIO(EdgeIOBase):
         self, entities: list[str] = None, limit_to_ifc_entities=False, client=None, module_name="default"
     ) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
-        self.client = self.db_client()
+
         db_entities = list(self._eq_builder.edgedb_objects.keys())
         if limit_to_ifc_entities is True:
             if entities is None:
