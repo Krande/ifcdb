@@ -5,12 +5,12 @@ was proposed to split the schema into chunks and run the EdgeDB migrations in st
 
 The following migration increments are subject to testing
 
-- [x]: 600 -> Memory Alloc error
-- [x]: 300 -> Memory Alloc error
-- []: 100
-- []: 50
+- [x] 600 -> Memory Alloc error
+- [x] 300 -> Memory Alloc error
+- [ ] 100 - Success! (20 hours execution time)
+- [ ] 50
 
-# Memory Alloc error
+## Memory Alloc error
 
 This is the most common error 
 
