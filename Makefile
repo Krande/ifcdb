@@ -1,6 +1,9 @@
 env:
 	conda env update --file environment.dev.yml --prune
 
+up:
+	cd src/server/admin/infrastructure/local && docker-compose up -d
+
 docs-install:
 	conda env create -f docs/environment.docs.yml
 

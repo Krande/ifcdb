@@ -682,6 +682,8 @@ class IfcSchemaModel:
     def entity_to_edge_str(self, entity: str) -> str:
         res = self.get_entity_by_name(entity)
         if isinstance(res, IntermediateClass):
+            if res.written_to_file is True:
+                return ""
             res.written_to_file = True
         return res.to_str()
 
@@ -696,6 +698,7 @@ class IfcSchemaModel:
         return entity.to_insert_str(ifc_entity, indent=indent, uuid_map=uuid_map, with_map=with_map)
 
     def to_esdl_str(self, entities: list[str], module_name="default") -> str:
+        print(f"Writing {len(entities)} entities to ESDL schema")
         esdl_str = f"module {module_name} {{\n\n"
         for entity_name in entities:
             esdl_str += self.entity_to_edge_str(entity_name)

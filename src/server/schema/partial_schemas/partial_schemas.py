@@ -1,16 +1,24 @@
 import os
 import time
 
+from dotenv import load_dotenv
+
 from ifcdb import EdgeIO
+from ifcdb.utils import top_dir
 from ifcdb.validation_utils import (
     validate_ifc_content,
     validate_ifc_objects,
     validate_using_ifc_diff,
 )
-from ifcdb.utils import top_dir
-from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables from .env.
+
+
+def mixed_schema(ifc_file: list[str], extra_ifc_classes: list[str]):
+    ifc_paths = [top_dir() / "files" / f for f in ifc_file]
+    with EdgeIO(db_schema_dir="db/mixed/dbschema", database="mixed") as io:
+        io.create_schema_from_ifc_file(ifc_path=ifc_paths, extra_entities=extra_ifc_classes)
+        io.setup_database(delete_existing_migrations=True)
 
 
 def basic_schema(ifc_file: str, extra_ifc_classes: list[str]):
@@ -73,4 +81,8 @@ if __name__ == "__main__":
     # main("SpatialHierarchy1.ifc", refresh_db=False)
     # main("MyBeam.ifc", refresh_db=False)
     # main("tessellated-item.ifc")
-    basic_schema("MyCube.ifc", ["IfcTelecomAddress", "IfcMember", "IfcColumn"])
+    # basic_schema("MyCube.ifc", ["IfcTelecomAddress", "IfcMember", "IfcColumn"])
+    mixed_schema(
+        ["MyCube.ifc", "cube-advanced-brep.ifc", "tessellated-item.ifc", "MyBeamWithHoles.ifc"],
+        ["IfcTelecomAddress", "IfcMember", "IfcColumn", "IfcPerson"],
+    )

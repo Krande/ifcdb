@@ -100,17 +100,29 @@ class EdgeIOBase:
 
     def create_schema_from_ifc_file(
         self,
-        ifc_path: str | pathlib.Path = None,
+        ifc_path: str | pathlib.Path | list[str | pathlib.Path] = None,
         ifc_str: str = None,
         extra_entities: list[str] = None,
         module_name="default",
     ):
         esdl_file_path = self.db_schema_dir / "default.esdl"
-        ifc_io = IfcIO(ifc_file=ifc_path, ifc_str=ifc_str)
-        ifc_ents = ifc_io.get_unique_class_entities_of_ifc_content()
+        if isinstance(ifc_path, list):
+            ifc_ents = []
+            for ifc_p in ifc_path:
+                ifc_io = IfcIO(ifc_file=ifc_p)
+                res = ifc_io.get_unique_class_entities_of_ifc_content()
+                res_set = set(res)
+                ifc_ents_set = set(ifc_ents)
+                ifc_ents_diff = res_set.difference(ifc_ents_set)
+                ifc_ents += list(ifc_ents_diff)
+        else:
+            ifc_io = IfcIO(ifc_file=ifc_path, ifc_str=ifc_str)
+            ifc_ents = ifc_io.get_unique_class_entities_of_ifc_content()
         if extra_entities is not None:
             ifc_ents += extra_entities
+
         related_entities = self._sm.get_related_entities(ifc_ents)
+
         self._sm.to_esdl_file(esdl_file_path, related_entities, module_name)
 
     def create_schema(self, entities: list[str] = None, module_name="default"):
@@ -320,6 +332,7 @@ class EdgeIOBase:
             except edgedb.errors.UnknownDatabaseError as e:
                 logging.warning(e)
         return self._eq_builder
+
 
 @dataclass
 class EdgeIO(EdgeIOBase):

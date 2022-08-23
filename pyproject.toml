@@ -30,5 +30,5 @@ profile = "black"
 
 [tool.pytest.ini_options]
 pythonpath = [
-  "src/server/api/fastapi_azure_ad"
+  "src/server/api/fastapi_azure"
 ]
