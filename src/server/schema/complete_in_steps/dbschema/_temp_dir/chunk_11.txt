@@ -1,0 +1,5 @@
+IfcTubeBundleType
+IfcUnitaryEquipmentType
+IfcValveType
+IfcWasteTerminalType
+IfcRelSpaceBoundary2ndLevel

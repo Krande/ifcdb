@@ -1,0 +1,402 @@
+module default {
+
+
+    type IfcAbsorbedDoseMeasure {
+        required property `IfcAbsorbedDoseMeasure` -> float64;
+    }
+
+    type IfcAccelerationMeasure {
+        required property `IfcAccelerationMeasure` -> float64;
+    }
+
+    type IfcAmountOfSubstanceMeasure {
+        required property `IfcAmountOfSubstanceMeasure` -> float64;
+    }
+
+    type IfcAngularVelocityMeasure {
+        required property `IfcAngularVelocityMeasure` -> float64;
+    }
+
+    type IfcAreaDensityMeasure {
+        required property `IfcAreaDensityMeasure` -> float64;
+    }
+
+    type IfcAreaMeasure {
+        required property `IfcAreaMeasure` -> float64;
+    }
+
+    type IfcBinary {
+        required property `IfcBinary` -> bytes;
+    }
+
+    type IfcBoolean {
+        required property `IfcBoolean` -> bool;
+    }
+
+    abstract type IfcBoundaryCondition  {
+        property Name -> str;
+    }
+
+    type IfcBoxAlignment {
+        required property `IfcBoxAlignment` -> str;
+    }
+
+    type IfcCardinalPointReference {
+        required property `IfcCardinalPointReference` -> int64;
+    }
+
+    type IfcComplexNumber {
+        required property `IfcComplexNumber` -> array<float64>{
+            constraint expression on (len(__subject__) = 1 or len(__subject__) = 2)
+        };
+    }
+
+    type IfcCompoundPlaneAngleMeasure {
+        required property `IfcCompoundPlaneAngleMeasure` -> array<int64>{
+            constraint expression on (len(__subject__) = 3 or len(__subject__) = 4)
+        };
+    }
+
+    abstract type IfcConnectionGeometry  {
+    }
+
+    type IfcContextDependentMeasure {
+        required property `IfcContextDependentMeasure` -> float64;
+    }
+
+    abstract type IfcCoordinateReferenceSystem  {
+        required property Name -> str;
+        property Description -> str;
+        property GeodeticDatum -> str;
+        property VerticalDatum -> str;
+    }
+
+    type IfcCountMeasure {
+        required property `IfcCountMeasure` -> int64;
+    }
+
+    type IfcCurvatureMeasure {
+        required property `IfcCurvatureMeasure` -> float64;
+    }
+
+    type IfcDate {
+        required property `IfcDate` -> str;
+    }
+
+    type IfcDateTime {
+        required property `IfcDateTime` -> str;
+    }
+
+    type IfcDayInMonthNumber {
+        required property `IfcDayInMonthNumber` -> int64;
+    }
+
+    type IfcDayInWeekNumber {
+        required property `IfcDayInWeekNumber` -> int64;
+    }
+
+    type IfcDescriptiveMeasure {
+        required property `IfcDescriptiveMeasure` -> str;
+    }
+
+    type IfcDimensionCount {
+        required property `IfcDimensionCount` -> int64;
+    }
+
+    type IfcDimensionalExponents  {
+        required property LengthExponent -> int64;
+        required property MassExponent -> int64;
+        required property TimeExponent -> int64;
+        required property ElectricCurrentExponent -> int64;
+        required property ThermodynamicTemperatureExponent -> int64;
+        required property AmountOfSubstanceExponent -> int64;
+        required property LuminousIntensityExponent -> int64;
+    }
+
+    type IfcDoseEquivalentMeasure {
+        required property `IfcDoseEquivalentMeasure` -> float64;
+    }
+
+    type IfcDuration {
+        required property `IfcDuration` -> str;
+    }
+
+    type IfcDynamicViscosityMeasure {
+        required property `IfcDynamicViscosityMeasure` -> float64;
+    }
+
+    type IfcElectricCapacitanceMeasure {
+        required property `IfcElectricCapacitanceMeasure` -> float64;
+    }
+
+    type IfcElectricChargeMeasure {
+        required property `IfcElectricChargeMeasure` -> float64;
+    }
+
+    type IfcElectricConductanceMeasure {
+        required property `IfcElectricConductanceMeasure` -> float64;
+    }
+
+    type IfcElectricCurrentMeasure {
+        required property `IfcElectricCurrentMeasure` -> float64;
+    }
+
+    type IfcElectricResistanceMeasure {
+        required property `IfcElectricResistanceMeasure` -> float64;
+    }
+
+    type IfcElectricVoltageMeasure {
+        required property `IfcElectricVoltageMeasure` -> float64;
+    }
+
+    type IfcEnergyMeasure {
+        required property `IfcEnergyMeasure` -> float64;
+    }
+
+    abstract type IfcExternalInformation  {
+    }
+
+    abstract type IfcExternalReference  {
+        property Location -> str;
+        property Identification -> str;
+        property Name -> str;
+    }
+
+    type IfcFontStyle {
+        required property `IfcFontStyle` -> str;
+    }
+
+    type IfcFontVariant {
+        required property `IfcFontVariant` -> str;
+    }
+
+    type IfcFontWeight {
+        required property `IfcFontWeight` -> str;
+    }
+
+    type IfcForceMeasure {
+        required property `IfcForceMeasure` -> float64;
+    }
+
+    type IfcFrequencyMeasure {
+        required property `IfcFrequencyMeasure` -> float64;
+    }
+
+    type IfcGloballyUniqueId {
+        required property `IfcGloballyUniqueId` -> str;
+    }
+
+    type IfcHeatFluxDensityMeasure {
+        required property `IfcHeatFluxDensityMeasure` -> float64;
+    }
+
+    type IfcHeatingValueMeasure {
+        required property `IfcHeatingValueMeasure` -> float64;
+    }
+
+    type IfcIdentifier {
+        required property `IfcIdentifier` -> str;
+    }
+
+    type IfcIlluminanceMeasure {
+        required property `IfcIlluminanceMeasure` -> float64;
+    }
+
+    type IfcInductanceMeasure {
+        required property `IfcInductanceMeasure` -> float64;
+    }
+
+    type IfcInteger {
+        required property `IfcInteger` -> int64;
+    }
+
+    type IfcIntegerCountRateMeasure {
+        required property `IfcIntegerCountRateMeasure` -> int64;
+    }
+
+    type IfcIonConcentrationMeasure {
+        required property `IfcIonConcentrationMeasure` -> float64;
+    }
+
+    type IfcIsothermalMoistureCapacityMeasure {
+        required property `IfcIsothermalMoistureCapacityMeasure` -> float64;
+    }
+
+    type IfcKinematicViscosityMeasure {
+        required property `IfcKinematicViscosityMeasure` -> float64;
+    }
+
+    type IfcLabel {
+        required property `IfcLabel` -> str;
+    }
+
+    type IfcLanguageId {
+        required property `IfcLanguageId` -> str;
+    }
+
+    type IfcLengthMeasure {
+        required property `IfcLengthMeasure` -> float64;
+    }
+
+    type IfcLightDistributionData  {
+        required property MainPlaneAngle -> float64;
+        required property SecondaryPlaneAngle -> tuple<float64>;
+        required property LuminousIntensity -> tuple<float64>;
+    }
+
+    type IfcLinearForceMeasure {
+        required property `IfcLinearForceMeasure` -> float64;
+    }
+
+    type IfcLinearMomentMeasure {
+        required property `IfcLinearMomentMeasure` -> float64;
+    }
+
+    type IfcLinearStiffnessMeasure {
+        required property `IfcLinearStiffnessMeasure` -> float64;
+    }
+
+    type IfcLinearVelocityMeasure {
+        required property `IfcLinearVelocityMeasure` -> float64;
+    }
+
+    type IfcLogical {
+        required property `IfcLogical` -> bool;
+    }
+
+    type IfcLuminousFluxMeasure {
+        required property `IfcLuminousFluxMeasure` -> float64;
+    }
+
+    type IfcLuminousIntensityDistributionMeasure {
+        required property `IfcLuminousIntensityDistributionMeasure` -> float64;
+    }
+
+    type IfcLuminousIntensityMeasure {
+        required property `IfcLuminousIntensityMeasure` -> float64;
+    }
+
+    type IfcMagneticFluxDensityMeasure {
+        required property `IfcMagneticFluxDensityMeasure` -> float64;
+    }
+
+    type IfcMagneticFluxMeasure {
+        required property `IfcMagneticFluxMeasure` -> float64;
+    }
+
+    type IfcMassDensityMeasure {
+        required property `IfcMassDensityMeasure` -> float64;
+    }
+
+    type IfcMassFlowRateMeasure {
+        required property `IfcMassFlowRateMeasure` -> float64;
+    }
+
+    type IfcMassMeasure {
+        required property `IfcMassMeasure` -> float64;
+    }
+
+    type IfcMassPerLengthMeasure {
+        required property `IfcMassPerLengthMeasure` -> float64;
+    }
+
+    abstract type IfcMaterialDefinition  {
+    }
+
+    abstract type IfcMaterialUsageDefinition  {
+    }
+
+    type IfcModulusOfElasticityMeasure {
+        required property `IfcModulusOfElasticityMeasure` -> float64;
+    }
+
+    type IfcModulusOfLinearSubgradeReactionMeasure {
+        required property `IfcModulusOfLinearSubgradeReactionMeasure` -> float64;
+    }
+
+    type IfcModulusOfRotationalSubgradeReactionMeasure {
+        required property `IfcModulusOfRotationalSubgradeReactionMeasure` -> float64;
+    }
+
+    type IfcModulusOfSubgradeReactionMeasure {
+        required property `IfcModulusOfSubgradeReactionMeasure` -> float64;
+    }
+
+    type IfcMoistureDiffusivityMeasure {
+        required property `IfcMoistureDiffusivityMeasure` -> float64;
+    }
+
+    type IfcMolecularWeightMeasure {
+        required property `IfcMolecularWeightMeasure` -> float64;
+    }
+
+    type IfcMomentOfInertiaMeasure {
+        required property `IfcMomentOfInertiaMeasure` -> float64;
+    }
+
+    type IfcMonetaryMeasure {
+        required property `IfcMonetaryMeasure` -> float64;
+    }
+
+    type IfcMonetaryUnit  {
+        required property Currency -> str;
+    }
+
+    type IfcMonthInYearNumber {
+        required property `IfcMonthInYearNumber` -> int64;
+    }
+
+    type IfcNonNegativeLengthMeasure {
+        required property `IfcNonNegativeLengthMeasure` -> float64;
+    }
+
+    type IfcNormalisedRatioMeasure {
+        required property `IfcNormalisedRatioMeasure` -> float64;
+    }
+
+    type IfcNullStyle {
+        required property IfcNullStyle -> str {
+            constraint one_of ('NULL');
+        };
+    }
+
+    type IfcNumericMeasure {
+        required property `IfcNumericMeasure` -> int64;
+    }
+
+    abstract type IfcObjectPlacement  {
+    }
+
+    type IfcPHMeasure {
+        required property `IfcPHMeasure` -> float64;
+    }
+
+    type IfcParameterValue {
+        required property `IfcParameterValue` -> float64;
+    }
+
+    abstract type IfcPhysicalQuantity  {
+        required property Name -> str;
+        property Description -> str;
+    }
+
+    type IfcPlanarForceMeasure {
+        required property `IfcPlanarForceMeasure` -> float64;
+    }
+
+    type IfcPlaneAngleMeasure {
+        required property `IfcPlaneAngleMeasure` -> float64;
+    }
+
+    type IfcPositiveInteger {
+        required property `IfcPositiveInteger` -> int64;
+    }
+
+    type IfcPositiveLengthMeasure {
+        required property `IfcPositiveLengthMeasure` -> float64;
+    }
+
+    type IfcPositivePlaneAngleMeasure {
+        required property `IfcPositivePlaneAngleMeasure` -> float64;
+    }
+}
