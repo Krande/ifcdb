@@ -27,7 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         WORKDIR: [
-          { name: basic, dir: "src/server/schema/partial_schemas/db/basic", use_python: "false" },
           { name: mixed, dir: "src/server/schema/mixed", use_python: "false" },
           { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: "true" }
         ]
@@ -60,17 +59,17 @@ jobs:
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
           rm -rf ./dbschema/migrations
-          edgedb $CON_PARAMS database create ${{ matrix.WORKDIR.name }}
+          edgedb database create ${{ matrix.WORKDIR.name }}
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Migrate create
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
-          edgedb $CON_PARAMS migration create --non-interactive
+          edgedb migration create --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
-          edgedb $CON_PARAMS migration apply
+          edgedb migration apply
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: Dump docker logs on failure
         if: failure()
