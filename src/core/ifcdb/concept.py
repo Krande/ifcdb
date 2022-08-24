@@ -50,6 +50,7 @@ class EdgeIOBase:
     client: edgedb.Client | edgedb.AsyncIOClient = None
     db_schema_dir: str | pathlib.Path = "dbschema"
     ifc_schema: str = "IFC4x1"
+    debug_log: bool = False
 
     _sm: IfcSchemaModel = None
     _eq_builder: EQBuilder = None
@@ -71,7 +72,11 @@ class EdgeIOBase:
         if self.client is None:
             self.client = self.default_client()
 
-        self._db_migrate = DbMigration(database=self.database, dbschema_dir=self.db_schema_dir)
+        self._db_migrate = DbMigration(
+            database=self.database,
+            dbschema_dir=self.db_schema_dir,
+            debug_logs=self.debug_log,
+        )
         self._sm = IfcSchemaModel(self.ifc_schema)
 
     def __enter__(self):
@@ -93,7 +98,6 @@ class EdgeIOBase:
         with DbConfig(self.database) as db_config:
             db_config.create_database()
         self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
-        self._eq_builder = EQBuilder(self.client)
 
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
         self._db_migrate.migrate_stepwise(ifc_schema_ver, entities, batch_size, **kwargs)

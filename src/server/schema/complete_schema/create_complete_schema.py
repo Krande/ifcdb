@@ -1,7 +1,7 @@
 import os
 
 from ifcdb import EdgeIO
-from ifcdb.edge_model.validation_utils import (
+from ifcdb.validation_utils import (
     validate_ifc_content,
     validate_ifc_objects,
     validate_using_ifc_diff,
@@ -12,8 +12,8 @@ from ifcdb.utils import top_dir
 def main(ifc_file, validate_data=False):
     ifc_path = top_dir() / "files" / ifc_file
 
-    with EdgeIO(ifc_file=ifc_path, db_schema_dir="complete/dbschema", ifc_schema="IFC4x1", database="complete") as io:
-        io.create_schema(from_ifc_file=False)
+    with EdgeIO(db_schema_dir="complete/dbschema", ifc_schema="IFC4x1", database="complete") as io:
+        io.create_schema_from_ifc_file(ifc_path=ifc_path)
         io.setup_database(delete_existing_migrations=True)
         io.insert_ifc()
 
