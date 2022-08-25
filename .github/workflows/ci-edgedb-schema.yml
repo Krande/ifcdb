@@ -30,8 +30,6 @@ jobs:
           { name: mixed, dir: "src/server/schema/mixed", use_python: "false" },
           { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: "true" }
         ]
-    env:
-      EDGEDB_DATABASE: "${{ matrix.WORKDIR.name }}"
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2  # https://github.com/conda-incubator/setup-miniconda
@@ -64,12 +62,12 @@ jobs:
       - name: EdgeDB Migrate create
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
-          edgedb migration create --non-interactive
+          edgedb migration create -d ${{ matrix.WORKDIR.name }} --non-interactive
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: EdgeDB Apply Migration
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |
-          edgedb migration apply
+          edgedb migration apply -d ${{ matrix.WORKDIR.name }}
         working-directory: ${{ matrix.WORKDIR.dir }}
       - name: Dump docker logs on failure
         if: failure()
