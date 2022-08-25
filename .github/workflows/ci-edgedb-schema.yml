@@ -28,7 +28,7 @@ jobs:
       matrix:
         WORKDIR: [
           { name: mixed, dir: "src/server/schema/mixed", use_python: "false" },
-          { name: stepwise, dir: "src/server/schema/complete_in_steps/complete_in_steps.py", use_python: "true" }
+          { name: stepwise, dir: "src/server/schema/complete_schema/create_complete_schema.py", use_python: "true" }
         ]
     steps:
       - uses: actions/checkout@v2

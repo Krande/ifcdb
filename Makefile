@@ -20,4 +20,4 @@ build:
 	docker build -t ifc-api/latest -f api.Dockerfile .
 
 migrate:
-	edgedb migration apply --database ifc001 --credentials-file .local.credentials.json --schema-dir ./src/server/schema/complete_in_steps/dbschema --tls-security insecure
+	edgedb migration create --database mixed --credentials-file .azurevm.credentials.json --schema-dir ./src/server/schema/mixed/dbschema --tls-security insecure
