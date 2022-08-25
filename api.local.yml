@@ -9,7 +9,8 @@ services:
     pull_policy: build
     environment:
       EDGEDB_CLIENT_TLS_SECURITY: insecure
-      EDGEDB_DSN: edgedb://ifcdbadmin:secret@edgedb-local:5656/edgedb
+      EDGEDB_DSN: edgedb://ifcdbadmin:secret@localhost:10701/edgedb
+      EDGEDB_SERVER_INSTANCE_NAME: ifcdb
     ports:
       - "8000:8000"
     env_file:

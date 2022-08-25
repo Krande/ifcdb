@@ -96,17 +96,17 @@ class DbMigration:
     def migrate_stepwise(
         self,
         ifc_schema: str,
-        entities: list[str] = None,
+        specific_entities: list[str] = None,
         batch_size=100,
         module_name: str = "default",
     ):
         schema_model = IfcSchemaModel(ifc_schema)
         schema_model.modify_circular_deps = True
 
-        if entities is None:
+        if specific_entities is None:
             unique_entities = schema_model.get_all_entities()
         else:
-            unique_entities = entities
+            unique_entities = specific_entities
 
         all_ents = schema_model.get_related_entities(unique_entities)
 
@@ -127,6 +127,8 @@ class DbMigration:
         esdl_file_path = self.dbschema_dir / "default.esdl"
         os.makedirs(tmp_dir, exist_ok=True)
         for i, chunk in enumerate(chunks, start=1):
+            for imc in schema_model.intermediate_classes.values():
+                imc.written_to_file = False
             current_schema += chunk
             schema_model.to_esdl_file(esdl_file_path, current_schema, module_name)
             self.migration_create()

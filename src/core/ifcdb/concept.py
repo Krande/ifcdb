@@ -102,6 +102,17 @@ class EdgeIOBase:
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
         self._db_migrate.migrate_stepwise(ifc_schema_ver, entities, batch_size, **kwargs)
 
+    def get_entities_from_ifc_files(self, ifc_paths: list[str | pathlib.Path] = None) -> list[str]:
+        ifc_ents = []
+        for ifc_p in ifc_paths:
+            ifc_io = IfcIO(ifc_file=ifc_p)
+            res = ifc_io.get_unique_class_entities_of_ifc_content()
+            res_set = set(res)
+            ifc_ents_set = set(ifc_ents)
+            ifc_ents_diff = res_set.difference(ifc_ents_set)
+            ifc_ents += list(ifc_ents_diff)
+        return ifc_ents
+
     def create_schema_from_ifc_file(
         self,
         ifc_path: str | pathlib.Path | list[str | pathlib.Path] = None,
