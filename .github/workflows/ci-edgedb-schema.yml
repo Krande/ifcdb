@@ -28,7 +28,7 @@ jobs:
       matrix:
         WORKDIR: [
           { name: mixed, dir: "src/server/schema/mixed", use_python: "false" },
-          { name: stepwise, dir: "src/server/schema/complete_schema/create_complete_schema.py", use_python: "true" }
+          { name: stepwise, dir: "src/server/schema/complete/create_complete_schema.py", use_python: "true" }
         ]
     steps:
       - uses: actions/checkout@v2
@@ -53,6 +53,7 @@ jobs:
           python ${{ matrix.WORKDIR.dir }}
         env:
           IFCDB_BATCH_SIZE: 50
+          EDGEDB_DATABASE: "${{ matrix.WORKDIR.name }}"
       - name: EdgeDB Clear previous migration and Create a new database
         if: ${{ matrix.WORKDIR.use_python == 'false' }}
         run: |

@@ -19,5 +19,8 @@ format:
 build:
 	docker build -t ifc-api/latest -f api.Dockerfile .
 
-migrate:
-	edgedb migration create --database mixed --credentials-file .azurevm.credentials.json --schema-dir ./src/server/schema/mixed/dbschema --tls-security insecure
+migc:
+	edgedb migration create --database mixed --credentials-file .azurevm.credentials.json --schema-dir ./src/server/schema/mixed/dbschema --tls-security insecure --non-interactive
+
+miga:
+	edgedb migration apply --database mixed --credentials-file .azurevm.credentials.json --schema-dir ./src/server/schema/mixed/dbschema --tls-security insecure
