@@ -276,6 +276,26 @@ using the EdgeDB built-in <code class="docutils literal notranslate"><span class
 </pre></div>
 </div>
 </section>
+<section id="potential-improvements">
+<h2>Potential improvements<a class="headerlink" href="#potential-improvements" title="Permalink to this heading">#</a></h2>
+<section id="ifcperson-make-identification-unique">
+<h3>IfcPerson - Make Identification unique<a class="headerlink" href="#ifcperson-make-identification-unique" title="Permalink to this heading">#</a></h3>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    type IfcPerson  {
+        property Identification -&gt; str {
+            constraint exclusive;
+        }
+        property FamilyName -&gt; str;
+        property GivenName -&gt; str;
+        property MiddleNames -&gt; tuple&lt;str&gt;;
+        property PrefixTitles -&gt; tuple&lt;str&gt;;
+        property SuffixTitles -&gt; tuple&lt;str&gt;;
+        multi link Roles -&gt; IfcActorRole;
+        multi link Addresses -&gt; IfcAddress;
+    }
+</pre></div>
+</div>
+</section>
+</section>
 </section>
 
         </article>
@@ -337,6 +357,10 @@ using the EdgeDB built-in <code class="docutils literal notranslate"><span class
             <ul>
 <li><a class="reference internal" href="#">Necessary modifications to the IFC schema</a><ul>
 <li><a class="reference internal" href="#base-types">Base Types</a></li>
+<li><a class="reference internal" href="#potential-improvements">Potential improvements</a><ul>
+<li><a class="reference internal" href="#ifcperson-make-identification-unique">IfcPerson - Make Identification unique</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

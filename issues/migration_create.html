@@ -135,7 +135,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -216,7 +216,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -252,6 +252,14 @@ container instance in Azure.</p>
 <span class="n">SERVER</span> <span class="p">(</span><span class="n">local</span><span class="p">):</span>   <span class="mf">2.1</span><span class="o">+</span><span class="n">c600476</span> <span class="p">(</span><span class="n">works</span> <span class="k">as</span> <span class="n">expected</span><span class="p">)</span>
 </pre></div>
 </div>
+<section id="potential-workarounds">
+<h2>Potential workarounds<a class="headerlink" href="#potential-workarounds" title="Permalink to this heading">#</a></h2>
+<p>If it proves to be a timeout issue then maybe this can help</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>edgedb&gt; configure instance set session_idle_transaction_timeout := &lt;duration&gt;&#39;0&#39;;
+</pre></div>
+</div>
+<p>https://github.com/edgedb/edgedb/discussions/3395#discussioncomment-2101020</p>
+</section>
 </section>
 
         </article>
@@ -281,8 +289,27 @@ container instance in Azure.</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Migration Create in Azure</a><ul>
+<li><a class="reference internal" href="#potential-workarounds">Potential workarounds</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
