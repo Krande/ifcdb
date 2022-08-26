@@ -64,25 +64,35 @@ async def get_users(
 @router.post("/users", status_code=HTTPStatus.CREATED, dependencies=[Security(azure_scheme)])
 async def post_user(user: User = Depends(azure_scheme), dbname: str = None) -> IfcPerson:
     client = get_async_client(database=dbname)
-
-    (created_user,) = await client.query(
-        """SELECT (
-    INSERT IfcPerson {
-        FamilyName:=<str>$FamilyName,
-        GivenName:=<str>$GivenName,
-        Identification:=<str>$Identification
-    }
-    unless conflict on .Identification else (
-        update IfcPerson
-        set {
-            FamilyName:=<str>$FamilyName, GivenName:=<str>$GivenName
+    check_for_user = await client.query(
+        "select IfcPerson FILTER .Identification=<str>$filter_name",
+        filter_name=user.claims["preferred_username"],
+    )
+    if len(check_for_user) == 1:
+        (created_user,) = await client.query(
+            """SELECT (
+            update IfcPerson FILTER .Identification=<str>$Identification
+            set {
+                FamilyName:=<str>$FamilyName, GivenName:=<str>$GivenName
+            }
+        ) {FamilyName, GivenName, Identification, Roles, Addresses};""",
+            FamilyName=user.name,
+            GivenName=user.name,
+            Identification=user.claims["preferred_username"],
+        )
+    else:
+        (created_user,) = await client.query(
+            """SELECT (
+        INSERT IfcPerson {
+            FamilyName:=<str>$FamilyName,
+            GivenName:=<str>$GivenName,
+            Identification:=<str>$Identification
         }
-    )
-) {FamilyName, GivenName, Identification, Roles, Addresses};""",
-        FamilyName=user.name,
-        GivenName=user.name,
-        Identification=user.claims["preferred_username"],
-    )
+    ) {FamilyName, GivenName, Identification, Roles, Addresses};""",
+            FamilyName=user.name,
+            GivenName=user.name,
+            Identification=user.claims["preferred_username"],
+        )
 
     response = IfcPerson(
         FamilyName=created_user.FamilyName,

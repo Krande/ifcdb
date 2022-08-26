@@ -35,3 +35,11 @@ CLI:      2.0.5+da7c868
 SERVER (Azure):   2.1+c600476 (uses an incredibly long time to respond)
 SERVER (local):   2.1+c600476 (works as expected)
 ```
+
+## Potential workarounds
+
+If it proves to be a timeout issue then maybe this can help
+
+    edgedb> configure instance set session_idle_transaction_timeout := <duration>'0';
+
+https://github.com/edgedb/edgedb/discussions/3395#discussioncomment-2101020

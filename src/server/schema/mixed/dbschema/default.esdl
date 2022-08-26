@@ -1,4 +1,6 @@
 module default {
+
+
     type IfcAbsorbedDoseMeasure {
         required property `IfcAbsorbedDoseMeasure` -> float64;
     }
@@ -715,6 +717,10 @@ module default {
         required property Orientation -> bool;
     }
 
+    type IfcIndexedPolygonalFace extending IfcTessellatedItem {
+        required property CoordIndex -> tuple<int64, int64, int64>;
+    }
+
     type IfcMaterialProfileSet extending IfcMaterialDefinition {
         property Name -> str;
         property Description -> str;
@@ -1113,5 +1119,49 @@ module default {
     }
 
     abstract type IfcBuildingElementType extending IfcElementType {
+    }
+
+    type IfcBuildingStorey extending IfcSpatialStructureElement {
+        property Elevation -> float64;
+    }
+
+    type IfcColumn extending IfcBuildingElement {
+        property PredefinedType -> str {
+            constraint one_of ('COLUMN','NOTDEFINED','PILASTER','USERDEFINED');
+        };
+    }
+
+    abstract type IfcFeatureElementSubtraction extending IfcFeatureElement {
+    }
+
+    type IfcMember extending IfcBuildingElement {
+        property PredefinedType -> str {
+            constraint one_of ('BRACE','CHORD','COLLAR','MEMBER','MULLION','NOTDEFINED','PLATE','POST','PURLIN','RAFTER','STRINGER','STRUT','STUD','USERDEFINED');
+        };
+    }
+
+    type IfcSite extending IfcSpatialStructureElement {
+        property RefLatitude -> int64;
+        property RefLongitude -> int64;
+        property RefElevation -> float64;
+        property LandTitleNumber -> str;
+        link SiteAddress -> IfcPostalAddress;
+    }
+
+    type IfcBeamType extending IfcBuildingElementType {
+        required property PredefinedType -> str {
+            constraint one_of ('BEAM','HOLLOWCORE','JOIST','LINTEL','NOTDEFINED','SPANDREL','T_BEAM','USERDEFINED');
+        };
+    }
+
+    type IfcOpeningElement extending IfcFeatureElementSubtraction {
+        property PredefinedType -> str {
+            constraint one_of ('NOTDEFINED','OPENING','RECESS','USERDEFINED');
+        };
+    }
+
+    type IfcRelVoidsElement extending IfcRelDecomposes {
+        required link RelatingBuildingElement -> IfcElement;
+        required link RelatedOpeningElement -> IfcFeatureElementSubtraction;
     }
 }

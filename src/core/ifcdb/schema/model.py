@@ -511,6 +511,9 @@ class IfcSchemaModel:
         type_names = list(self.base_types.keys()) + list(self.select_types.keys()) + list(self.enum_types.keys())
         self.entities = {x.name(): EntityModel(self, x) for x in decl if x.name() not in type_names}
 
+        # instantiate known intermediate classes
+        _ = self.entities["IfcBSplineSurface"].attributes_str
+
     def _find_dependencies(self, entity_name, dep_tree: dict = None, search_recursively=True):
         dep_tree = dict() if dep_tree is None else dep_tree
         entity_model = self.get_entity_by_name(entity_name)
@@ -698,7 +701,6 @@ class IfcSchemaModel:
         return entity.to_insert_str(ifc_entity, indent=indent, uuid_map=uuid_map, with_map=with_map)
 
     def to_esdl_str(self, entities: list[str], module_name="default") -> str:
-        print(f"Writing {len(entities)} entities to ESDL schema")
         esdl_str = f"module {module_name} {{\n\n"
         for entity_name in entities:
             esdl_str += self.entity_to_edge_str(entity_name)

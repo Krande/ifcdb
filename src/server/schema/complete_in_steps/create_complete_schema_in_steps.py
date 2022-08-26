@@ -11,4 +11,4 @@ def main(database: str, ifc_schema: str, batch_size: int):
 
 
 if __name__ == "__main__":
-    main("test", "IFC4x1", 100)
+    main("ifc001", "IFC4x1", 100)

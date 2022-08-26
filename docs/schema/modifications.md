@@ -60,3 +60,20 @@ type IfcQuantityArea extending IfcPhysicalSimpleQuantity {
     };
 }
 ```
+
+## Potential improvements
+
+### IfcPerson - Make Identification unique
+
+        type IfcPerson  {
+            property Identification -> str {
+                constraint exclusive;
+            }
+            property FamilyName -> str;
+            property GivenName -> str;
+            property MiddleNames -> tuple<str>;
+            property PrefixTitles -> tuple<str>;
+            property SuffixTitles -> tuple<str>;
+            multi link Roles -> IfcActorRole;
+            multi link Addresses -> IfcAddress;
+        }

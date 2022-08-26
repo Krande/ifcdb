@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pathlib
+
 import bpy
 import ifcopenshell.api
 import os
@@ -11,6 +13,7 @@ import blenderbim.tool as tool
 from blenderbim.bim.ifc import IfcStore
 from blenderbim.bim.module.model import product
 
+import tempfile
 
 @persistent
 def load_post(*args):
@@ -108,7 +111,32 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
             return {"FINISHED"}
 
         r = s.get(f"{api_url}/file", params={"dbname": props.db_name})
-        print("REST RESPONSE: " + r.text)
+        ifc_str = str(r.content[1:-1], encoding="utf8").replace(r'\n', '\n')
+        IfcStore.purge()
+        temp_dir = tempfile.gettempdir()
+        tmp_file = pathlib.Path(temp_dir) / 'temp.ifc'
+        print(f'Writing to "{tmp_file}"')
+        with open(tmp_file, 'w') as f:
+            f.write(ifc_str)
+
+        tmp_file = str(tmp_file)
+        IfcStore.load_file(tmp_file)
+        context.scene.BIMProperties.ifc_file = tmp_file
+        context.scene.BIMProjectProperties.is_loading = True
+        context.scene.BIMProjectProperties.total_elements = len(tool.Ifc.get().by_type("IfcElement"))
+
+        bpy.ops.bim.load_project_elements()
+        # bpy.ops.bim.load_project(filepath=str(tmp_file))
+        # IfcStore.load_file(tmp_file)
+        # new_ifc = ifcopenshell.file.from_string(r.text)
+        # ifc: ifcopenshell.file = IfcStore.get_file()
+        #
+        # for elem in new_ifc:
+        #     print(f'adding "elem"')
+        #     ifc.add(elem)
+
+        # bpy.ops.bim.load_project_elements()
+        # print("REST RESPONSE: " + r.text)
 
         return {"FINISHED"}
 

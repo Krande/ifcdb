@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import subprocess
 import time
+from datetime import datetime
 from dataclasses import dataclass
 from typing import Type
 
@@ -130,11 +131,13 @@ class DbMigration:
             for imc in schema_model.intermediate_classes.values():
                 imc.written_to_file = False
             current_schema += chunk
+            now = datetime.now().time().strftime('%H:%M:%S')
+            print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities @ {now}")
             schema_model.to_esdl_file(esdl_file_path, current_schema, module_name)
             self.migration_create()
             self.migration_apply()
             t_fin = time.time()
-            print(f"Finished with step {i} of {len(chunks)} in {t_fin-start:.1f} s adding {len(chunk)} entities")
+            print(f"Completed migration in {t_fin - start:.1f} s")
             start = t_fin
             shutil.copy(esdl_file_path, tmp_dir / f"esdl_file.{i}")
             with open(tmp_dir / f"chunk_{i}.txt", "w") as f:
@@ -144,13 +147,13 @@ class DbMigration:
         server_prefix = f"edgedb --database={self.database} migration create --non-interactive"
         if self.schema_dir is not None:
             server_prefix += f"--schema-dir ./{self.schema_dir}"
-        start_print = "Create Migration using CLI command"
+        start_print = f'running: "{server_prefix}"'
         if self.debug_logs:
             start_print += f' "{server_prefix}" @"{self.dbschema_dir}"'
 
         print(start_print)
         self._run_edgedb_cli(server_prefix, MigrationCreateError)
-        print("CLI command 'migration create' complete")
+        print("migration create complete")
 
     def migration_apply(self):
         server_prefix = f"edgedb --database={self.database} migration apply"
@@ -158,14 +161,14 @@ class DbMigration:
         if self.schema_dir is not None:
             server_prefix += f"--schema-dir ./{self.schema_dir}"
 
-        start_print = "Applying Migration using CLI command"
+        start_print = f'running: "{server_prefix}"'
 
         if self.debug_logs:
             start_print += f' "{server_prefix}" @"{self.dbschema_dir}"'
 
         print(start_print)
         self._run_edgedb_cli(server_prefix, MigrationApplyError)
-        print("CLI command 'migration apply' complete")
+        print("migration apply complete")
 
     def _run_edgedb_cli(self, cmd_str, error_type: Type[Exception]):
         res = subprocess.run(cmd_str, cwd=self.dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")

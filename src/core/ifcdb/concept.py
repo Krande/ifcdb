@@ -94,9 +94,12 @@ class EdgeIOBase:
         with DbConfig(self.database) as db_config:
             return db_config.database_exists()
 
-    def setup_database(self, delete_existing_migrations=False):
+    def create_database(self):
         with DbConfig(self.database) as db_config:
             db_config.create_database()
+
+    def setup_database(self, delete_existing_migrations=False):
+        self.create_database()
         self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
 
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
@@ -341,7 +344,6 @@ class EdgeIOBase:
     @property
     def eq_builder(self):
         if self._eq_builder is None:
-
             try:
                 self._eq_builder = EQBuilder(self.client)
             except edgedb.errors.UnknownDatabaseError as e:
@@ -480,7 +482,8 @@ class EdgeIO(EdgeIOBase):
         if entities is None:
             ent_dict = self._sm.entities
         else:
-            ent_dict = {x: self._sm.get_entity_by_name(x) for x in self._sm.get_related_entities(entities)}
+            related_ents = self._sm.get_related_entities(entities)
+            ent_dict = {x: self._sm.get_entity_by_name(x) for x in related_ents}
 
         self._insert_intermediate_classes(ent_dict)
 

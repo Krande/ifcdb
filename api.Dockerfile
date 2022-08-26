@@ -13,7 +13,6 @@ SHELL ["conda", "run", "--no-capture-output", "-n", "ifc-api", "/bin/bash", "-c"
 
 
 COPY ${api_dir}/app /code/app
-COPY ${api_dir}/scripts /code/scripts
 COPY ./src/core /code/core
 
 ENV PYTHONPATH "${PYTHONPATH}:/code/core"
