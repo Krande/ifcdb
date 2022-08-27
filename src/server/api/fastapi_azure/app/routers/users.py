@@ -37,10 +37,10 @@ async def get_users(
 ) -> Iterable[IfcPerson]:
     client = get_async_client(database=dbname)
     if not name:
-        users = await client.query(f"SELECT IfcPerson {IFCP_CONTENT};")
+        users = await client.query(f"SELECT IfcPerson {{ {IFCP_CONTENT} }};")
     else:
         users = await client.query(
-            f"""SELECT IfcPerson {IFCP_CONTENT} FILTER IfcPerson.GivenName=<str>$name""",
+            f"""SELECT IfcPerson {{ {IFCP_CONTENT} }} FILTER IfcPerson.GivenName=<str>$name""",
             name=name,
         )
     response = (

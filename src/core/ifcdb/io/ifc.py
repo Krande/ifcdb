@@ -42,3 +42,16 @@ class IfcIO:
 
     def get_unique_class_entities_of_ifc_content(self, include_related=False) -> list[str]:
         return list(set([x.is_a() for x in self.get_ifc_objects_by_sorted_insert_order_flat()]))
+
+    def to_ifc_json(self):
+        self.ifc_obj.wrapped_data.write()
+
+
+def walk_info(info: dict):
+    def walk(d):
+        if isinstance(d, dict):
+            for key, value in d.items():
+                if isinstance(value, ifcopenshell.entity_instance):
+                    pass
+
+    return walk(info)

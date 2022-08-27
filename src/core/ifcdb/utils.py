@@ -4,7 +4,7 @@ import pathlib
 def top_dir() -> pathlib.Path:
     this_dir = pathlib.Path(__file__).parent.resolve().absolute()
     top_level_dirs = {"src", "files", "docs"}
-    parents = list(this_dir.parents)
+    parents = [this_dir] + list(this_dir.parents)
     if "site-packages" in parents[0].name:
         cwd = pathlib.Path.cwd()
         this_dir = cwd.parent.resolve().absolute()
