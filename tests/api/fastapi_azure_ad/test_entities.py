@@ -11,7 +11,7 @@ from ifcdb.io.ifc import IfcIO
 
 @pytest.fixture
 def mock_db_name():
-    return "MyCube2"
+    return "MyCubeEntities"
 
 
 @dataclass
@@ -55,6 +55,6 @@ def cube_ifc_data(ifc_files_dir) -> list[IfcGeneric]:
 
 
 @pytest.mark.anyio
-async def test_auth_view_not_admin(normal_user_client: AsyncClient, cube_ifc_data, mock_db_name):
+async def test_cube_entities(normal_user_client: AsyncClient, cube_ifc_data, mock_db_name):
     response = await normal_user_client.post("/entities", params={"dbname": mock_db_name, "ifc_file": cube_ifc_data})
     assert response.status_code == 401

@@ -27,10 +27,10 @@ async def post_file_str(ifc_file_str: str, user: User = Depends(azure_scheme), d
     client = get_client(database=dbname)
     ifc_io = IfcIO(ifc_str=ifc_file_str)
 
-    sq = SeqInsert(ifc_io.schema, ifc_io.get_ifc_objects_by_sorted_insert_order_flat())
+    sq = SeqInsert(ifc_io.schema)
     for tx in client.transaction():
         with tx:
-            for item, insert_str in sq.create_insert_str():
+            for item, insert_str in sq.create_bulk_insert_str(ifc_io.get_ifc_objects_by_sorted_insert_order_flat()):
                 single_json = tx.query_single_json(insert_str)
                 query_res = json.loads(single_json)
                 sq._uuid_map[item] = query_res["id"]

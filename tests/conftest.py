@@ -46,3 +46,8 @@ def expreader_ifc4x1(ifc_4x1_exp_file) -> ExpReader:
 @pytest.fixture
 def tesselated_item_ifc(ifc_files_dir):
     return ifcopenshell.open(ifc_files_dir / "tessellated-item.ifc")
+
+
+@pytest.fixture
+def my_beam_w_holes_ifc(ifc_files_dir):
+    return ifcopenshell.open(ifc_files_dir / "MyBeamWithHoles.ifc")
