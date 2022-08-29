@@ -3,14 +3,19 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from itertools import count
+from typing import Any
 
 import ifcopenshell
 
 from ifcdb.schema.model import (
     ArrayModel,
     AttributeModel,
+    EntityModel,
+    EnumModel,
     IfcSchemaModel,
+    IntermediateClass,
     SelectModel,
+    TypeModel,
 )
 
 _INSERT_COUNTER = count(start=1)
@@ -18,8 +23,8 @@ _INSERT_COUNTER = count(start=1)
 
 @dataclass
 class AttResolver:
-    em: IfcSchemaModel
-    uuid_map: dict = None
+    _ism: IfcSchemaModel
+    uuid_map: dict[ifcopenshell.entity_instance, str] = None
     with_map: dict[str, str] = None
 
     def get_array_att_str(self, res: tuple, att: AttributeModel, att_ref: ArrayModel):
@@ -92,11 +97,13 @@ class AttResolver:
 
         return f"{name} := {value_str}"
 
-    def insert_ifc_entity(self, res, att_ref) -> str:
+    def insert_ifc_entity(self, res: ifcopenshell.entity_instance, att_ref) -> str:
         uuid_obj = self.uuid_map.get(res, None)
 
         if uuid_obj is None:
-            entity_str = f"({self.em.get_entity_insert_str(res, uuid_map=self.uuid_map, with_map=self.with_map)})"
+            entity = self._ism.get_entity_by_name(res.is_a())
+            _ = self.resolve_entity(entity)
+            entity_str = f"({self._ism.get_entity_insert_str(res, uuid_map=self.uuid_map, with_map=self.with_map)})"
         else:
             res_name = res.is_a()
             entity_str = f'(SELECT {res_name} filter .id = <uuid>"{uuid_obj}")'
@@ -122,3 +129,19 @@ class AttResolver:
         unique_ref_name = f"ifc_{res_id}"
         self.with_map[unique_ref_name] = ref_str
         return unique_ref_name
+
+    def resolve_entity(
+        self, entity: EntityModel | EnumModel | TypeModel | SelectModel | IntermediateClass
+    ) -> LinkInstance:
+
+        attributes = entity.get_attributes(include_inherited_attributes=False)
+        link_instance = LinkInstance(entity.name, attributes)
+
+        return link_instance
+
+
+@dataclass
+class LinkInstance:
+    class_name: str
+    props: dict[str, Any]
+    links: dict[str, LinkInstance]
