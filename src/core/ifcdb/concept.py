@@ -27,7 +27,6 @@ from ifcdb.database.model import (
 from ifcdb.database.utils import (
     dict_value_replace,
     flatten_uuid_source,
-    get_att_insert_str,
     get_uuid_refs,
     insert_uuid_objects_from_source,
     resolve_order_of_result_entities,
@@ -184,39 +183,6 @@ class EdgeIOBase:
         logging.info(f'Insert complete in "{diff:.1f}" seconds')
 
         return chunk
-
-    def _insert_items_sequentially(
-        self, ifc_items: [ifcopenshell.entity_instance], tx: edgedb.blocking_client, specific_ifc_ids: list[int] = None
-    ):
-        uuid_map = dict()
-        for i, item in enumerate(ifc_items, start=1):
-            if specific_ifc_ids is not None and item.id() not in specific_ifc_ids:
-                continue
-
-            entity = self._sm.get_entity_by_name(item.is_a())
-            all_atts = entity.get_entity_atts(item)
-            print(f'inserting ifc item ({i} of {len(ifc_items)}) "{item}"')
-            # INSERT block
-            with_map = dict()
-            insert_str = f"SELECT (INSERT {entity.name} {{\n    "
-            for j, att in enumerate(all_atts):
-                att_str = get_att_insert_str(att, item, self._sm, uuid_map=uuid_map, with_map=with_map)
-                if j == len(all_atts) - 1:
-                    comma_str = ""
-                else:
-                    comma_str = ",\n    "
-
-                insert_str += att_str + comma_str
-            insert_str += "\n   }\n)"
-
-            with_str = "WITH\n" if len(with_map.keys()) > 0 else ""
-            for key, value in with_map.items():
-                with_str += 4 * " " + f"{key} := {value},\n"
-
-            total_insert_str = with_str + insert_str
-            print(total_insert_str)
-            query_res = json.loads(tx.query_single_json(total_insert_str))
-            uuid_map[item] = query_res["id"]
 
     def _insert_intermediate_classes(self, ent_dict: dict):
         to_be_added = dict()
@@ -520,9 +486,15 @@ class EdgeIO(EdgeIOBase):
                 self._perform_method(tx, method, specific_ifc_ids)
 
     def _perform_method(self, tx, method, specific_ifc_ids):
+        from ifcdb.database.inserts.sequentially import SeqInsert
+
+        ifc_items = self._ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
         if method == INSERTS.SEQ:
-            ifc_items = self._ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-            self._insert_items_sequentially(ifc_items, tx, specific_ifc_ids)
+            sq = SeqInsert(self.ifc_schema, specific_ifc_ids=specific_ifc_ids)
+            for item, insert_str in sq.create_bulk_insert_str(ifc_items):
+                single_json = tx.query_single_json(insert_str)
+                query_res = json.loads(single_json)
+                sq._uuid_map[item] = query_res["id"]
         else:
             raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
 

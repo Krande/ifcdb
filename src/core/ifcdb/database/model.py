@@ -5,9 +5,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from ifcdb.database.utils import (
-    get_att_insert_str,
-)
 from ifcdb.schema.model import (
     ArrayModel,
     AttributeModel,
@@ -77,27 +74,6 @@ class EntityQueryModel:
             select_str += "" if i == len(all_atts) - 1 else ","
         select_str += "}"
         return select_str
-
-    def to_insert_str(
-        self,
-        entity: ifcopenshell.entity_instance,
-        indent: str = "",
-        uuid_map: dict = None,
-        with_map: dict[str, str] = None,
-    ):
-
-        all_atts = self.entity.get_entity_atts(entity)
-        newline = "" if len(all_atts) == 1 else "\n"
-        insert_str = f"{indent}INSERT {self.entity.name} {{{newline}  "
-        for i, att in enumerate(all_atts):
-            res = get_att_insert_str(att, entity, self.entity.edge_model, uuid_map=uuid_map, with_map=with_map)
-            if res is None:
-                continue
-
-            comma_str = "" if i == len(all_atts) - 1 else ","
-            insert_str += res + comma_str
-
-        return insert_str + f"}}{newline}"
 
     def add_entity_ref(self, ref_type, with_map, include_type_ref=False, include_id_ref=False, skip_properties=False):
         from ifcdb.utils import change_case

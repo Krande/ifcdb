@@ -9,6 +9,9 @@ def mock_db_name():
     with EdgeIO(db_name) as io:
         io.create_schema(["IfcPerson"])
         io.setup_database()
+
+    yield "UserDb"
+
     return "UserDb"
 
 

@@ -4,9 +4,9 @@ from dataclasses import dataclass, field
 
 import ifcopenshell
 
-from ifcdb.database.utils import get_att_insert_str
 from ifcdb.schema.model import IfcSchemaModel
 from ifcdb.database.inserts.attribute_resolver import AttResolver
+
 
 @dataclass
 class SeqInsert:
@@ -29,9 +29,8 @@ class SeqInsert:
         insert_str = f"SELECT (INSERT {entity.name} {{\n    "
 
         for j, att in enumerate(all_atts):
-            # attr = AttResolver(self._ism, self._uuid_map, with_map)
-            # att_str = attr.get_att_insert_str(att, item)
-            att_str = get_att_insert_str(att, item, self._ism, uuid_map=self._uuid_map, with_map=with_map)
+            attr = AttResolver(self._ism, self._uuid_map, with_map)
+            att_str = attr.get_att_insert_str(att, item)
             if j == len(all_atts) - 1:
                 comma_str = ""
             else:
