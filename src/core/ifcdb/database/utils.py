@@ -113,7 +113,7 @@ def flatten_uuid_source(source: dict) -> dict:
         for v in value:
             if "id" not in v.keys():
                 continue
-            rdict[v.pop("id")] = v
+            rdict[v["id"]] = v
 
     # Replace nested uuids
     ordict = copy.deepcopy(rdict)
@@ -123,8 +123,6 @@ def flatten_uuid_source(source: dict) -> dict:
                 res = value.get("id")
                 if res is None:
                     raise ValueError("")
-                if res not in rdict.keys():
-                    print("sd")
                 rdict[uuid][key] = rdict[res]
 
     return rdict
@@ -137,7 +135,7 @@ def insert_uuid_objects_from_source(flat_source: dict, destination: dict):
             new_d[key] = value
             continue
 
-        obj_id = value.pop("id")
+        obj_id = value["id"]
         source_res = flat_source[obj_id]
         new_d[key] = source_res
 

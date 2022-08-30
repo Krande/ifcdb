@@ -189,6 +189,9 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: IfcSchemaModel) 
             value = output
             props[key] = value
         elif isinstance(value, list) and len(value) > 0:
+            if atts is None:
+                # TODO: Atts cannot be zero
+                raise ValueError("Atts cannot be zero")
             att_type: AttributeModel = atts.get(key)
             arr_ref = att_type.array_ref()
             par_type = arr_ref.parameter_type

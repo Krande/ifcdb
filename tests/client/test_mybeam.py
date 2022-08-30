@@ -40,7 +40,7 @@ def test_get_ifc_class_select_zero_depth(bulk_io: GetBulk):
 
 def test_get_ifc_class_select_full_depth(bulk_io: GetBulk):
     name = "MyBeam"
-    bulk_io.get_by_name_v2(name)
+    _ = bulk_io.get_by_name_v2(name)
 
 
 def test_get_by_globalid(bulk_io: GetBulk):

@@ -83,8 +83,8 @@ class GetBulk:
     def get_owner_history(self) -> dict:
         """Returns all OwnerHistory related objects as a flat dictionary dict[uuid:result]"""
         query_str = self.eq_builder.get_owner_history_str()
-        result = json.loads(self.client.query_single_json(query_str))
-        return flatten_uuid_source(result)
+        return json.loads(self.client.query_single_json(query_str))
+
 
     def get_object_placements(self) -> dict:
         """Returns all related objects and properties needed to resolve locations of all IFC objects"""
@@ -162,8 +162,9 @@ class GetBulk:
 
         # Insert Owner History into object shape
         owner_id = object_shape["OwnerHistory"]["id"]
-        owner_map = {o.pop("id"): o for o in copy.deepcopy(owner["IfcOwnerHistory"])}
-        _ = insert_uuid_objects_from_source(owner, owner_map[owner_id])
+        owner_flat = flatten_uuid_source(owner)
+        owner_map = {o["id"]: o for o in copy.deepcopy(owner["IfcOwnerHistory"])}
+        _ = insert_uuid_objects_from_source(owner_flat, owner_map[owner_id])
 
         # Insert Object Placement
         obj_place_id = object_shape["ObjectPlacement"]["id"]
