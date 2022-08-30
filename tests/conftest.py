@@ -2,10 +2,10 @@ import pathlib
 
 import ifcopenshell
 import pytest
-
-from ifcdb.schema.model import IfcSchemaModel
-from ifcdb.pymodel.base import ExpReader
 from dotenv import load_dotenv
+
+from ifcdb.pymodel.base import ExpReader
+from ifcdb.schema.model import IfcSchemaModel
 
 load_dotenv()  # take environment variables from .env.
 
@@ -41,11 +41,6 @@ def sm_ifc4x1(wrap) -> IfcSchemaModel:
 @pytest.fixture
 def expreader_ifc4x1(ifc_4x1_exp_file) -> ExpReader:
     return ExpReader(express_file=ifc_4x1_exp_file)
-
-
-@pytest.fixture
-def tesselated_item_ifc(ifc_files_dir):
-    return ifcopenshell.open(ifc_files_dir / "tessellated-item.ifc")
 
 
 @pytest.fixture

@@ -5,7 +5,7 @@ from ifcdb.utils import top_dir
 
 
 @pytest.fixture
-def my_beam_4x1_db():
+def my_beam_4x1_db(root_dir):
     ifc_file = "MyBeam.ifc"
     db_name = ifc_file.replace(".ifc", "").replace("-", "_")
     ifc_path = top_dir() / "files" / ifc_file
