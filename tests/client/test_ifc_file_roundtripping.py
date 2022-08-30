@@ -30,7 +30,7 @@ def test_roundtrip_ifc_files_validation(ifc_files_dir, ifc_file_name):
         io.setup_database(delete_existing_migrations=True)
 
         # Insert IFC elements
-        io.insert_ifc(ifc_file)
+        ifc_io = io.insert_ifc(ifc_file)
 
         # Query & Validate Data using IfcOpenShell
-        validate_ifc_objects(io._ifc_io.ifc_obj, io.to_ifcopenshell_object())
+        validate_ifc_objects(ifc_io.ifc_obj, io.to_ifcopenshell_object())

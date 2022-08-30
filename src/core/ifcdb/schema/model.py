@@ -4,7 +4,7 @@ import logging
 import os
 import pathlib
 from dataclasses import dataclass, field
-from typing import ClassVar, Dict, List, Union
+from typing import ClassVar, Dict, List, Union, TypeVar
 
 import ifcopenshell
 from toposort import toposort_flatten
@@ -232,15 +232,6 @@ class EntityBaseModel:
     def schema(self):
         return self.edge_model.schema
 
-    def to_insert_str(
-        self,
-        entity: ifcopenshell.entity_instance,
-        indent: str = "",
-        with_map: dict = None,
-        uuid_map: dict = None,
-    ) -> str:
-        raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
-
     def to_str(self) -> str:
         raise NotImplementedError(f"Have not added method for subclass '{self.__class__.__name__}'")
 
@@ -415,21 +406,6 @@ class TypeModel(EntityBaseModel):
     def is_aggregate(self):
         cur_decl = self.get_cur_decl()
         return isinstance(cur_decl, wrap.aggregation_type)
-
-    def to_insert_str(
-        self,
-        entity: ifcopenshell.entity_instance,
-        indent: str = "",
-        with_map: dict = None,
-        uuid_map: dict = None,
-    ) -> str:
-        # value = get_base_type_name(self.entity)
-        wrap_value = entity.wrappedValue
-        if isinstance(wrap_value, str):
-            wrap_str = f"'{wrap_value}'"
-        else:
-            wrap_str = str(wrap_value)
-        return f"INSERT {self.name} {{{self.name} := {wrap_str} }}"
 
     def to_str(self):
         entity = None
@@ -690,16 +666,6 @@ class IfcSchemaModel:
             res.written_to_file = True
         return res.to_str()
 
-    def get_entity_insert_str(
-        self,
-        ifc_entity: ifcopenshell.entity_instance,
-        indent: str = "",
-        uuid_map: dict = None,
-        with_map: dict[str, str] = None,
-    ) -> str:
-        entity = self.get_entity_by_name(ifc_entity.is_a())
-        return entity.to_insert_str(ifc_entity, indent=indent, uuid_map=uuid_map, with_map=with_map)
-
     def to_esdl_str(self, entities: list[str], module_name="default") -> str:
         esdl_str = f"module {module_name} {{\n\n"
         for entity_name in entities:
@@ -713,3 +679,6 @@ class IfcSchemaModel:
 
         with open(esdl_file_path, "w") as f:
             f.write(self.to_esdl_str(entities, module_name))
+
+
+IfcSchemaType = TypeVar("IfcSchemaType", EntityModel, EnumModel, TypeModel, SelectModel, IntermediateClass)

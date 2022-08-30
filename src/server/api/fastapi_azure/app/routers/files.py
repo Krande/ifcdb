@@ -9,7 +9,7 @@ from fastapi_azure_auth.user import User
 from app.dependencies import azure_scheme
 from app.internal.database import get_client
 from ifcdb import EdgeIO
-from ifcdb.database.inserts.sequentially import SeqInsert
+from ifcdb.database.inserts.sequentially import InsertSeq
 from ifcdb.io.ifc import IfcIO
 
 router = APIRouter()
@@ -27,12 +27,12 @@ async def post_file_str(ifc_file_str: str, user: User = Depends(azure_scheme), d
     client = get_client(database=dbname)
     ifc_io = IfcIO(ifc_str=ifc_file_str)
 
-    sq = SeqInsert(ifc_io.schema)
+    sq = InsertSeq(ifc_io.schema)
     for tx in client.transaction():
         with tx:
             for item, insert_str in sq.create_bulk_insert_str(ifc_io.get_ifc_objects_by_sorted_insert_order_flat()):
                 single_json = tx.query_single_json(insert_str)
                 query_res = json.loads(single_json)
-                sq._uuid_map[item] = query_res["id"]
+                sq.uuid_map[item] = query_res["id"]
 
     return "SUCCESS"
