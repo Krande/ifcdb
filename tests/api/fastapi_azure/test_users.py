@@ -1,5 +1,6 @@
 import pytest
 from httpx import AsyncClient
+
 from ifcdb import EdgeIO
 
 
@@ -7,8 +8,9 @@ from ifcdb import EdgeIO
 def mock_db_name():
     db_name = "UserDb"
     with EdgeIO(db_name, db_schema_dir=f"temp/{db_name}/dbschema") as io:
-        io.create_schema(["IfcPerson"])
-        io.setup_database(delete_existing_migrations=True)
+        if io.database_exists() is False:
+            io.create_schema(["IfcPerson"])
+            io.setup_database(delete_existing_migrations=True)
 
     yield "UserDb"
 

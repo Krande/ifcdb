@@ -18,7 +18,18 @@ def test_insert_beam(my_beam_w_holes_ifc):
 
     # Adding a single ifc element should return UUID for use later
     bm = my_beam_w_holes_optimized.by_type("IfcBeam")[0]
-    _ = sq.create_insert_entity(bm)
+
+    insert_entity = sq.create_insert_entity(bm)
+    assert frozenset(insert_entity.props) == frozenset(
+        {
+            "GlobalId": "1Yi29q_3qHx8aIw2f4ZOUQ",
+            "Name": "MyBeam",
+            "Description": "IPE400",
+            "ObjectType": "Beam",
+            "Tag": "MyBeam",
+        }
+    )
+    _ = insert_entity.to_str()
     insert_str = sq.create_entity_insert_str(bm)
     sq.uuid_map[bm] = "a_random_uuid_replacement_for_IfcBeam"
 

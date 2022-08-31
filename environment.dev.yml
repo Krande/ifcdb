@@ -1,6 +1,6 @@
 name: ifcdb-dev
 channels:
-  - krande/label/dev
+  - ifcopenshell
   - conda-forge
 dependencies:
   - ifcopenshell

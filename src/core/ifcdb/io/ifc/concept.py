@@ -1,14 +1,21 @@
 from __future__ import annotations
 
-import ifcopenshell
 import logging
 import pathlib
 from dataclasses import dataclass
+
+import ifcopenshell
 from toposort import toposort, toposort_flatten
 
 from ifcdb.database.utils import resolve_order_of_result_entities
 from ifcdb.io.ifc.optimizing import general_optimization
-from ifcdb.schema.model import IfcSchemaModel, IntermediateClass, EntityModel, AttributeModel, SelectModel, TypeModel
+from ifcdb.schema.model import (
+    AttributeModel,
+    EntityModel,
+    IfcSchemaModel,
+    IntermediateClass,
+    SelectModel,
+)
 
 
 @dataclass
@@ -172,10 +179,6 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: IfcSchemaModel) 
     atts = None
     if isinstance(entity, EntityModel):
         atts = {att.name: att for att in entity.get_attributes(True)}
-
-    if atts is None and isinstance(entity, TypeModel):
-        base_type = entity.get_base_type()
-        print('sd')
 
     props = dict()
     for key, value in db_props.items():

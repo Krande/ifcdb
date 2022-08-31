@@ -53,12 +53,12 @@ class InsertBase:
                     ptype = att_ref.parameter_type
                     if isinstance(ptype, EntityModel):
                         result = []
-                        # for r in res:
-                        #     output = self.create_insert_entity(r)
-                        #     result.append(output)
+                        for r in res:
+                            output = self.create_insert_entity(r)
+                            result.append(output)
 
-                        props[name] = result
-                        # continue
+                        links[name] = tuple(result)
+                        continue
 
                 props[name] = res
 
@@ -230,15 +230,24 @@ class FilterModel:
 @dataclass
 class InsertEntityModel:
     name: str
-    props: dict[str, Any]
-    links: dict[str, InsertEntityModel]
+    props: dict[str, Any] = field(repr=False)
+    links: dict[str, InsertEntityModel] = field(repr=False)
     filter: FilterModel = None
 
     def props_str(self):
-        return ", ".join([f"{key}:= {value}" for key, value in self.props.items()])
+        return ",\n".join([f"{key}:= {value}" for key, value in self.props.items()])
 
     def links_str(self):
-        return ", ".join([f"{key}:= {value.to_str()}" for key, value in self.links.items()])
+        return ",\n".join([f"{key}:= {value.to_str()}" for key, value in self.links.items()])
 
     def to_str(self):
-        return f"INSERT {self.name} {{ {self.props_str} }};"
+        prop_str = self.props_str()
+        links_str = ""
+        for key, value in self.links.items():
+            if isinstance(value, InsertEntityModel):
+                value = [value]
+
+            for v in value:
+                links_str += f"{key}:= ({v.to_str()})"
+
+        return f"INSERT {self.name} {{\n    {prop_str},{links_str} }};"
