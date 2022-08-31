@@ -12,12 +12,13 @@ def test_insert_beam(my_beam_w_holes_ifc):
     sq = InsertSeq("IFC4x1")
 
     for ifc_owner in my_beam_w_holes_optimized.by_type("IfcOwnerHistory"):
-        insert_str = sq.create_entity_insert_str(ifc_owner)
         sq.uuid_map[ifc_owner] = "a_random_uuid_replacement_for_IfcOwner"
-        print(insert_str)
+        # insert_str = sq.create_entity_insert_str(ifc_owner)
+        # print(insert_str)
 
     # Adding a single ifc element should return UUID for use later
     bm = my_beam_w_holes_optimized.by_type("IfcBeam")[0]
+    _ = sq.create_insert_entity(bm)
     insert_str = sq.create_entity_insert_str(bm)
     sq.uuid_map[bm] = "a_random_uuid_replacement_for_IfcBeam"
 

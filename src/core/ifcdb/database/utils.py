@@ -4,9 +4,7 @@ import copy
 import logging
 from toposort import toposort_flatten
 
-from ifcdb.schema.model import (
-    IfcSchemaModel,
-)
+from ifcdb.schema.model import IfcSchemaModel
 
 ID_PARAMS = {"id", "_e_type"}
 
@@ -60,7 +58,7 @@ def get_ids(obj: dict, id_list):
                     get_ids(subinst, id_list)
 
 
-def resolve_order_of_result_entities(results: dict, em: IfcSchemaModel) -> list:
+def resolve_order_of_result_entities(results: dict, em: IfcSchemaModel) -> list[dict]:
     id_map = dict()
     key_map = dict()
     for key, value in results.items():

@@ -397,6 +397,8 @@ class EnumModel(EntityBaseModel):
 class TypeModel(EntityBaseModel):
     entity: wrap.type_declaration = field(repr=False)
 
+    def get_base_type(self):
+        return get_base_type_name(self.entity)
     def get_cur_decl(self):
         cur_decl = self.entity
         while hasattr(cur_decl, "declared_type") is True:

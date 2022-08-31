@@ -35,7 +35,23 @@ class InsertBase:
         if self.schema_model is None:
             self.schema_model = IfcSchemaModel(schema_version=self.ifc_schema)
 
-    def create_entity_insert_str(self, item: _IFC_ENTITY):
+    def create_insert_entity(self, item: _IFC_ENTITY) -> InsertEntityModel:
+        entity = self.schema_model.get_entity_by_name(item.is_a())
+        all_atts = entity.get_entity_atts(item)
+        links = dict()
+        props = dict()
+        for j, att in enumerate(all_atts):
+            name = att.name
+            _ = att.get_type_ref()
+            res = getattr(item, name)
+            if isinstance(res, _IFC_ENTITY):
+                links[name] = self.create_insert_entity(res)
+            else:
+                props[name] = res
+
+        return InsertEntityModel(entity.name, props, links)
+
+    def create_entity_insert_str(self, item: _IFC_ENTITY) -> str:
         entity = self.schema_model.get_entity_by_name(item.is_a())
         all_atts = entity.get_entity_atts(item)
 
@@ -203,7 +219,7 @@ class InsertEntityModel:
     name: str
     props: dict[str, Any]
     links: dict[str, InsertEntityModel]
-    filter: FilterModel
+    filter: FilterModel = None
 
     @property
     def props_str(self):
