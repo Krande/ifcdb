@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-import ifcopenshell
 import logging
 from dataclasses import dataclass, field
 from itertools import count
-from typing import ClassVar, Any
+from typing import Any, ClassVar
+
+import ifcopenshell
 
 from ifcdb.schema.model import (
+    ArrayModel,
+    AttributeModel,
+    EntityModel,
     IfcSchemaModel,
     IfcSchemaType,
-    AttributeModel,
-    ArrayModel,
-    TypeModel,
     SelectModel,
+    TypeModel,
 )
 
 _INSERT_COUNTER = count(start=1)
@@ -42,11 +44,22 @@ class InsertBase:
         props = dict()
         for j, att in enumerate(all_atts):
             name = att.name
-            _ = att.get_type_ref()
+            att_ref = att.get_type_ref()
             res = getattr(item, name)
             if isinstance(res, _IFC_ENTITY):
                 links[name] = self.create_insert_entity(res)
             else:
+                if isinstance(att_ref, ArrayModel):
+                    ptype = att_ref.parameter_type
+                    if isinstance(ptype, EntityModel):
+                        result = []
+                        # for r in res:
+                        #     output = self.create_insert_entity(r)
+                        #     result.append(output)
+
+                        props[name] = result
+                        # continue
+
                 props[name] = res
 
         return InsertEntityModel(entity.name, props, links)
@@ -221,11 +234,9 @@ class InsertEntityModel:
     links: dict[str, InsertEntityModel]
     filter: FilterModel = None
 
-    @property
     def props_str(self):
         return ", ".join([f"{key}:= {value}" for key, value in self.props.items()])
 
-    @property
     def links_str(self):
         return ", ".join([f"{key}:= {value.to_str()}" for key, value in self.links.items()])
 
