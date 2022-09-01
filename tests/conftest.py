@@ -18,7 +18,7 @@ def root_dir() -> pathlib.Path:
 
 
 @pytest.fixture
-def ifc_files_dir(root_dir) -> pathlib.Path:
+def files_dir(root_dir) -> pathlib.Path:
     return root_dir / "files"
 
 
@@ -44,5 +44,5 @@ def expreader_ifc4x1(ifc_4x1_exp_file) -> ExpReader:
 
 
 @pytest.fixture
-def my_beam_w_holes_ifc(ifc_files_dir):
-    return ifcopenshell.open(ifc_files_dir / "MyBeamWithHoles.ifc")
+def my_beam_w_holes_ifc(files_dir):
+    return ifcopenshell.open(files_dir / "MyBeamWithHoles.ifc")

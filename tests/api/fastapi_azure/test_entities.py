@@ -49,8 +49,8 @@ def to_generic(ifc_elem: ifcopenshell.entity_instance) -> IfcGeneric:
 
 
 @pytest.fixture
-def cube_ifc_data(ifc_files_dir) -> list[IfcGeneric]:
-    ifc_io = IfcIO(ifc_files_dir / "MyCube.ifc")
+def cube_ifc_data(files_dir) -> list[IfcGeneric]:
+    ifc_io = IfcIO(files_dir / "MyCube.ifc")
     return [to_generic(f) for f in ifc_io.ifc_obj]
 
 

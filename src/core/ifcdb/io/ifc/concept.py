@@ -114,6 +114,11 @@ class IfcIO:
                             fix_props[key] = f.create_entity("IfcReal", value)
                         else:
                             fix_props[key] = value
+                elif ifc_class == 'IfcIndexedPolyCurve':
+                    fix_props = dict()
+                    fix_props.update(props)
+                    for i, seg in enumerate(props["Segments"]):
+                        fix_props["Segments"][i] = f.create_entity("IfcLineIndex", seg)
                 else:
                     fix_props = props
                 try:
@@ -165,9 +170,8 @@ def get_ref_id(ref_id, id_map):
         return n
 
     if n.ifc_id is None:
-        if isinstance(n.props, (float, int)):
+        if isinstance(n.props, (float, int, list)):
             return n.props
-
         res = n.props.get(n.name)
 
         if res is None:
@@ -199,9 +203,6 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: IfcSchemaModel) 
             value = output
             props[key] = value
         elif isinstance(value, list) and len(value) > 0 and atts is not None:
-            if atts is None:
-                # TODO: Atts cannot be zero
-                raise ValueError("Atts cannot be zero")
             att_type: AttributeModel = atts.get(key)
             arr_ref = att_type.array_ref()
             par_type = arr_ref.parameter_type

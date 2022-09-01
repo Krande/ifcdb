@@ -1,0 +1,4202 @@
+{
+  "results": [
+    {
+      "IfcBeam": [
+        {
+          "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00",
+          "Tag": "MyBeam",
+          "Name": "MyBeam",
+          "GlobalId": "1Yi29q_3qHx8aIw2f4ZOUQ",
+          "ObjectType": "Beam",
+          "Description": "IPE400",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "57e5df58-2a26-11ed-a381-6b2b38170940"
+          },
+          "ObjectPlacement": {
+            "id": "5915bb50-2a26-11ed-a381-cf93f1ccb290"
+          }
+        },
+        {
+          "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7",
+          "Tag": "MyBeam",
+          "Name": "MyBeam",
+          "GlobalId": "1Yi29q_3qHx8aIw2f4ZOUQ",
+          "ObjectType": "Beam",
+          "Description": "IPE400",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "7b8dc934-2a26-11ed-a381-37fb2ef58f48"
+          },
+          "ObjectPlacement": {
+            "id": "7b927ce0-2a26-11ed-a381-bfc58fb75ae3"
+          }
+        }
+      ],
+      "IfcDate": [],
+      "IfcReal": [],
+      "IfcSite": [
+        {
+          "id": "55671a80-2a26-11ed-a381-77b22c01d775",
+          "Name": "MyAssembly",
+          "GlobalId": "1Yi72J_3qHxBDtw2f4ZOUQ",
+          "LongName": null,
+          "ObjectType": null,
+          "Description": null,
+          "RefLatitude": null,
+          "SiteAddress": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RefElevation": null,
+          "RefLongitude": null,
+          "Representation": null,
+          "CompositionType": "ELEMENT",
+          "LandTitleNumber": null,
+          "ObjectPlacement": {
+            "id": "54460a58-2a26-11ed-a381-3f30c1b62fba"
+          }
+        },
+        {
+          "id": "7b827bce-2a26-11ed-a381-37e200e3c730",
+          "Name": "MyAssembly",
+          "GlobalId": "1Yi72J_3qHxBDtw2f4ZOUQ",
+          "LongName": null,
+          "ObjectType": null,
+          "Description": null,
+          "RefLatitude": null,
+          "SiteAddress": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RefElevation": null,
+          "RefLongitude": null,
+          "Representation": null,
+          "CompositionType": "ELEMENT",
+          "LandTitleNumber": null,
+          "ObjectPlacement": {
+            "id": "7b7ca67c-2a26-11ed-a381-a319412e206a"
+          }
+        }
+      ],
+      "IfcText": [
+        {
+          "id": "4ed5f7e0-2a26-11ed-a381-07aab53aaab2",
+          "IfcText": "AdaProject"
+        },
+        {
+          "id": "4ef3c3b0-2a26-11ed-a381-738792bd9600",
+          "IfcText": "IFC4X1"
+        },
+        {
+          "id": "4f0f3514-2a26-11ed-a381-c332eecf6333",
+          "IfcText": "site"
+        },
+        {
+          "id": "4f4fe050-2a26-11ed-a381-47d6c08ec410",
+          "IfcText": "S420"
+        },
+        {
+          "id": "7b678558-2a26-11ed-a381-4767f2672358",
+          "IfcText": "AdaProject"
+        },
+        {
+          "id": "7b67ec3c-2a26-11ed-a381-13a79d457638",
+          "IfcText": "IFC4X1"
+        },
+        {
+          "id": "7b683fb6-2a26-11ed-a381-433d7ad8704d",
+          "IfcText": "site"
+        },
+        {
+          "id": "7b688ec6-2a26-11ed-a381-c7d44f5b7dd4",
+          "IfcText": "S420"
+        }
+      ],
+      "IfcTime": [],
+      "IfcUnit": [
+        {
+          "id": "50a2ab22-2a26-11ed-a381-3fff62101072",
+          "IfcUnit": {
+            "id": "4d93d3a2-2a26-11ed-a381-a79f2fb56749"
+          }
+        },
+        {
+          "id": "554bde3c-2a26-11ed-a381-133005ee51a3",
+          "IfcUnit": {
+            "id": "4d91a99c-2a26-11ed-a381-3b71141ad60d"
+          }
+        },
+        {
+          "id": "554be6a2-2a26-11ed-a381-37f2861e72d1",
+          "IfcUnit": {
+            "id": "4d92a234-2a26-11ed-a381-cfa97bea817a"
+          }
+        },
+        {
+          "id": "554be878-2a26-11ed-a381-371bc97c6355",
+          "IfcUnit": {
+            "id": "4d9351b6-2a26-11ed-a381-97ea830fa0c8"
+          }
+        },
+        {
+          "id": "554bea58-2a26-11ed-a381-676f7caf77ee",
+          "IfcUnit": {
+            "id": "53e67700-2a26-11ed-a381-6fdb76aacd3f"
+          }
+        },
+        {
+          "id": "7b6cbc58-2a26-11ed-a381-abb4755ca1a2",
+          "IfcUnit": {
+            "id": "7b611d76-2a26-11ed-a381-a7eace26a1dd"
+          }
+        },
+        {
+          "id": "7b81e6a0-2a26-11ed-a381-cfbbbdc26a4e",
+          "IfcUnit": {
+            "id": "7b5f8768-2a26-11ed-a381-3f8a732a89cf"
+          }
+        },
+        {
+          "id": "7b81e8da-2a26-11ed-a381-2b026cd3b3b4",
+          "IfcUnit": {
+            "id": "7b602c22-2a26-11ed-a381-4bbc00d2a229"
+          }
+        },
+        {
+          "id": "7b81e9de-2a26-11ed-a381-9facfcfab99b",
+          "IfcUnit": {
+            "id": "7b60b750-2a26-11ed-a381-1bac24d20aba"
+          }
+        },
+        {
+          "id": "7b81eb0a-2a26-11ed-a381-5b1d164ca194",
+          "IfcUnit": {
+            "id": "7b7b6c9e-2a26-11ed-a381-af161e772b11"
+          }
+        }
+      ],
+      "IfcLabel": [],
+      "IfcValue": [
+        {
+          "id": "4ed602f8-2a26-11ed-a381-c7b40b04d9bd",
+          "IfcValue": {
+            "id": "4ed5f7e0-2a26-11ed-a381-07aab53aaab2"
+          }
+        },
+        {
+          "id": "4ef3c68a-2a26-11ed-a381-83c18e9ef831",
+          "IfcValue": {
+            "id": "4ef3c3b0-2a26-11ed-a381-738792bd9600"
+          }
+        },
+        {
+          "id": "4f0f373a-2a26-11ed-a381-6743ace7d839",
+          "IfcValue": {
+            "id": "4f0f3514-2a26-11ed-a381-c332eecf6333"
+          }
+        },
+        {
+          "id": "4f4fe384-2a26-11ed-a381-f3f705c520f7",
+          "IfcValue": {
+            "id": "4f4fe050-2a26-11ed-a381-47d6c08ec410"
+          }
+        },
+        {
+          "id": "4f6d390c-2a26-11ed-a381-478450e59352",
+          "IfcValue": {
+            "id": "4f6d2c8c-2a26-11ed-a381-fbc6e89f2a0f"
+          }
+        },
+        {
+          "id": "4f880f3e-2a26-11ed-a381-f7f586213463",
+          "IfcValue": {
+            "id": "4f88048a-2a26-11ed-a381-3f8dd7e6f42c"
+          }
+        },
+        {
+          "id": "4fa6c2bc-2a26-11ed-a381-d7b062a3b312",
+          "IfcValue": {
+            "id": "4fa6b006-2a26-11ed-a381-67f7a19c0282"
+          }
+        },
+        {
+          "id": "4fc250ae-2a26-11ed-a381-33c030aa0ce4",
+          "IfcValue": {
+            "id": "4fc24528-2a26-11ed-a381-7b3849a72db0"
+          }
+        },
+        {
+          "id": "4fde6b0e-2a26-11ed-a381-475ed0ad01ec",
+          "IfcValue": {
+            "id": "4fde5eca-2a26-11ed-a381-a7f02e669727"
+          }
+        },
+        {
+          "id": "50304f8c-2a26-11ed-a381-6bf865f7a17a",
+          "IfcValue": {
+            "id": "50304082-2a26-11ed-a381-cf667e04a2d7"
+          }
+        },
+        {
+          "id": "50a2a910-2a26-11ed-a381-63f0d1861436",
+          "IfcValue": {
+            "id": "50a299f2-2a26-11ed-a381-c3aed6ae175c"
+          }
+        },
+        {
+          "id": "7b67874c-2a26-11ed-a381-c327f79a7433",
+          "IfcValue": {
+            "id": "7b678558-2a26-11ed-a381-4767f2672358"
+          }
+        },
+        {
+          "id": "7b67ee26-2a26-11ed-a381-576ccb9010fb",
+          "IfcValue": {
+            "id": "7b67ec3c-2a26-11ed-a381-13a79d457638"
+          }
+        },
+        {
+          "id": "7b684164-2a26-11ed-a381-af0f6954f860",
+          "IfcValue": {
+            "id": "7b683fb6-2a26-11ed-a381-433d7ad8704d"
+          }
+        },
+        {
+          "id": "7b68916e-2a26-11ed-a381-2bbf023ecbf4",
+          "IfcValue": {
+            "id": "7b688ec6-2a26-11ed-a381-c7d44f5b7dd4"
+          }
+        },
+        {
+          "id": "7b68f348-2a26-11ed-a381-0bff4fa45a61",
+          "IfcValue": {
+            "id": "7b68f122-2a26-11ed-a381-47bc80f6ada9"
+          }
+        },
+        {
+          "id": "7b69572a-2a26-11ed-a381-bf86a1f10ddb",
+          "IfcValue": {
+            "id": "7b695478-2a26-11ed-a381-a352ba378935"
+          }
+        },
+        {
+          "id": "7b69ba30-2a26-11ed-a381-33134e1bf2c1",
+          "IfcValue": {
+            "id": "7b69b85a-2a26-11ed-a381-57164457a7d6"
+          }
+        },
+        {
+          "id": "7b6a2042-2a26-11ed-a381-d3df4e3a32ec",
+          "IfcValue": {
+            "id": "7b6a1e76-2a26-11ed-a381-ff162c72ade2"
+          }
+        },
+        {
+          "id": "7b6a8744-2a26-11ed-a381-63e633241ffa",
+          "IfcValue": {
+            "id": "7b6a850a-2a26-11ed-a381-bfcd2f2572a4"
+          }
+        },
+        {
+          "id": "7b6aef68-2a26-11ed-a381-f7de78e14616",
+          "IfcValue": {
+            "id": "7b6aecf2-2a26-11ed-a381-b7156ec7e901"
+          }
+        },
+        {
+          "id": "7b6cba78-2a26-11ed-a381-bf4359be3b43",
+          "IfcValue": {
+            "id": "7b6cb848-2a26-11ed-a381-b7cdc2f7ec5e"
+          }
+        }
+      ],
+      "IfcBinary": [],
+      "IfcPerson": [
+        {
+          "id": "4d4bc4b8-2a26-11ed-a381-bbc5630ca097",
+          "Roles": [],
+          "Addresses": [],
+          "GivenName": null,
+          "FamilyName": null,
+          "MiddleNames": null,
+          "PrefixTitles": null,
+          "SuffixTitles": null,
+          "Identification": "AdaUser"
+        },
+        {
+          "id": "7b5ac598-2a26-11ed-a381-4b8ef304ed77",
+          "Roles": [],
+          "Addresses": [],
+          "GivenName": null,
+          "FamilyName": null,
+          "MiddleNames": null,
+          "PrefixTitles": null,
+          "SuffixTitles": null,
+          "Identification": "AdaUser"
+        }
+      ],
+      "IfcSIUnit": [
+        {
+          "id": "4d91a99c-2a26-11ed-a381-3b71141ad60d",
+          "Name": "METRE",
+          "Prefix": null,
+          "UnitType": "LENGTHUNIT",
+          "Dimensions": null
+        },
+        {
+          "id": "4d92a234-2a26-11ed-a381-cfa97bea817a",
+          "Name": "SQUARE_METRE",
+          "Prefix": null,
+          "UnitType": "AREAUNIT",
+          "Dimensions": null
+        },
+        {
+          "id": "4d9351b6-2a26-11ed-a381-97ea830fa0c8",
+          "Name": "CUBIC_METRE",
+          "Prefix": null,
+          "UnitType": "VOLUMEUNIT",
+          "Dimensions": null
+        },
+        {
+          "id": "4d93d3a2-2a26-11ed-a381-a79f2fb56749",
+          "Name": "RADIAN",
+          "Prefix": null,
+          "UnitType": "PLANEANGLEUNIT",
+          "Dimensions": null
+        },
+        {
+          "id": "7b5f8768-2a26-11ed-a381-3f8a732a89cf",
+          "Name": "METRE",
+          "Prefix": null,
+          "UnitType": "LENGTHUNIT",
+          "Dimensions": null
+        },
+        {
+          "id": "7b602c22-2a26-11ed-a381-4bbc00d2a229",
+          "Name": "SQUARE_METRE",
+          "Prefix": null,
+          "UnitType": "AREAUNIT",
+          "Dimensions": null
+        },
+        {
+          "id": "7b60b750-2a26-11ed-a381-1bac24d20aba",
+          "Name": "CUBIC_METRE",
+          "Prefix": null,
+          "UnitType": "VOLUMEUNIT",
+          "Dimensions": null
+        },
+        {
+          "id": "7b611d76-2a26-11ed-a381-a7eace26a1dd",
+          "Name": "RADIAN",
+          "Prefix": null,
+          "UnitType": "PLANEANGLEUNIT",
+          "Dimensions": null
+        }
+      ],
+      "IfcBoolean": [],
+      "IfcInteger": [],
+      "IfcLogical": [],
+      "IfcProject": [
+        {
+          "id": "5745568c-2a26-11ed-a381-33c963ead909",
+          "Name": "AdaProject",
+          "Phase": null,
+          "GlobalId": "1Yi72K_3qHxAnmw2f4ZOUQ",
+          "LongName": null,
+          "ObjectType": null,
+          "Description": null,
+          "OwnerHistory": {
+            "id": "53a26f42-2a26-11ed-a381-1f59486f63a3"
+          },
+          "UnitsInContext": {
+            "id": "554bd2ca-2a26-11ed-a381-0f0f67b79422"
+          },
+          "RepresentationContexts": [
+            {
+              "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+            }
+          ]
+        },
+        {
+          "id": "7b8b3f0c-2a26-11ed-a381-cbcb83576dc0",
+          "Name": "AdaProject",
+          "Phase": null,
+          "GlobalId": "1Yi72K_3qHxAnmw2f4ZOUQ",
+          "LongName": null,
+          "ObjectType": null,
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b798ece-2a26-11ed-a381-771c5a087fe0"
+          },
+          "UnitsInContext": {
+            "id": "7b81e39e-2a26-11ed-a381-53170e5c16e3"
+          },
+          "RepresentationContexts": [
+            {
+              "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+            }
+          ]
+        }
+      ],
+      "IfcArcIndex": [
+        {
+          "id": "521430de-2a26-11ed-a381-134893ec6261",
+          "IfcArcIndex": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "52144830-2a26-11ed-a381-4bd52317cba9",
+          "IfcArcIndex": [
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "id": "52144c72-2a26-11ed-a381-27935d318906",
+          "IfcArcIndex": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "id": "52946ce0-2a26-11ed-a381-473c49e8842c",
+          "IfcArcIndex": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "52947122-2a26-11ed-a381-ebe9ee5c595c",
+          "IfcArcIndex": [
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "id": "52947398-2a26-11ed-a381-ab5736fc71d1",
+          "IfcArcIndex": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "id": "52947622-2a26-11ed-a381-7f6da84bb7ef",
+          "IfcArcIndex": [
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "id": "7b70e940-2a26-11ed-a381-5f069f7c535f",
+          "IfcArcIndex": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "7b70eefe-2a26-11ed-a381-53946477f058",
+          "IfcArcIndex": [
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "id": "7b70f1ce-2a26-11ed-a381-8fb54184c4c9",
+          "IfcArcIndex": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "id": "7b72ae42-2a26-11ed-a381-6b79f67bcf8a",
+          "IfcArcIndex": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "7b72b75c-2a26-11ed-a381-d38bdbb484ec",
+          "IfcArcIndex": [
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "id": "7b72b9fa-2a26-11ed-a381-dfdab62f8df7",
+          "IfcArcIndex": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "id": "7b72bc8e-2a26-11ed-a381-6372eeac8d2f",
+          "IfcArcIndex": [
+            10,
+            11,
+            12
+          ]
+        }
+      ],
+      "IfcBeamType": [
+        {
+          "id": "563e7a3e-2a26-11ed-a381-0ba259702021",
+          "Tag": null,
+          "Name": "IPE400",
+          "GlobalId": "1chyka_3qHx8m_w2f4ZOUQ",
+          "Description": "IPE400",
+          "ElementType": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "PredefinedType": "BEAM",
+          "HasPropertySets": [],
+          "RepresentationMaps": [],
+          "ApplicableOccurrence": null
+        },
+        {
+          "id": "7b8571da-2a26-11ed-a381-c3f1f80a8d5b",
+          "Tag": null,
+          "Name": "IPE400",
+          "GlobalId": "1chyka_3qHx8m_w2f4ZOUQ",
+          "Description": "IPE400",
+          "ElementType": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "PredefinedType": "BEAM",
+          "HasPropertySets": [],
+          "RepresentationMaps": [],
+          "ApplicableOccurrence": null
+        }
+      ],
+      "IfcDateTime": [],
+      "IfcDuration": [],
+      "IfcMaterial": [
+        {
+          "id": "4de79730-2a26-11ed-a381-4bfa9b8a14ad",
+          "Name": "S420",
+          "Category": "Steel",
+          "Description": null
+        },
+        {
+          "id": "7b62510a-2a26-11ed-a381-5bae041b6437",
+          "Name": "S420",
+          "Category": "Steel",
+          "Description": null
+        }
+      ],
+      "IfcPolyline": [
+        {
+          "id": "510e90ee-2a26-11ed-a381-b7ae00306d03",
+          "Points": [
+            {
+              "id": "4d7351ae-2a26-11ed-a381-67ec71e16fac"
+            },
+            {
+              "id": "4df9ea48-2a26-11ed-a381-8f3031b0148d"
+            }
+          ]
+        },
+        {
+          "id": "530bed9c-2a26-11ed-a381-b7b1d08c7283",
+          "Points": [
+            {
+              "id": "4eaa1f12-2a26-11ed-a381-4b36c1208d2d"
+            },
+            {
+              "id": "4eb71dd4-2a26-11ed-a381-1f87946f68ce"
+            },
+            {
+              "id": "4eb7e3e0-2a26-11ed-a381-cb8babebff12"
+            },
+            {
+              "id": "4eb8a55a-2a26-11ed-a381-a3995f71970f"
+            }
+          ]
+        },
+        {
+          "id": "7b6e11d4-2a26-11ed-a381-970296dfda97",
+          "Points": [
+            {
+              "id": "7b5d4fac-2a26-11ed-a381-b799d7434a57"
+            },
+            {
+              "id": "7b633386-2a26-11ed-a381-c7c4ff283391"
+            }
+          ]
+        },
+        {
+          "id": "7b75dd7e-2a26-11ed-a381-8f71474906e0",
+          "Points": [
+            {
+              "id": "7b662514-2a26-11ed-a381-373f4d03f6fa"
+            },
+            {
+              "id": "7b667c58-2a26-11ed-a381-a752a3fd016f"
+            },
+            {
+              "id": "7b66d036-2a26-11ed-a381-5773b246cbe5"
+            },
+            {
+              "id": "7b672374-2a26-11ed-a381-f39b4d596b16"
+            }
+          ]
+        }
+      ],
+      "IfcActorRole": [
+        {
+          "id": "4dda465c-2a26-11ed-a381-2f4a9246feba",
+          "Role": "ENGINEER",
+          "Description": null,
+          "UserDefinedRole": null
+        },
+        {
+          "id": "7b61813a-2a26-11ed-a381-c78f9383d09b",
+          "Role": "ENGINEER",
+          "Description": null,
+          "UserDefinedRole": null
+        }
+      ],
+      "IfcDirection": [
+        {
+          "id": "4d66f15c-2a26-11ed-a381-17ad0f6e47fb",
+          "DirectionRatios": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "4d67bea2-2a26-11ed-a381-377efbf31aba",
+          "DirectionRatios": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "id": "4d742f98-2a26-11ed-a381-db6ebb3ecf61",
+          "DirectionRatios": [
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "id": "7b5c203c-2a26-11ed-a381-1bcea9d8ada3",
+          "DirectionRatios": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "7b5cbd58-2a26-11ed-a381-870a782e132f",
+          "DirectionRatios": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "id": "7b5dd29c-2a26-11ed-a381-bf614441da4e",
+          "DirectionRatios": [
+            0,
+            1,
+            0
+          ]
+        }
+      ],
+      "IfcLineIndex": [
+        {
+          "id": "51797382-2a26-11ed-a381-5bc28c88865e",
+          "IfcLineIndex": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "517987c8-2a26-11ed-a381-43aba846852d",
+          "IfcLineIndex": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "51798a2a-2a26-11ed-a381-4f655e990b1f",
+          "IfcLineIndex": [
+            3,
+            1
+          ]
+        },
+        {
+          "id": "521445e2-2a26-11ed-a381-6b08acdf5371",
+          "IfcLineIndex": [
+            3,
+            4
+          ]
+        },
+        {
+          "id": "52144aa6-2a26-11ed-a381-7fee911e2810",
+          "IfcLineIndex": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "52144ed4-2a26-11ed-a381-cff3157e6cf0",
+          "IfcLineIndex": [
+            9,
+            1
+          ]
+        },
+        {
+          "id": "52946f7e-2a26-11ed-a381-03ac08f5e8bd",
+          "IfcLineIndex": [
+            3,
+            4
+          ]
+        },
+        {
+          "id": "52947262-2a26-11ed-a381-17a63fb41375",
+          "IfcLineIndex": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "529474d8-2a26-11ed-a381-03d05987ca67",
+          "IfcLineIndex": [
+            9,
+            10
+          ]
+        },
+        {
+          "id": "52947762-2a26-11ed-a381-f7bcf946ed59",
+          "IfcLineIndex": [
+            12,
+            1
+          ]
+        },
+        {
+          "id": "7b6fd276-2a26-11ed-a381-57e9ef4ce07f",
+          "IfcLineIndex": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "7b6fd5a0-2a26-11ed-a381-4b957b771dcb",
+          "IfcLineIndex": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "7b6fd71c-2a26-11ed-a381-8f834ee4da30",
+          "IfcLineIndex": [
+            3,
+            1
+          ]
+        },
+        {
+          "id": "7b70eca6-2a26-11ed-a381-2fe0da1154ca",
+          "IfcLineIndex": [
+            3,
+            4
+          ]
+        },
+        {
+          "id": "7b70f070-2a26-11ed-a381-3fbbef06ed3d",
+          "IfcLineIndex": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "7b70f322-2a26-11ed-a381-1fb2787ce314",
+          "IfcLineIndex": [
+            9,
+            1
+          ]
+        },
+        {
+          "id": "7b72b252-2a26-11ed-a381-5ff87f7b10a4",
+          "IfcLineIndex": [
+            3,
+            4
+          ]
+        },
+        {
+          "id": "7b72b8b0-2a26-11ed-a381-a3822d1b9cb9",
+          "IfcLineIndex": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "7b72bb3a-2a26-11ed-a381-4f114eed894b",
+          "IfcLineIndex": [
+            9,
+            10
+          ]
+        },
+        {
+          "id": "7b72bdce-2a26-11ed-a381-d33b3b926096",
+          "IfcLineIndex": [
+            12,
+            1
+          ]
+        }
+      ],
+      "IfcPHMeasure": [],
+      "IfcTimeStamp": [],
+      "IfcIdentifier": [],
+      "IfcProfileDef": [
+        {
+          "id": "54785864-2a26-11ed-a381-9fc7eae4498e",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "548a8322-2a26-11ed-a381-4b1f2f011e97",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "549db528-2a26-11ed-a381-0f901021b084",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "5500c28a-2a26-11ed-a381-431ab250070b",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b7dd43e-2a26-11ed-a381-2b97d00b3110",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b7ef0b2-2a26-11ed-a381-bb9f7a667e0d",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b7f83ec-2a26-11ed-a381-ffefcdd90076",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b80b0fa-2a26-11ed-a381-97a778f4f458",
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "4df916a4-2a26-11ed-a381-0345affab4aa",
+          "ProfileName": "IPE400",
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b62c518-2a26-11ed-a381-bf21eee4d4d8",
+          "ProfileName": "IPE400",
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "4e9ba4d2-2a26-11ed-a381-5f56b269e553",
+          "ProfileName": "cylinder",
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b65cdd0-2a26-11ed-a381-db75b00b1692",
+          "ProfileName": "cylinder",
+          "ProfileType": "AREA"
+        }
+      ],
+      "IfcTypeObject": [
+        {
+          "id": "563e7a3e-2a26-11ed-a381-0ba259702021",
+          "Name": "IPE400",
+          "GlobalId": "1chyka_3qHx8m_w2f4ZOUQ",
+          "Description": "IPE400",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "HasPropertySets": [],
+          "ApplicableOccurrence": null
+        },
+        {
+          "id": "7b8571da-2a26-11ed-a381-c3f1f80a8d5b",
+          "Name": "IPE400",
+          "GlobalId": "1chyka_3qHx8m_w2f4ZOUQ",
+          "Description": "IPE400",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "HasPropertySets": [],
+          "ApplicableOccurrence": null
+        }
+      ],
+      "IfcApplication": [
+        {
+          "id": "505df63a-2a26-11ed-a381-bf7d51565d2f",
+          "Version": "0.6",
+          "ApplicationFullName": "IfcOpenShell",
+          "ApplicationDeveloper": {
+            "id": "4d5ac7a6-2a26-11ed-a381-378e353c2771"
+          },
+          "ApplicationIdentifier": ""
+        },
+        {
+          "id": "50d3b69a-2a26-11ed-a381-8fd3a587fdb5",
+          "Version": "XXX",
+          "ApplicationFullName": "ADA",
+          "ApplicationDeveloper": {
+            "id": "4ddb232e-2a26-11ed-a381-b30ee47384f7"
+          },
+          "ApplicationIdentifier": "ADA"
+        },
+        {
+          "id": "7b6bcc9e-2a26-11ed-a381-93d1c43125e4",
+          "Version": "0.6",
+          "ApplicationFullName": "IfcOpenShell",
+          "ApplicationDeveloper": {
+            "id": "7b5b7c9a-2a26-11ed-a381-db990a0f20ce"
+          },
+          "ApplicationIdentifier": ""
+        },
+        {
+          "id": "7b6d9dd0-2a26-11ed-a381-ebd991bdfa99",
+          "Version": "XXX",
+          "ApplicationFullName": "ADA",
+          "ApplicationDeveloper": {
+            "id": "7b61ebe8-2a26-11ed-a381-07b4d50b3462"
+          },
+          "ApplicationIdentifier": "ADA"
+        }
+      ],
+      "IfcAreaMeasure": [],
+      "IfcDerivedUnit": [],
+      "IfcMassMeasure": [],
+      "IfcPropertySet": [
+        {
+          "id": "558ec5ee-2a26-11ed-a381-8b8354cdfb11",
+          "Name": "Properties",
+          "GlobalId": "3_0I3fWu14hBHIXlwvg_m2",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "HasProperties": [
+            {
+              "id": "4ed60b7c-2a26-11ed-a381-ab38aabfe13d"
+            },
+            {
+              "id": "4ef3c81a-2a26-11ed-a381-07534ad4d86c"
+            },
+            {
+              "id": "4f0f3866-2a26-11ed-a381-e3d08cf4971f"
+            }
+          ]
+        },
+        {
+          "id": "5628bbae-2a26-11ed-a381-a3df9fea1cc2",
+          "Name": "S420",
+          "GlobalId": "1chfCn_3qHx9jTw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "HasProperties": [
+            {
+              "id": "4f4fe64a-2a26-11ed-a381-9b0f8ea477b1"
+            },
+            {
+              "id": "4f6d3c86-2a26-11ed-a381-63346c60afa9"
+            },
+            {
+              "id": "4f8810ec-2a26-11ed-a381-0718bcee258d"
+            },
+            {
+              "id": "4fa6c4f6-2a26-11ed-a381-0fd15a5c040b"
+            },
+            {
+              "id": "4fc25266-2a26-11ed-a381-470fb2534a45"
+            },
+            {
+              "id": "4fde6cc6-2a26-11ed-a381-2bfb28dcf929"
+            },
+            {
+              "id": "50305180-2a26-11ed-a381-cb57fe17732d"
+            }
+          ]
+        },
+        {
+          "id": "7b832682-2a26-11ed-a381-b3d2c0e70897",
+          "Name": "Properties",
+          "GlobalId": "3_0I3fWu14hBHIXlwvg_m2",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "HasProperties": [
+            {
+              "id": "7b6788b4-2a26-11ed-a381-4755685e272b"
+            },
+            {
+              "id": "7b67ef5c-2a26-11ed-a381-0bff18a29b0d"
+            },
+            {
+              "id": "7b684286-2a26-11ed-a381-73587baa5eea"
+            }
+          ]
+        },
+        {
+          "id": "7b84c01e-2a26-11ed-a381-47df481527b0",
+          "Name": "S420",
+          "GlobalId": "1chfCn_3qHx9jTw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "HasProperties": [
+            {
+              "id": "7b68938a-2a26-11ed-a381-0bb27e7e9f14"
+            },
+            {
+              "id": "7b68f488-2a26-11ed-a381-db64bb50db2c"
+            },
+            {
+              "id": "7b69584c-2a26-11ed-a381-737b70f1e8e8"
+            },
+            {
+              "id": "7b69bc60-2a26-11ed-a381-1f535792a455"
+            },
+            {
+              "id": "7b6a2178-2a26-11ed-a381-4f1098297f25"
+            },
+            {
+              "id": "7b6a887a-2a26-11ed-a381-cf98f1ec29ba"
+            },
+            {
+              "id": "7b6af0a8-2a26-11ed-a381-67c21c73097c"
+            }
+          ]
+        }
+      ],
+      "IfcSimpleValue": [],
+      "IfcTimeMeasure": [],
+      "IfcTypeProduct": [
+        {
+          "id": "563e7a3e-2a26-11ed-a381-0ba259702021",
+          "Tag": null,
+          "Name": "IPE400",
+          "GlobalId": "1chyka_3qHx8m_w2f4ZOUQ",
+          "Description": "IPE400",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "HasPropertySets": [],
+          "RepresentationMaps": [],
+          "ApplicableOccurrence": null
+        },
+        {
+          "id": "7b8571da-2a26-11ed-a381-c3f1f80a8d5b",
+          "Tag": null,
+          "Name": "IPE400",
+          "GlobalId": "1chyka_3qHx8m_w2f4ZOUQ",
+          "Description": "IPE400",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "HasPropertySets": [],
+          "RepresentationMaps": [],
+          "ApplicableOccurrence": null
+        }
+      ],
+      "IfcCountMeasure": [],
+      "IfcForceMeasure": [],
+      "IfcMaterialList": [],
+      "IfcMeasureValue": [],
+      "IfcMonetaryUnit": [],
+      "IfcOrganization": [
+        {
+          "id": "4d5ac7a6-2a26-11ed-a381-378e353c2771",
+          "Name": "Assembly For Design and Analysis",
+          "Roles": [],
+          "Addresses": [],
+          "Description": null,
+          "Identification": "Assembly For Design and Analysis"
+        },
+        {
+          "id": "4ddb232e-2a26-11ed-a381-b30ee47384f7",
+          "Name": "Assembly For Design and Analysis",
+          "Roles": [],
+          "Addresses": [],
+          "Description": null,
+          "Identification": "ADA"
+        },
+        {
+          "id": "7b5b7c9a-2a26-11ed-a381-db990a0f20ce",
+          "Name": "Assembly For Design and Analysis",
+          "Roles": [],
+          "Addresses": [],
+          "Description": null,
+          "Identification": "Assembly For Design and Analysis"
+        },
+        {
+          "id": "7b61ebe8-2a26-11ed-a381-07b4d50b3462",
+          "Name": "Assembly For Design and Analysis",
+          "Roles": [],
+          "Addresses": [],
+          "Description": null,
+          "Identification": "ADA"
+        }
+      ],
+      "IfcOwnerHistory": [
+        {
+          "id": "53a26f42-2a26-11ed-a381-1f59486f63a3",
+          "State": null,
+          "OwningUser": {
+            "id": "5048f870-2a26-11ed-a381-a77a9efe3cea"
+          },
+          "ChangeAction": "ADDED",
+          "CreationDate": 1656570307,
+          "LastModifiedDate": null,
+          "LastModifyingUser": {
+            "id": "5048f870-2a26-11ed-a381-a77a9efe3cea"
+          },
+          "OwningApplication": {
+            "id": "505df63a-2a26-11ed-a381-bf7d51565d2f"
+          },
+          "LastModifyingApplication": {
+            "id": "505df63a-2a26-11ed-a381-bf7d51565d2f"
+          }
+        },
+        {
+          "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a",
+          "State": "READWRITE",
+          "OwningUser": {
+            "id": "50c1b332-2a26-11ed-a381-cbf35f420965"
+          },
+          "ChangeAction": null,
+          "CreationDate": 1656570314,
+          "LastModifiedDate": 1656570314,
+          "LastModifyingUser": {
+            "id": "50c1b332-2a26-11ed-a381-cbf35f420965"
+          },
+          "OwningApplication": {
+            "id": "50d3b69a-2a26-11ed-a381-8fd3a587fdb5"
+          },
+          "LastModifyingApplication": {
+            "id": "50d3b69a-2a26-11ed-a381-8fd3a587fdb5"
+          }
+        },
+        {
+          "id": "7b798ece-2a26-11ed-a381-771c5a087fe0",
+          "State": null,
+          "OwningUser": {
+            "id": "7b6b6222-2a26-11ed-a381-a38fbd088fe3"
+          },
+          "ChangeAction": "ADDED",
+          "CreationDate": 1656570307,
+          "LastModifiedDate": null,
+          "LastModifyingUser": {
+            "id": "7b6b6222-2a26-11ed-a381-a38fbd088fe3"
+          },
+          "OwningApplication": {
+            "id": "7b6bcc9e-2a26-11ed-a381-93d1c43125e4"
+          },
+          "LastModifyingApplication": {
+            "id": "7b6bcc9e-2a26-11ed-a381-93d1c43125e4"
+          }
+        },
+        {
+          "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b",
+          "State": "READWRITE",
+          "OwningUser": {
+            "id": "7b6d2d78-2a26-11ed-a381-fb48c4a0ca4f"
+          },
+          "ChangeAction": null,
+          "CreationDate": 1656570314,
+          "LastModifiedDate": 1656570314,
+          "LastModifyingUser": {
+            "id": "7b6d2d78-2a26-11ed-a381-fb48c4a0ca4f"
+          },
+          "OwningApplication": {
+            "id": "7b6d9dd0-2a26-11ed-a381-ebd991bdfa99"
+          },
+          "LastModifyingApplication": {
+            "id": "7b6d9dd0-2a26-11ed-a381-ebd991bdfa99"
+          }
+        }
+      ],
+      "IfcPowerMeasure": [],
+      "IfcRatioMeasure": [],
+      "IfcComplexNumber": [],
+      "IfcEnergyMeasure": [],
+      "IfcLengthMeasure": [],
+      "IfcPostalAddress": [],
+      "IfcRelAggregates": [
+        {
+          "id": "58ca52aa-2a26-11ed-a381-dfc5b547f885",
+          "Name": "Project Container",
+          "GlobalId": "1chaKF_3qHx90Iw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedObjects": [
+            {
+              "id": "55671a80-2a26-11ed-a381-77b22c01d775"
+            }
+          ],
+          "RelatingObject": {
+            "id": "5745568c-2a26-11ed-a381-33c963ead909"
+          }
+        },
+        {
+          "id": "58f9f1cc-2a26-11ed-a381-67a2346eb59a",
+          "Name": "Site Container",
+          "GlobalId": "1chcmV_3qHxALrw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedObjects": [
+            {
+              "id": "5786a10a-2a26-11ed-a381-33cd4b8a3316"
+            }
+          ],
+          "RelatingObject": {
+            "id": "55671a80-2a26-11ed-a381-77b22c01d775"
+          }
+        },
+        {
+          "id": "7b914ca8-2a26-11ed-a381-5bf2d5e6a0c4",
+          "Name": "Project Container",
+          "GlobalId": "1chaKF_3qHx90Iw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedObjects": [
+            {
+              "id": "7b827bce-2a26-11ed-a381-37e200e3c730"
+            }
+          ],
+          "RelatingObject": {
+            "id": "7b8b3f0c-2a26-11ed-a381-cbcb83576dc0"
+          }
+        },
+        {
+          "id": "7b91f040-2a26-11ed-a381-079d5e7db036",
+          "Name": "Site Container",
+          "GlobalId": "1chcmV_3qHxALrw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedObjects": [
+            {
+              "id": "7b8ca108-2a26-11ed-a381-8b425e592bb2"
+            }
+          ],
+          "RelatingObject": {
+            "id": "7b827bce-2a26-11ed-a381-37e200e3c730"
+          }
+        }
+      ],
+      "IfcTorqueMeasure": [],
+      "IfcVolumeMeasure": [],
+      "IfcAxis2Placement": [
+        {
+          "id": "53cbb0aa-2a26-11ed-a381-e7bbae2842fb",
+          "IfcAxis2Placement": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          }
+        },
+        {
+          "id": "5446086e-2a26-11ed-a381-2fcb415df67c",
+          "IfcAxis2Placement": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          }
+        },
+        {
+          "id": "55a7c3c8-2a26-11ed-a381-8fce791e8984",
+          "IfcAxis2Placement": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          }
+        },
+        {
+          "id": "57ce3196-2a26-11ed-a381-0fa9bd8aadae",
+          "IfcAxis2Placement": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          }
+        },
+        {
+          "id": "5915b8b2-2a26-11ed-a381-a38c16bbb6d2",
+          "IfcAxis2Placement": {
+            "id": "513a006c-2a26-11ed-a381-8b1a7ad39d4c"
+          }
+        },
+        {
+          "id": "7b7aba42-2a26-11ed-a381-5f2caaecfec9",
+          "IfcAxis2Placement": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          }
+        },
+        {
+          "id": "7b7ca4ba-2a26-11ed-a381-c3c5122a95ee",
+          "IfcAxis2Placement": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          }
+        },
+        {
+          "id": "7b83af30-2a26-11ed-a381-dfd2c31134b0",
+          "IfcAxis2Placement": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          }
+        },
+        {
+          "id": "7b8d39e2-2a26-11ed-a381-d3401ba36a68",
+          "IfcAxis2Placement": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          }
+        },
+        {
+          "id": "7b927b00-2a26-11ed-a381-9b2febe53360",
+          "IfcAxis2Placement": {
+            "id": "7b6f0b16-2a26-11ed-a381-ef5267611c19"
+          }
+        }
+      ],
+      "IfcBuildingStorey": [
+        {
+          "id": "5786a10a-2a26-11ed-a381-33cd4b8a3316",
+          "Name": "MyPart",
+          "GlobalId": "1Yi72L_3qHxBC7w2f4ZOUQ",
+          "LongName": null,
+          "Elevation": 0,
+          "ObjectType": null,
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "Representation": null,
+          "CompositionType": "ELEMENT",
+          "ObjectPlacement": {
+            "id": "55a7c62a-2a26-11ed-a381-5348ae517d86"
+          }
+        },
+        {
+          "id": "7b8ca108-2a26-11ed-a381-8b425e592bb2",
+          "Name": "MyPart",
+          "GlobalId": "1Yi72L_3qHxBC7w2f4ZOUQ",
+          "LongName": null,
+          "Elevation": 0,
+          "ObjectType": null,
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "Representation": null,
+          "CompositionType": "ELEMENT",
+          "ObjectPlacement": {
+            "id": "7b83b214-2a26-11ed-a381-475f8a73cb40"
+          }
+        }
+      ],
+      "IfcCartesianPoint": [
+        {
+          "id": "4d7351ae-2a26-11ed-a381-67ec71e16fac",
+          "Coordinates": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "4df9ea48-2a26-11ed-a381-8f3031b0148d",
+          "Coordinates": [
+            0,
+            0,
+            1.5
+          ]
+        },
+        {
+          "id": "4e8f2a7c-2a26-11ed-a381-97cdea63b9e9",
+          "Coordinates": [
+            0.8,
+            -0.1,
+            0
+          ]
+        },
+        {
+          "id": "4eaa1f12-2a26-11ed-a381-4b36c1208d2d",
+          "Coordinates": [
+            1,
+            -0.1,
+            -0.1
+          ]
+        },
+        {
+          "id": "4eb71dd4-2a26-11ed-a381-1f87946f68ce",
+          "Coordinates": [
+            1,
+            0.1,
+            -0.1
+          ]
+        },
+        {
+          "id": "4eb7e3e0-2a26-11ed-a381-cb8babebff12",
+          "Coordinates": [
+            1.2,
+            0.1,
+            -0.1
+          ]
+        },
+        {
+          "id": "4eb8a55a-2a26-11ed-a381-a3995f71970f",
+          "Coordinates": [
+            1.2,
+            -0.1,
+            -0.1
+          ]
+        },
+        {
+          "id": "7b5d4fac-2a26-11ed-a381-b799d7434a57",
+          "Coordinates": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "7b633386-2a26-11ed-a381-c7c4ff283391",
+          "Coordinates": [
+            0,
+            0,
+            1.5
+          ]
+        },
+        {
+          "id": "7b656f5c-2a26-11ed-a381-7ff3fa749f29",
+          "Coordinates": [
+            0.8,
+            -0.1,
+            0
+          ]
+        },
+        {
+          "id": "7b662514-2a26-11ed-a381-373f4d03f6fa",
+          "Coordinates": [
+            1,
+            -0.1,
+            -0.1
+          ]
+        },
+        {
+          "id": "7b667c58-2a26-11ed-a381-a752a3fd016f",
+          "Coordinates": [
+            1,
+            0.1,
+            -0.1
+          ]
+        },
+        {
+          "id": "7b66d036-2a26-11ed-a381-5773b246cbe5",
+          "Coordinates": [
+            1.2,
+            0.1,
+            -0.1
+          ]
+        },
+        {
+          "id": "7b672374-2a26-11ed-a381-f39b4d596b16",
+          "Coordinates": [
+            1.2,
+            -0.1,
+            -0.1
+          ]
+        }
+      ],
+      "IfcLocalPlacement": [
+        {
+          "id": "54460a58-2a26-11ed-a381-3f30c1b62fba",
+          "PlacementRelTo": null,
+          "RelativePlacement": {
+            "id": "5446086e-2a26-11ed-a381-2fcb415df67c"
+          }
+        },
+        {
+          "id": "55a7c62a-2a26-11ed-a381-5348ae517d86",
+          "PlacementRelTo": {
+            "id": "54460a58-2a26-11ed-a381-3f30c1b62fba"
+          },
+          "RelativePlacement": {
+            "id": "55a7c3c8-2a26-11ed-a381-8fce791e8984"
+          }
+        },
+        {
+          "id": "57ce3420-2a26-11ed-a381-6f6cf5098d9d",
+          "PlacementRelTo": {
+            "id": "55a7c62a-2a26-11ed-a381-5348ae517d86"
+          },
+          "RelativePlacement": {
+            "id": "57ce3196-2a26-11ed-a381-0fa9bd8aadae"
+          }
+        },
+        {
+          "id": "5915bb50-2a26-11ed-a381-cf93f1ccb290",
+          "PlacementRelTo": {
+            "id": "57ce3420-2a26-11ed-a381-6f6cf5098d9d"
+          },
+          "RelativePlacement": {
+            "id": "5915b8b2-2a26-11ed-a381-a38c16bbb6d2"
+          }
+        },
+        {
+          "id": "7b7ca67c-2a26-11ed-a381-a319412e206a",
+          "PlacementRelTo": null,
+          "RelativePlacement": {
+            "id": "7b7ca4ba-2a26-11ed-a381-c3c5122a95ee"
+          }
+        },
+        {
+          "id": "7b83b214-2a26-11ed-a381-475f8a73cb40",
+          "PlacementRelTo": {
+            "id": "7b7ca67c-2a26-11ed-a381-a319412e206a"
+          },
+          "RelativePlacement": {
+            "id": "7b83af30-2a26-11ed-a381-dfd2c31134b0"
+          }
+        },
+        {
+          "id": "7b8d3bf4-2a26-11ed-a381-0f997fdc7afd",
+          "PlacementRelTo": {
+            "id": "7b83b214-2a26-11ed-a381-475f8a73cb40"
+          },
+          "RelativePlacement": {
+            "id": "7b8d39e2-2a26-11ed-a381-d3401ba36a68"
+          }
+        },
+        {
+          "id": "7b927ce0-2a26-11ed-a381-bfc58fb75ae3",
+          "PlacementRelTo": {
+            "id": "7b8d3bf4-2a26-11ed-a381-0f997fdc7afd"
+          },
+          "RelativePlacement": {
+            "id": "7b927b00-2a26-11ed-a381-9b2febe53360"
+          }
+        }
+      ],
+      "IfcMaterialSelect": [
+        {
+          "id": "58a87e5a-2a26-11ed-a381-df563cac2182",
+          "IfcMaterialSelect": {
+            "id": "5511404c-2a26-11ed-a381-bf58fe0a6632"
+          }
+        },
+        {
+          "id": "5bc9168a-2a26-11ed-a381-7782fbc92a3a",
+          "IfcMaterialSelect": {
+            "id": "5511404c-2a26-11ed-a381-bf58fe0a6632"
+          }
+        },
+        {
+          "id": "5c05debc-2a26-11ed-a381-e34cd6f3f886",
+          "IfcMaterialSelect": {
+            "id": "572871c0-2a26-11ed-a381-27b125d6418b"
+          }
+        },
+        {
+          "id": "7b90a1ae-2a26-11ed-a381-83381bcf6fdc",
+          "IfcMaterialSelect": {
+            "id": "7b81260c-2a26-11ed-a381-57e78c328b0d"
+          }
+        },
+        {
+          "id": "7b9af122-2a26-11ed-a381-431380869e58",
+          "IfcMaterialSelect": {
+            "id": "7b81260c-2a26-11ed-a381-57e78c328b0d"
+          }
+        },
+        {
+          "id": "7b9bd8a8-2a26-11ed-a381-f31e5f874292",
+          "IfcMaterialSelect": {
+            "id": "7b8a8ddc-2a26-11ed-a381-c3c933d79fa3"
+          }
+        }
+      ],
+      "IfcNumericMeasure": [],
+      "IfcOpeningElement": [
+        {
+          "id": "59a7c4f0-2a26-11ed-a381-83b7403d08fd",
+          "Tag": null,
+          "Name": "cylinder",
+          "GlobalId": "1ci8$X_3qHxA3Rw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "cylinder (Opening)",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "583a051a-2a26-11ed-a381-a796d649881d"
+          },
+          "ObjectPlacement": {
+            "id": "57ce3420-2a26-11ed-a381-6f6cf5098d9d"
+          }
+        },
+        {
+          "id": "5a0b2cc0-2a26-11ed-a381-a3a596a7168e",
+          "Tag": null,
+          "Name": "Poly1",
+          "GlobalId": "1ci1dK_3qHxBonw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "Poly1 (Opening)",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "592680a2-2a26-11ed-a381-334381a27840"
+          },
+          "ObjectPlacement": {
+            "id": "57ce3420-2a26-11ed-a381-6f6cf5098d9d"
+          }
+        },
+        {
+          "id": "5a30cec6-2a26-11ed-a381-9bcd6829178b",
+          "Tag": null,
+          "Name": "Poly2",
+          "GlobalId": "1ci489_3qHx9T1w2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "Poly2 (Opening)",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "59386d80-2a26-11ed-a381-137cd1c05a3c"
+          },
+          "ObjectPlacement": {
+            "id": "57ce3420-2a26-11ed-a381-6f6cf5098d9d"
+          }
+        },
+        {
+          "id": "5a54a53a-2a26-11ed-a381-b77394bb8285",
+          "Tag": null,
+          "Name": "Poly3",
+          "GlobalId": "1ci6ZC_3qHx8QPw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "Poly3 (Opening)",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "594b2006-2a26-11ed-a381-0b13e93b6aae"
+          },
+          "ObjectPlacement": {
+            "id": "57ce3420-2a26-11ed-a381-6f6cf5098d9d"
+          }
+        },
+        {
+          "id": "5a7c5a30-2a26-11ed-a381-db8bfe226c86",
+          "Tag": null,
+          "Name": "box",
+          "GlobalId": "1ci8$Z_3qHxAMCw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "box (Opening)",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "59b9f756-2a26-11ed-a381-67122af4fbce"
+          },
+          "ObjectPlacement": {
+            "id": "57ce3420-2a26-11ed-a381-6f6cf5098d9d"
+          }
+        },
+        {
+          "id": "7b943a8a-2a26-11ed-a381-a7a8d2427766",
+          "Tag": null,
+          "Name": "cylinder",
+          "GlobalId": "1ci8$X_3qHxA3Rw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "cylinder (Opening)",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "7b8f88d2-2a26-11ed-a381-df36b127d847"
+          },
+          "ObjectPlacement": {
+            "id": "7b8d3bf4-2a26-11ed-a381-0f997fdc7afd"
+          }
+        },
+        {
+          "id": "7b95ba90-2a26-11ed-a381-331b3ead7d0e",
+          "Tag": null,
+          "Name": "Poly1",
+          "GlobalId": "1ci1dK_3qHxBonw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "Poly1 (Opening)",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "7b92df96-2a26-11ed-a381-db281954d343"
+          },
+          "ObjectPlacement": {
+            "id": "7b8d3bf4-2a26-11ed-a381-0f997fdc7afd"
+          }
+        },
+        {
+          "id": "7b962980-2a26-11ed-a381-7f57856c96db",
+          "Tag": null,
+          "Name": "Poly2",
+          "GlobalId": "1ci489_3qHx9T1w2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "Poly2 (Opening)",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "7b933d1a-2a26-11ed-a381-ffb082d29307"
+          },
+          "ObjectPlacement": {
+            "id": "7b8d3bf4-2a26-11ed-a381-0f997fdc7afd"
+          }
+        },
+        {
+          "id": "7b969ef6-2a26-11ed-a381-af337e8523f9",
+          "Tag": null,
+          "Name": "Poly3",
+          "GlobalId": "1ci6ZC_3qHx8QPw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "Poly3 (Opening)",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "7b939f80-2a26-11ed-a381-e365ee941fb6"
+          },
+          "ObjectPlacement": {
+            "id": "7b8d3bf4-2a26-11ed-a381-0f997fdc7afd"
+          }
+        },
+        {
+          "id": "7b9710de-2a26-11ed-a381-6b10482fb772",
+          "Tag": null,
+          "Name": "box",
+          "GlobalId": "1ci8$Z_3qHxAMCw2f4ZOUQ",
+          "ObjectType": null,
+          "Description": "box (Opening)",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "PredefinedType": null,
+          "Representation": {
+            "id": "7b94a65a-2a26-11ed-a381-9735ed6e1b07"
+          },
+          "ObjectPlacement": {
+            "id": "7b8d3bf4-2a26-11ed-a381-0f997fdc7afd"
+          }
+        }
+      ],
+      "IfcParameterValue": [],
+      "IfcUnitAssignment": [
+        {
+          "id": "554bd2ca-2a26-11ed-a381-0f0f67b79422",
+          "Units": [
+            {
+              "id": "554bde3c-2a26-11ed-a381-133005ee51a3"
+            },
+            {
+              "id": "554be6a2-2a26-11ed-a381-37f2861e72d1"
+            },
+            {
+              "id": "554be878-2a26-11ed-a381-371bc97c6355"
+            },
+            {
+              "id": "554bea58-2a26-11ed-a381-676f7caf77ee"
+            }
+          ]
+        },
+        {
+          "id": "7b81e39e-2a26-11ed-a381-53170e5c16e3",
+          "Units": [
+            {
+              "id": "7b81e6a0-2a26-11ed-a381-cfbbbdc26a4e"
+            },
+            {
+              "id": "7b81e8da-2a26-11ed-a381-2b026cd3b3b4"
+            },
+            {
+              "id": "7b81e9de-2a26-11ed-a381-9facfcfab99b"
+            },
+            {
+              "id": "7b81eb0a-2a26-11ed-a381-5b1d164ca194"
+            }
+          ]
+        }
+      ],
+      "IfcMaterialProfile": [
+        {
+          "id": "532a92d8-2a26-11ed-a381-f731efabac26",
+          "Name": "IPE400",
+          "Profile": {
+            "id": "4df916a4-2a26-11ed-a381-0345affab4aa"
+          },
+          "Category": "LoadBearing",
+          "Material": {
+            "id": "4de79730-2a26-11ed-a381-4bfa9b8a14ad"
+          },
+          "Priority": null,
+          "Description": "A material profile"
+        },
+        {
+          "id": "7b76ebba-2a26-11ed-a381-2f007f0acad4",
+          "Name": "IPE400",
+          "Profile": {
+            "id": "7b62c518-2a26-11ed-a381-bf21eee4d4d8"
+          },
+          "Category": "LoadBearing",
+          "Material": {
+            "id": "7b62510a-2a26-11ed-a381-5bae041b6437"
+          },
+          "Priority": null,
+          "Description": "A material profile"
+        }
+      ],
+      "IfcMeasureWithUnit": [
+        {
+          "id": "50a2b1a8-2a26-11ed-a381-eff274d28ccb",
+          "UnitComponent": {
+            "id": "50a2ab22-2a26-11ed-a381-3fff62101072"
+          },
+          "ValueComponent": {
+            "id": "50a2a910-2a26-11ed-a381-63f0d1861436"
+          }
+        },
+        {
+          "id": "7b6cbd98-2a26-11ed-a381-434f9bb40775",
+          "UnitComponent": {
+            "id": "7b6cbc58-2a26-11ed-a381-abb4755ca1a2"
+          },
+          "ValueComponent": {
+            "id": "7b6cba78-2a26-11ed-a381-bf4359be3b43"
+          }
+        }
+      ],
+      "IfcMonetaryMeasure": [],
+      "IfcPositiveInteger": [],
+      "IfcPressureMeasure": [
+        {
+          "id": "4f6d2c8c-2a26-11ed-a381-fbc6e89f2a0f",
+          "IfcPressureMeasure": 420000000
+        },
+        {
+          "id": "7b68f122-2a26-11ed-a381-47bc80f6ada9",
+          "IfcPressureMeasure": 420000000
+        }
+      ],
+      "IfcRelVoidsElement": [
+        {
+          "id": "5ad31c08-2a26-11ed-a381-1b9687af56c7",
+          "Name": null,
+          "GlobalId": "1ch$F8_3qHxAr2w2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedOpeningElement": {
+            "id": "5a0b2cc0-2a26-11ed-a381-a3a596a7168e"
+          },
+          "RelatingBuildingElement": {
+            "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+          }
+        },
+        {
+          "id": "5af3b18e-2a26-11ed-a381-af16fa014819",
+          "Name": null,
+          "GlobalId": "1ci1dL_3qHxAXTw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedOpeningElement": {
+            "id": "5a30cec6-2a26-11ed-a381-9bcd6829178b"
+          },
+          "RelatingBuildingElement": {
+            "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+          }
+        },
+        {
+          "id": "5b116ea4-2a26-11ed-a381-8b72ea197394",
+          "Name": null,
+          "GlobalId": "1ci48A_3qHx8R_w2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedOpeningElement": {
+            "id": "5a54a53a-2a26-11ed-a381-b77394bb8285"
+          },
+          "RelatingBuildingElement": {
+            "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+          }
+        },
+        {
+          "id": "5b30c7cc-2a26-11ed-a381-4781cdf1d98d",
+          "Name": null,
+          "GlobalId": "1ci6ZD_3qHx86ew2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedOpeningElement": {
+            "id": "59a7c4f0-2a26-11ed-a381-83b7403d08fd"
+          },
+          "RelatingBuildingElement": {
+            "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+          }
+        },
+        {
+          "id": "5b509c46-2a26-11ed-a381-6fa9bfeb7899",
+          "Name": null,
+          "GlobalId": "1ci8$Y_3qHx8qyw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedOpeningElement": {
+            "id": "5a7c5a30-2a26-11ed-a381-db8bfe226c86"
+          },
+          "RelatingBuildingElement": {
+            "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+          }
+        },
+        {
+          "id": "7b97aaa8-2a26-11ed-a381-f770f7fee195",
+          "Name": null,
+          "GlobalId": "1ch$F8_3qHxAr2w2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedOpeningElement": {
+            "id": "7b95ba90-2a26-11ed-a381-331b3ead7d0e"
+          },
+          "RelatingBuildingElement": {
+            "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+          }
+        },
+        {
+          "id": "7b981ec0-2a26-11ed-a381-5313d08048e3",
+          "Name": null,
+          "GlobalId": "1ci1dL_3qHxAXTw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedOpeningElement": {
+            "id": "7b962980-2a26-11ed-a381-7f57856c96db"
+          },
+          "RelatingBuildingElement": {
+            "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+          }
+        },
+        {
+          "id": "7b988fae-2a26-11ed-a381-af2aae2f0e6e",
+          "Name": null,
+          "GlobalId": "1ci48A_3qHx8R_w2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedOpeningElement": {
+            "id": "7b969ef6-2a26-11ed-a381-af337e8523f9"
+          },
+          "RelatingBuildingElement": {
+            "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+          }
+        },
+        {
+          "id": "7b990b78-2a26-11ed-a381-b3c2ae61604c",
+          "Name": null,
+          "GlobalId": "1ci6ZD_3qHx86ew2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedOpeningElement": {
+            "id": "7b943a8a-2a26-11ed-a381-a7a8d2427766"
+          },
+          "RelatingBuildingElement": {
+            "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+          }
+        },
+        {
+          "id": "7b998ae4-2a26-11ed-a381-e30ece13e7d8",
+          "Name": null,
+          "GlobalId": "1ci8$Y_3qHx8qyw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedOpeningElement": {
+            "id": "7b9710de-2a26-11ed-a381-6b10482fb772"
+          },
+          "RelatingBuildingElement": {
+            "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+          }
+        }
+      ],
+      "IfcAxis2Placement2D": [],
+      "IfcAxis2Placement3D": [
+        {
+          "id": "507ab6e4-2a26-11ed-a381-73468735024c",
+          "Axis": {
+            "id": "4d67bea2-2a26-11ed-a381-377efbf31aba"
+          },
+          "Location": {
+            "id": "4d7351ae-2a26-11ed-a381-67ec71e16fac"
+          },
+          "RefDirection": {
+            "id": "4d66f15c-2a26-11ed-a381-17ad0f6e47fb"
+          }
+        },
+        {
+          "id": "511f0ee2-2a26-11ed-a381-0bc92cc5952b",
+          "Axis": null,
+          "Location": {
+            "id": "4d7351ae-2a26-11ed-a381-67ec71e16fac"
+          },
+          "RefDirection": null
+        },
+        {
+          "id": "513a006c-2a26-11ed-a381-8b1a7ad39d4c",
+          "Axis": {
+            "id": "4d66f15c-2a26-11ed-a381-17ad0f6e47fb"
+          },
+          "Location": {
+            "id": "4d7351ae-2a26-11ed-a381-67ec71e16fac"
+          },
+          "RefDirection": {
+            "id": "4d742f98-2a26-11ed-a381-db6ebb3ecf61"
+          }
+        },
+        {
+          "id": "52ab5f04-2a26-11ed-a381-d7bc32b58d23",
+          "Axis": {
+            "id": "4d742f98-2a26-11ed-a381-db6ebb3ecf61"
+          },
+          "Location": {
+            "id": "4e8f2a7c-2a26-11ed-a381-97cdea63b9e9"
+          },
+          "RefDirection": {
+            "id": "4d66f15c-2a26-11ed-a381-17ad0f6e47fb"
+          }
+        },
+        {
+          "id": "7b6c4340-2a26-11ed-a381-ef027682955a",
+          "Axis": {
+            "id": "7b5cbd58-2a26-11ed-a381-870a782e132f"
+          },
+          "Location": {
+            "id": "7b5d4fac-2a26-11ed-a381-b799d7434a57"
+          },
+          "RefDirection": {
+            "id": "7b5c203c-2a26-11ed-a381-1bcea9d8ada3"
+          }
+        },
+        {
+          "id": "7b6e78ea-2a26-11ed-a381-53f771a7feda",
+          "Axis": null,
+          "Location": {
+            "id": "7b5d4fac-2a26-11ed-a381-b799d7434a57"
+          },
+          "RefDirection": null
+        },
+        {
+          "id": "7b6f0b16-2a26-11ed-a381-ef5267611c19",
+          "Axis": {
+            "id": "7b5c203c-2a26-11ed-a381-1bcea9d8ada3"
+          },
+          "Location": {
+            "id": "7b5d4fac-2a26-11ed-a381-b799d7434a57"
+          },
+          "RefDirection": {
+            "id": "7b5dd29c-2a26-11ed-a381-bf614441da4e"
+          }
+        },
+        {
+          "id": "7b748e06-2a26-11ed-a381-5bdda82f8dd8",
+          "Axis": {
+            "id": "7b5dd29c-2a26-11ed-a381-bf614441da4e"
+          },
+          "Location": {
+            "id": "7b656f5c-2a26-11ed-a381-7ff3fa749f29"
+          },
+          "RefDirection": {
+            "id": "7b5c203c-2a26-11ed-a381-1bcea9d8ada3"
+          }
+        }
+      ],
+      "IfcCircleProfileDef": [
+        {
+          "id": "4e9ba4d2-2a26-11ed-a381-5f56b269e553",
+          "Radius": 0.1,
+          "Position": null,
+          "ProfileName": "cylinder",
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b65cdd0-2a26-11ed-a381-db75b00b1692",
+          "Radius": 0.1,
+          "Position": null,
+          "ProfileName": "cylinder",
+          "ProfileType": "AREA"
+        }
+      ],
+      "IfcCurvatureMeasure": [],
+      "IfcDefinitionSelect": [
+        {
+          "id": "58a89d86-2a26-11ed-a381-ffd91b2dbbc4",
+          "IfcDefinitionSelect": {
+            "id": "563e7a3e-2a26-11ed-a381-0ba259702021"
+          }
+        },
+        {
+          "id": "5bc91bf8-2a26-11ed-a381-17033f45d731",
+          "IfcDefinitionSelect": {
+            "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+          }
+        },
+        {
+          "id": "5c05e704-2a26-11ed-a381-efa82d823ac3",
+          "IfcDefinitionSelect": {
+            "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+          }
+        },
+        {
+          "id": "7b90a6a4-2a26-11ed-a381-57a0d02b5093",
+          "IfcDefinitionSelect": {
+            "id": "7b8571da-2a26-11ed-a381-c3f1f80a8d5b"
+          }
+        },
+        {
+          "id": "7b9af672-2a26-11ed-a381-67593b2af700",
+          "IfcDefinitionSelect": {
+            "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+          }
+        },
+        {
+          "id": "7b9bdf6a-2a26-11ed-a381-a372096e643e",
+          "IfcDefinitionSelect": {
+            "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+          }
+        }
+      ],
+      "IfcFrequencyMeasure": [],
+      "IfcIShapeProfileDef": [
+        {
+          "id": "4df916a4-2a26-11ed-a381-0345affab4aa",
+          "Position": null,
+          "FlangeSlope": null,
+          "ProfileName": "IPE400",
+          "ProfileType": "AREA",
+          "FilletRadius": null,
+          "OverallDepth": 0.4,
+          "OverallWidth": 0.18,
+          "WebThickness": 0.0086,
+          "FlangeThickness": 0.0135,
+          "FlangeEdgeRadius": null
+        },
+        {
+          "id": "7b62c518-2a26-11ed-a381-bf21eee4d4d8",
+          "Position": null,
+          "FlangeSlope": null,
+          "ProfileName": "IPE400",
+          "ProfileType": "AREA",
+          "FilletRadius": null,
+          "OverallDepth": 0.4,
+          "OverallWidth": 0.18,
+          "WebThickness": 0.0086,
+          "FlangeThickness": 0.0135,
+          "FlangeEdgeRadius": null
+        }
+      ],
+      "IfcIndexedPolyCurve": [
+        {
+          "id": "517965d6-2a26-11ed-a381-97eb7716da2f",
+          "Points": {
+            "id": "4e0d241e-2a26-11ed-a381-3bdb4cc6759a"
+          },
+          "Segments": [
+            {
+              "id": "51797af8-2a26-11ed-a381-634693c67528"
+            },
+            {
+              "id": "517988fe-2a26-11ed-a381-4b180e6783a8"
+            },
+            {
+              "id": "51798afc-2a26-11ed-a381-0fec968b7c68"
+            }
+          ],
+          "SelfIntersect": null
+        },
+        {
+          "id": "52142c2e-2a26-11ed-a381-1f9a6b9b8b24",
+          "Points": {
+            "id": "4e32f43c-2a26-11ed-a381-9b39afb97d52"
+          },
+          "Segments": [
+            {
+              "id": "521441e6-2a26-11ed-a381-bf0dd7c7134e"
+            },
+            {
+              "id": "52144722-2a26-11ed-a381-731a2faecad3"
+            },
+            {
+              "id": "521449ac-2a26-11ed-a381-9f7eb4be8508"
+            },
+            {
+              "id": "52144b6e-2a26-11ed-a381-33558367ef42"
+            },
+            {
+              "id": "52144dda-2a26-11ed-a381-b75289a31b51"
+            },
+            {
+              "id": "52144fa6-2a26-11ed-a381-6fb3363622e8"
+            }
+          ],
+          "SelfIntersect": null
+        },
+        {
+          "id": "52946a10-2a26-11ed-a381-6f7146b0ca5a",
+          "Points": {
+            "id": "4e5befae-2a26-11ed-a381-1bfe73e23532"
+          },
+          "Segments": [
+            {
+              "id": "52946df8-2a26-11ed-a381-fb9f11352602"
+            },
+            {
+              "id": "5294706e-2a26-11ed-a381-cfa0a0398870"
+            },
+            {
+              "id": "529471ae-2a26-11ed-a381-1784341c52b0"
+            },
+            {
+              "id": "529472ee-2a26-11ed-a381-434c5cc39605"
+            },
+            {
+              "id": "52947424-2a26-11ed-a381-ebb1ef34851f"
+            },
+            {
+              "id": "5294756e-2a26-11ed-a381-878ad4568c65"
+            },
+            {
+              "id": "529476ae-2a26-11ed-a381-538393850bce"
+            },
+            {
+              "id": "529477ee-2a26-11ed-a381-a338ac558aa4"
+            }
+          ],
+          "SelfIntersect": null
+        },
+        {
+          "id": "7b6fce70-2a26-11ed-a381-03768b1249ee",
+          "Points": {
+            "id": "7b63b95a-2a26-11ed-a381-c7a69e39ee7a"
+          },
+          "Segments": [
+            {
+              "id": "7b6fd3e8-2a26-11ed-a381-fb328c93d72a"
+            },
+            {
+              "id": "7b6fd654-2a26-11ed-a381-ef54aee41f5a"
+            },
+            {
+              "id": "7b6fd7bc-2a26-11ed-a381-836e1e9611f1"
+            }
+          ],
+          "SelfIntersect": null
+        },
+        {
+          "id": "7b70e620-2a26-11ed-a381-5b4214fbb6da",
+          "Points": {
+            "id": "7b645784-2a26-11ed-a381-7f6efbb8b93b"
+          },
+          "Segments": [
+            {
+              "id": "7b70eaa8-2a26-11ed-a381-8fc949c2587f"
+            },
+            {
+              "id": "7b70ee2c-2a26-11ed-a381-af5e56883150"
+            },
+            {
+              "id": "7b70efa8-2a26-11ed-a381-dbc11a0be47e"
+            },
+            {
+              "id": "7b70f110-2a26-11ed-a381-c39253f62982"
+            },
+            {
+              "id": "7b70f264-2a26-11ed-a381-2f41ca64fc96"
+            },
+            {
+              "id": "7b70f3c2-2a26-11ed-a381-2ff9ab964612"
+            }
+          ],
+          "SelfIntersect": null
+        },
+        {
+          "id": "7b72ab7c-2a26-11ed-a381-2b7477ab32a5",
+          "Points": {
+            "id": "7b6509b8-2a26-11ed-a381-53d9cd6d8f51"
+          },
+          "Segments": [
+            {
+              "id": "7b72af64-2a26-11ed-a381-7f99c0cb4410"
+            },
+            {
+              "id": "7b72b676-2a26-11ed-a381-6b18b51387d4"
+            },
+            {
+              "id": "7b72b7fc-2a26-11ed-a381-0bc523065712"
+            },
+            {
+              "id": "7b72b946-2a26-11ed-a381-ff53e895bd68"
+            },
+            {
+              "id": "7b72ba86-2a26-11ed-a381-639cd28dd36f"
+            },
+            {
+              "id": "7b72bbda-2a26-11ed-a381-235dd9210ab0"
+            },
+            {
+              "id": "7b72bd1a-2a26-11ed-a381-732bfb5e35f6"
+            },
+            {
+              "id": "7b72be5a-2a26-11ed-a381-1beb4d686c59"
+            }
+          ],
+          "SelfIntersect": null
+        }
+      ],
+      "IfcRelDefinesByType": [
+        {
+          "id": "5b6a86e2-2a26-11ed-a381-e35223b776df",
+          "Name": "IPE",
+          "GlobalId": "1ci8$a_3qHxA1tw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": null,
+          "RelatingType": {
+            "id": "563e7a3e-2a26-11ed-a381-0ba259702021"
+          },
+          "RelatedObjects": [
+            {
+              "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+            }
+          ]
+        },
+        {
+          "id": "7b9a2274-2a26-11ed-a381-97393875dcdb",
+          "Name": "IPE",
+          "GlobalId": "1ci8$a_3qHxA1tw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": null,
+          "RelatingType": {
+            "id": "7b8571da-2a26-11ed-a381-c3f1f80a8d5b"
+          },
+          "RelatedObjects": [
+            {
+              "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+            }
+          ]
+        }
+      ],
+      "IfcExtrudedAreaSolid": [
+        {
+          "id": "54666276-2a26-11ed-a381-17085ff1416a",
+          "Depth": 1.5,
+          "Position": {
+            "id": "511f0ee2-2a26-11ed-a381-0bc92cc5952b"
+          },
+          "SweptArea": {
+            "id": "4df916a4-2a26-11ed-a381-0345affab4aa"
+          },
+          "ExtrudedDirection": {
+            "id": "4d67bea2-2a26-11ed-a381-377efbf31aba"
+          }
+        },
+        {
+          "id": "54beba34-2a26-11ed-a381-ffb310fffa1d",
+          "Depth": 0.2,
+          "Position": {
+            "id": "52ab5f04-2a26-11ed-a381-d7bc32b58d23"
+          },
+          "SweptArea": {
+            "id": "4e9ba4d2-2a26-11ed-a381-5f56b269e553"
+          },
+          "ExtrudedDirection": {
+            "id": "4d67bea2-2a26-11ed-a381-377efbf31aba"
+          }
+        },
+        {
+          "id": "5683bc7a-2a26-11ed-a381-87b6b226e1b5",
+          "Depth": 0.2,
+          "Position": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          },
+          "SweptArea": {
+            "id": "54785864-2a26-11ed-a381-9fc7eae4498e"
+          },
+          "ExtrudedDirection": {
+            "id": "4d742f98-2a26-11ed-a381-db6ebb3ecf61"
+          }
+        },
+        {
+          "id": "569d5400-2a26-11ed-a381-6725e6e43fc5",
+          "Depth": 0.2,
+          "Position": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          },
+          "SweptArea": {
+            "id": "548a8322-2a26-11ed-a381-4b1f2f011e97"
+          },
+          "ExtrudedDirection": {
+            "id": "4d742f98-2a26-11ed-a381-db6ebb3ecf61"
+          }
+        },
+        {
+          "id": "56e77ec2-2a26-11ed-a381-5fb5ab896891",
+          "Depth": 0.2,
+          "Position": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          },
+          "SweptArea": {
+            "id": "549db528-2a26-11ed-a381-0f901021b084"
+          },
+          "ExtrudedDirection": {
+            "id": "4d742f98-2a26-11ed-a381-db6ebb3ecf61"
+          }
+        },
+        {
+          "id": "571839ea-2a26-11ed-a381-072fcfdb00af",
+          "Depth": 0.2,
+          "Position": {
+            "id": "507ab6e4-2a26-11ed-a381-73468735024c"
+          },
+          "SweptArea": {
+            "id": "5500c28a-2a26-11ed-a381-431ab250070b"
+          },
+          "ExtrudedDirection": {
+            "id": "4d67bea2-2a26-11ed-a381-377efbf31aba"
+          }
+        },
+        {
+          "id": "7b7d5568-2a26-11ed-a381-c3d7d6667070",
+          "Depth": 1.5,
+          "Position": {
+            "id": "7b6e78ea-2a26-11ed-a381-53f771a7feda"
+          },
+          "SweptArea": {
+            "id": "7b62c518-2a26-11ed-a381-bf21eee4d4d8"
+          },
+          "ExtrudedDirection": {
+            "id": "7b5cbd58-2a26-11ed-a381-870a782e132f"
+          }
+        },
+        {
+          "id": "7b8040a2-2a26-11ed-a381-ef6be3456933",
+          "Depth": 0.2,
+          "Position": {
+            "id": "7b748e06-2a26-11ed-a381-5bdda82f8dd8"
+          },
+          "SweptArea": {
+            "id": "7b65cdd0-2a26-11ed-a381-db75b00b1692"
+          },
+          "ExtrudedDirection": {
+            "id": "7b5cbd58-2a26-11ed-a381-870a782e132f"
+          }
+        },
+        {
+          "id": "7b875d7e-2a26-11ed-a381-0f3ea9a3286c",
+          "Depth": 0.2,
+          "Position": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          },
+          "SweptArea": {
+            "id": "7b7dd43e-2a26-11ed-a381-2b97d00b3110"
+          },
+          "ExtrudedDirection": {
+            "id": "7b5dd29c-2a26-11ed-a381-bf614441da4e"
+          }
+        },
+        {
+          "id": "7b882b3c-2a26-11ed-a381-5f5589a22732",
+          "Depth": 0.2,
+          "Position": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          },
+          "SweptArea": {
+            "id": "7b7ef0b2-2a26-11ed-a381-bb9f7a667e0d"
+          },
+          "ExtrudedDirection": {
+            "id": "7b5dd29c-2a26-11ed-a381-bf614441da4e"
+          }
+        },
+        {
+          "id": "7b88c98e-2a26-11ed-a381-c302dab6539e",
+          "Depth": 0.2,
+          "Position": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          },
+          "SweptArea": {
+            "id": "7b7f83ec-2a26-11ed-a381-ffefcdd90076"
+          },
+          "ExtrudedDirection": {
+            "id": "7b5dd29c-2a26-11ed-a381-bf614441da4e"
+          }
+        },
+        {
+          "id": "7b89f386-2a26-11ed-a381-cb9524213545",
+          "Depth": 0.2,
+          "Position": {
+            "id": "7b6c4340-2a26-11ed-a381-ef027682955a"
+          },
+          "SweptArea": {
+            "id": "7b80b0fa-2a26-11ed-a381-97a778f4f458"
+          },
+          "ExtrudedDirection": {
+            "id": "7b5cbd58-2a26-11ed-a381-870a782e132f"
+          }
+        }
+      ],
+      "IfcInductanceMeasure": [],
+      "IfcPlaneAngleMeasure": [
+        {
+          "id": "50a299f2-2a26-11ed-a381-c3aed6ae175c",
+          "IfcPlaneAngleMeasure": 0.017453292519943295
+        },
+        {
+          "id": "7b6cb848-2a26-11ed-a381-b7cdc2f7ec5e",
+          "IfcPlaneAngleMeasure": 0.017453292519943295
+        }
+      ],
+      "IfcRepresentationMap": [],
+      "IfcSolidAngleMeasure": [],
+      "IfcSoundPowerMeasure": [],
+      "IfcAreaDensityMeasure": [],
+      "IfcDerivedUnitElement": [],
+      "IfcDescriptiveMeasure": [],
+      "IfcIlluminanceMeasure": [],
+      "IfcLinearForceMeasure": [],
+      "IfcMassDensityMeasure": [
+        {
+          "id": "50304082-2a26-11ed-a381-cf667e04a2d7",
+          "IfcMassDensityMeasure": 7850
+        },
+        {
+          "id": "7b6aecf2-2a26-11ed-a381-b7156ec7e901",
+          "IfcMassDensityMeasure": 7850
+        }
+      ],
+      "IfcMaterialProfileSet": [
+        {
+          "id": "5511404c-2a26-11ed-a381-bf58fe0a6632",
+          "Name": "IPE400",
+          "Description": null,
+          "CompositeProfile": null,
+          "MaterialProfiles": [
+            {
+              "id": "532a92d8-2a26-11ed-a381-f731efabac26"
+            }
+          ]
+        },
+        {
+          "id": "7b81260c-2a26-11ed-a381-57e78c328b0d",
+          "Name": "IPE400",
+          "Description": null,
+          "CompositeProfile": null,
+          "MaterialProfiles": [
+            {
+              "id": "7b76ebba-2a26-11ed-a381-2f007f0acad4"
+            }
+          ]
+        }
+      ],
+      "IfcMaterialProperties": [
+        {
+          "id": "53807ce8-2a26-11ed-a381-ab01565cd551",
+          "Name": "MaterialMechanical",
+          "Material": {
+            "id": "4de79730-2a26-11ed-a381-4bfa9b8a14ad"
+          },
+          "Properties": [
+            {
+              "id": "4f4fe64a-2a26-11ed-a381-9b0f8ea477b1"
+            },
+            {
+              "id": "4f6d3c86-2a26-11ed-a381-63346c60afa9"
+            },
+            {
+              "id": "4f8810ec-2a26-11ed-a381-0718bcee258d"
+            },
+            {
+              "id": "4fa6c4f6-2a26-11ed-a381-0fd15a5c040b"
+            },
+            {
+              "id": "4fc25266-2a26-11ed-a381-470fb2534a45"
+            },
+            {
+              "id": "4fde6cc6-2a26-11ed-a381-2bfb28dcf929"
+            },
+            {
+              "id": "50305180-2a26-11ed-a381-cb57fe17732d"
+            }
+          ],
+          "Description": "A Material property description"
+        },
+        {
+          "id": "7b787656-2a26-11ed-a381-fb580049ca4c",
+          "Name": "MaterialMechanical",
+          "Material": {
+            "id": "7b62510a-2a26-11ed-a381-5bae041b6437"
+          },
+          "Properties": [
+            {
+              "id": "7b68938a-2a26-11ed-a381-0bb27e7e9f14"
+            },
+            {
+              "id": "7b68f488-2a26-11ed-a381-db64bb50db2c"
+            },
+            {
+              "id": "7b69584c-2a26-11ed-a381-737b70f1e8e8"
+            },
+            {
+              "id": "7b69bc60-2a26-11ed-a381-1f535792a455"
+            },
+            {
+              "id": "7b6a2178-2a26-11ed-a381-4f1098297f25"
+            },
+            {
+              "id": "7b6a887a-2a26-11ed-a381-cf98f1ec29ba"
+            },
+            {
+              "id": "7b6af0a8-2a26-11ed-a381-67c21c73097c"
+            }
+          ],
+          "Description": "A Material property description"
+        }
+      ],
+      "IfcPlanarForceMeasure": [],
+      "IfcSegmentIndexSelect": [
+        {
+          "id": "51797af8-2a26-11ed-a381-634693c67528",
+          "IfcSegmentIndexSelect": {
+            "id": "51797382-2a26-11ed-a381-5bc28c88865e"
+          }
+        },
+        {
+          "id": "517988fe-2a26-11ed-a381-4b180e6783a8",
+          "IfcSegmentIndexSelect": {
+            "id": "517987c8-2a26-11ed-a381-43aba846852d"
+          }
+        },
+        {
+          "id": "51798afc-2a26-11ed-a381-0fec968b7c68",
+          "IfcSegmentIndexSelect": {
+            "id": "51798a2a-2a26-11ed-a381-4f655e990b1f"
+          }
+        },
+        {
+          "id": "521441e6-2a26-11ed-a381-bf0dd7c7134e",
+          "IfcSegmentIndexSelect": {
+            "id": "521430de-2a26-11ed-a381-134893ec6261"
+          }
+        },
+        {
+          "id": "52144722-2a26-11ed-a381-731a2faecad3",
+          "IfcSegmentIndexSelect": {
+            "id": "521445e2-2a26-11ed-a381-6b08acdf5371"
+          }
+        },
+        {
+          "id": "521449ac-2a26-11ed-a381-9f7eb4be8508",
+          "IfcSegmentIndexSelect": {
+            "id": "52144830-2a26-11ed-a381-4bd52317cba9"
+          }
+        },
+        {
+          "id": "52144b6e-2a26-11ed-a381-33558367ef42",
+          "IfcSegmentIndexSelect": {
+            "id": "52144aa6-2a26-11ed-a381-7fee911e2810"
+          }
+        },
+        {
+          "id": "52144dda-2a26-11ed-a381-b75289a31b51",
+          "IfcSegmentIndexSelect": {
+            "id": "52144c72-2a26-11ed-a381-27935d318906"
+          }
+        },
+        {
+          "id": "52144fa6-2a26-11ed-a381-6fb3363622e8",
+          "IfcSegmentIndexSelect": {
+            "id": "52144ed4-2a26-11ed-a381-cff3157e6cf0"
+          }
+        },
+        {
+          "id": "52946df8-2a26-11ed-a381-fb9f11352602",
+          "IfcSegmentIndexSelect": {
+            "id": "52946ce0-2a26-11ed-a381-473c49e8842c"
+          }
+        },
+        {
+          "id": "5294706e-2a26-11ed-a381-cfa0a0398870",
+          "IfcSegmentIndexSelect": {
+            "id": "52946f7e-2a26-11ed-a381-03ac08f5e8bd"
+          }
+        },
+        {
+          "id": "529471ae-2a26-11ed-a381-1784341c52b0",
+          "IfcSegmentIndexSelect": {
+            "id": "52947122-2a26-11ed-a381-ebe9ee5c595c"
+          }
+        },
+        {
+          "id": "529472ee-2a26-11ed-a381-434c5cc39605",
+          "IfcSegmentIndexSelect": {
+            "id": "52947262-2a26-11ed-a381-17a63fb41375"
+          }
+        },
+        {
+          "id": "52947424-2a26-11ed-a381-ebb1ef34851f",
+          "IfcSegmentIndexSelect": {
+            "id": "52947398-2a26-11ed-a381-ab5736fc71d1"
+          }
+        },
+        {
+          "id": "5294756e-2a26-11ed-a381-878ad4568c65",
+          "IfcSegmentIndexSelect": {
+            "id": "529474d8-2a26-11ed-a381-03d05987ca67"
+          }
+        },
+        {
+          "id": "529476ae-2a26-11ed-a381-538393850bce",
+          "IfcSegmentIndexSelect": {
+            "id": "52947622-2a26-11ed-a381-7f6da84bb7ef"
+          }
+        },
+        {
+          "id": "529477ee-2a26-11ed-a381-a338ac558aa4",
+          "IfcSegmentIndexSelect": {
+            "id": "52947762-2a26-11ed-a381-f7bcf946ed59"
+          }
+        },
+        {
+          "id": "7b6fd3e8-2a26-11ed-a381-fb328c93d72a",
+          "IfcSegmentIndexSelect": {
+            "id": "7b6fd276-2a26-11ed-a381-57e9ef4ce07f"
+          }
+        },
+        {
+          "id": "7b6fd654-2a26-11ed-a381-ef54aee41f5a",
+          "IfcSegmentIndexSelect": {
+            "id": "7b6fd5a0-2a26-11ed-a381-4b957b771dcb"
+          }
+        },
+        {
+          "id": "7b6fd7bc-2a26-11ed-a381-836e1e9611f1",
+          "IfcSegmentIndexSelect": {
+            "id": "7b6fd71c-2a26-11ed-a381-8f834ee4da30"
+          }
+        },
+        {
+          "id": "7b70eaa8-2a26-11ed-a381-8fc949c2587f",
+          "IfcSegmentIndexSelect": {
+            "id": "7b70e940-2a26-11ed-a381-5f069f7c535f"
+          }
+        },
+        {
+          "id": "7b70ee2c-2a26-11ed-a381-af5e56883150",
+          "IfcSegmentIndexSelect": {
+            "id": "7b70eca6-2a26-11ed-a381-2fe0da1154ca"
+          }
+        },
+        {
+          "id": "7b70efa8-2a26-11ed-a381-dbc11a0be47e",
+          "IfcSegmentIndexSelect": {
+            "id": "7b70eefe-2a26-11ed-a381-53946477f058"
+          }
+        },
+        {
+          "id": "7b70f110-2a26-11ed-a381-c39253f62982",
+          "IfcSegmentIndexSelect": {
+            "id": "7b70f070-2a26-11ed-a381-3fbbef06ed3d"
+          }
+        },
+        {
+          "id": "7b70f264-2a26-11ed-a381-2f41ca64fc96",
+          "IfcSegmentIndexSelect": {
+            "id": "7b70f1ce-2a26-11ed-a381-8fb54184c4c9"
+          }
+        },
+        {
+          "id": "7b70f3c2-2a26-11ed-a381-2ff9ab964612",
+          "IfcSegmentIndexSelect": {
+            "id": "7b70f322-2a26-11ed-a381-1fb2787ce314"
+          }
+        },
+        {
+          "id": "7b72af64-2a26-11ed-a381-7f99c0cb4410",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72ae42-2a26-11ed-a381-6b79f67bcf8a"
+          }
+        },
+        {
+          "id": "7b72b676-2a26-11ed-a381-6b18b51387d4",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72b252-2a26-11ed-a381-5ff87f7b10a4"
+          }
+        },
+        {
+          "id": "7b72b7fc-2a26-11ed-a381-0bc523065712",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72b75c-2a26-11ed-a381-d38bdbb484ec"
+          }
+        },
+        {
+          "id": "7b72b946-2a26-11ed-a381-ff53e895bd68",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72b8b0-2a26-11ed-a381-a3822d1b9cb9"
+          }
+        },
+        {
+          "id": "7b72ba86-2a26-11ed-a381-639cd28dd36f",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72b9fa-2a26-11ed-a381-dfdab62f8df7"
+          }
+        },
+        {
+          "id": "7b72bbda-2a26-11ed-a381-235dd9210ab0",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72bb3a-2a26-11ed-a381-4f114eed894b"
+          }
+        },
+        {
+          "id": "7b72bd1a-2a26-11ed-a381-732bfb5e35f6",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72bc8e-2a26-11ed-a381-6372eeac8d2f"
+          }
+        },
+        {
+          "id": "7b72be5a-2a26-11ed-a381-1beb4d686c59",
+          "IfcSegmentIndexSelect": {
+            "id": "7b72bdce-2a26-11ed-a381-d33b3b926096"
+          }
+        }
+      ],
+      "IfcAbsorbedDoseMeasure": [],
+      "IfcAccelerationMeasure": [],
+      "IfcCompositeProfileDef": [],
+      "IfcConversionBasedUnit": [
+        {
+          "id": "53e67700-2a26-11ed-a381-6fdb76aacd3f",
+          "Name": "DEGREE",
+          "UnitType": "PLANEANGLEUNIT",
+          "Dimensions": {
+            "id": "4d8485aa-2a26-11ed-a381-03c65a3418c8"
+          },
+          "ConversionFactor": {
+            "id": "50a2b1a8-2a26-11ed-a381-eff274d28ccb"
+          }
+        },
+        {
+          "id": "7b7b6c9e-2a26-11ed-a381-af161e772b11",
+          "Name": "DEGREE",
+          "UnitType": "PLANEANGLEUNIT",
+          "Dimensions": {
+            "id": "7b5e51c2-2a26-11ed-a381-7f51f1e8e741"
+          },
+          "ConversionFactor": {
+            "id": "7b6cbd98-2a26-11ed-a381-434f9bb40775"
+          }
+        }
+      ],
+      "IfcDerivedMeasureValue": [],
+      "IfcHeatingValueMeasure": [],
+      "IfcLinearMomentMeasure": [],
+      "IfcLuminousFluxMeasure": [],
+      "IfcMagneticFluxMeasure": [],
+      "IfcMassFlowRateMeasure": [],
+      "IfcPropertySingleValue": [
+        {
+          "id": "4ed60b7c-2a26-11ed-a381-ab38aabfe13d",
+          "Name": "project",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4ed602f8-2a26-11ed-a381-c7b40b04d9bd"
+          }
+        },
+        {
+          "id": "4ef3c81a-2a26-11ed-a381-07534ad4d86c",
+          "Name": "schema",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4ef3c68a-2a26-11ed-a381-83c18e9ef831"
+          }
+        },
+        {
+          "id": "4f0f3866-2a26-11ed-a381-e3d08cf4971f",
+          "Name": "ifctype",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4f0f373a-2a26-11ed-a381-6743ace7d839"
+          }
+        },
+        {
+          "id": "4f4fe64a-2a26-11ed-a381-9b0f8ea477b1",
+          "Name": "Grade",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4f4fe384-2a26-11ed-a381-f3f705c520f7"
+          }
+        },
+        {
+          "id": "4f6d3c86-2a26-11ed-a381-63346c60afa9",
+          "Name": "YieldStress",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4f6d390c-2a26-11ed-a381-478450e59352"
+          }
+        },
+        {
+          "id": "4f8810ec-2a26-11ed-a381-0718bcee258d",
+          "Name": "YoungModulus",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4f880f3e-2a26-11ed-a381-f7f586213463"
+          }
+        },
+        {
+          "id": "4fa6c4f6-2a26-11ed-a381-0fd15a5c040b",
+          "Name": "PoissonRatio",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4fa6c2bc-2a26-11ed-a381-d7b062a3b312"
+          }
+        },
+        {
+          "id": "4fc25266-2a26-11ed-a381-470fb2534a45",
+          "Name": "ThermalExpansionCoefficient",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4fc250ae-2a26-11ed-a381-33c030aa0ce4"
+          }
+        },
+        {
+          "id": "4fde6cc6-2a26-11ed-a381-2bfb28dcf929",
+          "Name": "SpecificHeatCapacity",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "4fde6b0e-2a26-11ed-a381-475ed0ad01ec"
+          }
+        },
+        {
+          "id": "50305180-2a26-11ed-a381-cb57fe17732d",
+          "Name": "MassDensity",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "50304f8c-2a26-11ed-a381-6bf865f7a17a"
+          }
+        },
+        {
+          "id": "7b6788b4-2a26-11ed-a381-4755685e272b",
+          "Name": "project",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b67874c-2a26-11ed-a381-c327f79a7433"
+          }
+        },
+        {
+          "id": "7b67ef5c-2a26-11ed-a381-0bff18a29b0d",
+          "Name": "schema",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b67ee26-2a26-11ed-a381-576ccb9010fb"
+          }
+        },
+        {
+          "id": "7b684286-2a26-11ed-a381-73587baa5eea",
+          "Name": "ifctype",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b684164-2a26-11ed-a381-af0f6954f860"
+          }
+        },
+        {
+          "id": "7b68938a-2a26-11ed-a381-0bb27e7e9f14",
+          "Name": "Grade",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b68916e-2a26-11ed-a381-2bbf023ecbf4"
+          }
+        },
+        {
+          "id": "7b68f488-2a26-11ed-a381-db64bb50db2c",
+          "Name": "YieldStress",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b68f348-2a26-11ed-a381-0bff4fa45a61"
+          }
+        },
+        {
+          "id": "7b69584c-2a26-11ed-a381-737b70f1e8e8",
+          "Name": "YoungModulus",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b69572a-2a26-11ed-a381-bf86a1f10ddb"
+          }
+        },
+        {
+          "id": "7b69bc60-2a26-11ed-a381-1f535792a455",
+          "Name": "PoissonRatio",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b69ba30-2a26-11ed-a381-33134e1bf2c1"
+          }
+        },
+        {
+          "id": "7b6a2178-2a26-11ed-a381-4f1098297f25",
+          "Name": "ThermalExpansionCoefficient",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b6a2042-2a26-11ed-a381-d3df4e3a32ec"
+          }
+        },
+        {
+          "id": "7b6a887a-2a26-11ed-a381-cf98f1ec29ba",
+          "Name": "SpecificHeatCapacity",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b6a8744-2a26-11ed-a381-63e633241ffa"
+          }
+        },
+        {
+          "id": "7b6af0a8-2a26-11ed-a381-67c21c73097c",
+          "Name": "MassDensity",
+          "Unit": null,
+          "Description": null,
+          "NominalValue": {
+            "id": "7b6aef68-2a26-11ed-a381-f7de78e14616"
+          }
+        }
+      ],
+      "IfcShapeRepresentation": [
+        {
+          "id": "56553ca6-2a26-11ed-a381-47632de7c56c",
+          "Items": [
+            {
+              "id": "54666276-2a26-11ed-a381-17085ff1416a"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "566b2944-2a26-11ed-a381-237584c8c7a9",
+          "Items": [
+            {
+              "id": "510e90ee-2a26-11ed-a381-b7ae00306d03"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+          },
+          "RepresentationType": "Curve3D",
+          "RepresentationIdentifier": "Axis"
+        },
+        {
+          "id": "56fe5728-2a26-11ed-a381-2be3def20cff",
+          "Items": [
+            {
+              "id": "54beba34-2a26-11ed-a381-ffb310fffa1d"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "57fd387e-2a26-11ed-a381-57256dfdb3ca",
+          "Items": [
+            {
+              "id": "5683bc7a-2a26-11ed-a381-87b6b226e1b5"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "5813dbec-2a26-11ed-a381-fbaea86df2a5",
+          "Items": [
+            {
+              "id": "569d5400-2a26-11ed-a381-6725e6e43fc5"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "582acca8-2a26-11ed-a381-53ec59c67878",
+          "Items": [
+            {
+              "id": "56e77ec2-2a26-11ed-a381-5fb5ab896891"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "58501382-2a26-11ed-a381-77f931183d1e",
+          "Items": [
+            {
+              "id": "571839ea-2a26-11ed-a381-072fcfdb00af"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "7b85f448-2a26-11ed-a381-f747365d5f0a",
+          "Items": [
+            {
+              "id": "7b7d5568-2a26-11ed-a381-c3d7d6667070"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "7b869fe2-2a26-11ed-a381-8ba1508577ae",
+          "Items": [
+            {
+              "id": "7b6e11d4-2a26-11ed-a381-970296dfda97"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+          },
+          "RepresentationType": "Curve3D",
+          "RepresentationIdentifier": "Axis"
+        },
+        {
+          "id": "7b896358-2a26-11ed-a381-ab07aa27afa8",
+          "Items": [
+            {
+              "id": "7b8040a2-2a26-11ed-a381-ef6be3456933"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "7b8e3bb2-2a26-11ed-a381-db75a96b01ae",
+          "Items": [
+            {
+              "id": "7b875d7e-2a26-11ed-a381-0f3ea9a3286c"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "7b8ea822-2a26-11ed-a381-d3965a9006a0",
+          "Items": [
+            {
+              "id": "7b882b3c-2a26-11ed-a381-5f5589a22732"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "7b8f149c-2a26-11ed-a381-2bb945e71878",
+          "Items": [
+            {
+              "id": "7b88c98e-2a26-11ed-a381-c302dab6539e"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        },
+        {
+          "id": "7b8ff9b6-2a26-11ed-a381-dbea0535a565",
+          "Items": [
+            {
+              "id": "7b89f386-2a26-11ed-a381-cb9524213545"
+            }
+          ],
+          "ContextOfItems": {
+            "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6"
+          },
+          "RepresentationType": "SweptSolid",
+          "RepresentationIdentifier": "Body"
+        }
+      ],
+      "IfcShearModulusMeasure": [],
+      "IfcCartesianPointList3D": [
+        {
+          "id": "4e0d241e-2a26-11ed-a381-3bdb4cc6759a",
+          "TagList": null,
+          "CoordList": [
+            [
+              0.15,
+              -0.1,
+              2.77555756156289e-17
+            ],
+            [
+              0.2,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.1,
+              -0.1,
+              -0.1
+            ]
+          ]
+        },
+        {
+          "id": "4e32f43c-2a26-11ed-a381-9b39afb97d52",
+          "TagList": null,
+          "CoordList": [
+            [
+              0.385528,
+              -0.1,
+              -0.071056
+            ],
+            [
+              0.38465217230347,
+              -0.1,
+              -0.0905148877430337
+            ],
+            [
+              0.367639,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.332361,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.315347827696315,
+              -0.1,
+              -0.0905148877431668
+            ],
+            [
+              0.314472,
+              -0.1,
+              -0.071056
+            ],
+            [
+              0.332111,
+              -0.1,
+              -0.035777
+            ],
+            [
+              0.35,
+              -0.1,
+              -0.0247209123360058
+            ],
+            [
+              0.367889,
+              -0.1,
+              -0.035777
+            ]
+          ]
+        },
+        {
+          "id": "4e5befae-2a26-11ed-a381-1bfe73e23532",
+          "TagList": null,
+          "CoordList": [
+            [
+              0.58,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.594142135623731,
+              -0.1,
+              -0.094142135623731
+            ],
+            [
+              0.6,
+              -0.1,
+              -0.08
+            ],
+            [
+              0.6,
+              -0.1,
+              0.08
+            ],
+            [
+              0.594142135623731,
+              -0.1,
+              0.094142135623731
+            ],
+            [
+              0.58,
+              -0.1,
+              0.1
+            ],
+            [
+              0.52,
+              -0.1,
+              0.1
+            ],
+            [
+              0.505857864376269,
+              -0.1,
+              0.094142135623731
+            ],
+            [
+              0.5,
+              -0.1,
+              0.08
+            ],
+            [
+              0.5,
+              -0.1,
+              -0.08
+            ],
+            [
+              0.505857864376269,
+              -0.1,
+              -0.094142135623731
+            ],
+            [
+              0.52,
+              -0.1,
+              -0.1
+            ]
+          ]
+        },
+        {
+          "id": "7b63b95a-2a26-11ed-a381-c7a69e39ee7a",
+          "TagList": null,
+          "CoordList": [
+            [
+              0.15,
+              -0.1,
+              2.77555756156289e-17
+            ],
+            [
+              0.2,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.1,
+              -0.1,
+              -0.1
+            ]
+          ]
+        },
+        {
+          "id": "7b645784-2a26-11ed-a381-7f6efbb8b93b",
+          "TagList": null,
+          "CoordList": [
+            [
+              0.385528,
+              -0.1,
+              -0.071056
+            ],
+            [
+              0.38465217230347,
+              -0.1,
+              -0.0905148877430337
+            ],
+            [
+              0.367639,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.332361,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.315347827696315,
+              -0.1,
+              -0.0905148877431668
+            ],
+            [
+              0.314472,
+              -0.1,
+              -0.071056
+            ],
+            [
+              0.332111,
+              -0.1,
+              -0.035777
+            ],
+            [
+              0.35,
+              -0.1,
+              -0.0247209123360058
+            ],
+            [
+              0.367889,
+              -0.1,
+              -0.035777
+            ]
+          ]
+        },
+        {
+          "id": "7b6509b8-2a26-11ed-a381-53d9cd6d8f51",
+          "TagList": null,
+          "CoordList": [
+            [
+              0.58,
+              -0.1,
+              -0.1
+            ],
+            [
+              0.594142135623731,
+              -0.1,
+              -0.094142135623731
+            ],
+            [
+              0.6,
+              -0.1,
+              -0.08
+            ],
+            [
+              0.6,
+              -0.1,
+              0.08
+            ],
+            [
+              0.594142135623731,
+              -0.1,
+              0.094142135623731
+            ],
+            [
+              0.58,
+              -0.1,
+              0.1
+            ],
+            [
+              0.52,
+              -0.1,
+              0.1
+            ],
+            [
+              0.505857864376269,
+              -0.1,
+              0.094142135623731
+            ],
+            [
+              0.5,
+              -0.1,
+              0.08
+            ],
+            [
+              0.5,
+              -0.1,
+              -0.08
+            ],
+            [
+              0.505857864376269,
+              -0.1,
+              -0.094142135623731
+            ],
+            [
+              0.52,
+              -0.1,
+              -0.1
+            ]
+          ]
+        }
+      ],
+      "IfcDimensionalExponents": [
+        {
+          "id": "4d8485aa-2a26-11ed-a381-03c65a3418c8",
+          "MassExponent": 0,
+          "TimeExponent": 0,
+          "LengthExponent": 0,
+          "ElectricCurrentExponent": 0,
+          "AmountOfSubstanceExponent": 0,
+          "LuminousIntensityExponent": 0,
+          "ThermodynamicTemperatureExponent": 0
+        },
+        {
+          "id": "7b5e51c2-2a26-11ed-a381-7f51f1e8e741",
+          "MassExponent": 0,
+          "TimeExponent": 0,
+          "LengthExponent": 0,
+          "ElectricCurrentExponent": 0,
+          "AmountOfSubstanceExponent": 0,
+          "LuminousIntensityExponent": 0,
+          "ThermodynamicTemperatureExponent": 0
+        }
+      ],
+      "IfcMassPerLengthMeasure": [],
+      "IfcPositiveRatioMeasure": [
+        {
+          "id": "4fa6b006-2a26-11ed-a381-67f7a19c0282",
+          "IfcPositiveRatioMeasure": 0.3
+        },
+        {
+          "id": "7b69b85a-2a26-11ed-a381-57164457a7d6",
+          "IfcPositiveRatioMeasure": 0.3
+        }
+      ],
+      "IfcRadioActivityMeasure": [],
+      "IfcSoundPressureMeasure": [],
+      "IfcWarpingMomentMeasure": [],
+      "IfcDoseEquivalentMeasure": [],
+      "IfcElectricChargeMeasure": [],
+      "IfcLinearVelocityMeasure": [],
+      "IfcPersonAndOrganization": [
+        {
+          "id": "5048f870-2a26-11ed-a381-a77a9efe3cea",
+          "Roles": [],
+          "ThePerson": {
+            "id": "4d4bc4b8-2a26-11ed-a381-bbc5630ca097"
+          },
+          "TheOrganization": {
+            "id": "4d5ac7a6-2a26-11ed-a381-378e353c2771"
+          }
+        },
+        {
+          "id": "50c1b332-2a26-11ed-a381-cbf35f420965",
+          "Roles": [],
+          "ThePerson": {
+            "id": "4d4bc4b8-2a26-11ed-a381-bbc5630ca097"
+          },
+          "TheOrganization": {
+            "id": "4ddb232e-2a26-11ed-a381-b30ee47384f7"
+          }
+        },
+        {
+          "id": "7b6b6222-2a26-11ed-a381-a38fbd088fe3",
+          "Roles": [],
+          "ThePerson": {
+            "id": "7b5ac598-2a26-11ed-a381-4b8ef304ed77"
+          },
+          "TheOrganization": {
+            "id": "7b5b7c9a-2a26-11ed-a381-db990a0f20ce"
+          }
+        },
+        {
+          "id": "7b6d2d78-2a26-11ed-a381-fb48c4a0ca4f",
+          "Roles": [],
+          "ThePerson": {
+            "id": "7b5ac598-2a26-11ed-a381-4b8ef304ed77"
+          },
+          "TheOrganization": {
+            "id": "7b61ebe8-2a26-11ed-a381-07b4d50b3462"
+          }
+        }
+      ],
+      "IfcPositiveLengthMeasure": [],
+      "IfcRelAssociatesMaterial": [
+        {
+          "id": "58a88ff8-2a26-11ed-a381-f71fe242cb53",
+          "Name": null,
+          "GlobalId": "1ciBRr_3qHxAfqw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedObjects": [
+            {
+              "id": "58a89d86-2a26-11ed-a381-ffd91b2dbbc4"
+            }
+          ],
+          "RelatingMaterial": {
+            "id": "58a87e5a-2a26-11ed-a381-df563cac2182"
+          }
+        },
+        {
+          "id": "5bc91914-2a26-11ed-a381-337f4bfe786a",
+          "Name": "S420",
+          "GlobalId": "1ciBRs_3qHx9bcw2f4ZOUQ",
+          "Description": "Associated Material to beam MyBeam",
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedObjects": [
+            {
+              "id": "5bc91bf8-2a26-11ed-a381-17033f45d731"
+            }
+          ],
+          "RelatingMaterial": {
+            "id": "5bc9168a-2a26-11ed-a381-7782fbc92a3a"
+          }
+        },
+        {
+          "id": "5c05e2a4-2a26-11ed-a381-d7f324d33967",
+          "Name": null,
+          "GlobalId": "1ciBRt_3qHxAx_w2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedObjects": [
+            {
+              "id": "5c05e704-2a26-11ed-a381-efa82d823ac3"
+            }
+          ],
+          "RelatingMaterial": {
+            "id": "5c05debc-2a26-11ed-a381-e34cd6f3f886"
+          }
+        },
+        {
+          "id": "7b90a3e8-2a26-11ed-a381-272abc6cd9f6",
+          "Name": null,
+          "GlobalId": "1ciBRr_3qHxAfqw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedObjects": [
+            {
+              "id": "7b90a6a4-2a26-11ed-a381-57a0d02b5093"
+            }
+          ],
+          "RelatingMaterial": {
+            "id": "7b90a1ae-2a26-11ed-a381-83381bcf6fdc"
+          }
+        },
+        {
+          "id": "7b9af3a2-2a26-11ed-a381-3fd3842567e8",
+          "Name": "S420",
+          "GlobalId": "1ciBRs_3qHx9bcw2f4ZOUQ",
+          "Description": "Associated Material to beam MyBeam",
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedObjects": [
+            {
+              "id": "7b9af672-2a26-11ed-a381-67593b2af700"
+            }
+          ],
+          "RelatingMaterial": {
+            "id": "7b9af122-2a26-11ed-a381-431380869e58"
+          }
+        },
+        {
+          "id": "7b9bdaec-2a26-11ed-a381-fb6d0734d2d0",
+          "Name": null,
+          "GlobalId": "1ciBRt_3qHxAx_w2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedObjects": [
+            {
+              "id": "7b9bdf6a-2a26-11ed-a381-a372096e643e"
+            }
+          ],
+          "RelatingMaterial": {
+            "id": "7b9bd8a8-2a26-11ed-a381-f31e5f874292"
+          }
+        }
+      ],
+      "IfcRotationalMassMeasure": [],
+      "IfcSectionModulusMeasure": [],
+      "IfcAngularVelocityMeasure": [],
+      "IfcElectricCurrentMeasure": [],
+      "IfcElectricVoltageMeasure": [],
+      "IfcHeatFluxDensityMeasure": [],
+      "IfcLinearStiffnessMeasure": [],
+      "IfcMolecularWeightMeasure": [],
+      "IfcMomentOfInertiaMeasure": [],
+      "IfcNormalisedRatioMeasure": [],
+      "IfcProductDefinitionShape": [
+        {
+          "id": "57e5df58-2a26-11ed-a381-6b2b38170940",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "56553ca6-2a26-11ed-a381-47632de7c56c"
+            },
+            {
+              "id": "566b2944-2a26-11ed-a381-237584c8c7a9"
+            }
+          ]
+        },
+        {
+          "id": "583a051a-2a26-11ed-a381-a796d649881d",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "56fe5728-2a26-11ed-a381-2be3def20cff"
+            }
+          ]
+        },
+        {
+          "id": "592680a2-2a26-11ed-a381-334381a27840",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "57fd387e-2a26-11ed-a381-57256dfdb3ca"
+            }
+          ]
+        },
+        {
+          "id": "59386d80-2a26-11ed-a381-137cd1c05a3c",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "5813dbec-2a26-11ed-a381-fbaea86df2a5"
+            }
+          ]
+        },
+        {
+          "id": "594b2006-2a26-11ed-a381-0b13e93b6aae",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "582acca8-2a26-11ed-a381-53ec59c67878"
+            }
+          ]
+        },
+        {
+          "id": "59b9f756-2a26-11ed-a381-67122af4fbce",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "58501382-2a26-11ed-a381-77f931183d1e"
+            }
+          ]
+        },
+        {
+          "id": "7b8dc934-2a26-11ed-a381-37fb2ef58f48",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "7b85f448-2a26-11ed-a381-f747365d5f0a"
+            },
+            {
+              "id": "7b869fe2-2a26-11ed-a381-8ba1508577ae"
+            }
+          ]
+        },
+        {
+          "id": "7b8f88d2-2a26-11ed-a381-df36b127d847",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "7b896358-2a26-11ed-a381-ab07aa27afa8"
+            }
+          ]
+        },
+        {
+          "id": "7b92df96-2a26-11ed-a381-db281954d343",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "7b8e3bb2-2a26-11ed-a381-db75a96b01ae"
+            }
+          ]
+        },
+        {
+          "id": "7b933d1a-2a26-11ed-a381-ffb082d29307",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "7b8ea822-2a26-11ed-a381-d3965a9006a0"
+            }
+          ]
+        },
+        {
+          "id": "7b939f80-2a26-11ed-a381-e365ee941fb6",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "7b8f149c-2a26-11ed-a381-2bb945e71878"
+            }
+          ]
+        },
+        {
+          "id": "7b94a65a-2a26-11ed-a381-9735ed6e1b07",
+          "Name": null,
+          "Description": null,
+          "Representations": [
+            {
+              "id": "7b8ff9b6-2a26-11ed-a381-dbea0535a565"
+            }
+          ]
+        }
+      ],
+      "IfcRelDefinesByProperties": [
+        {
+          "id": "576c12fe-2a26-11ed-a381-330ddd0ab9c6",
+          "Name": "Properties",
+          "GlobalId": "1chcmU_3qHx8HWw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedObjects": [
+            {
+              "id": "55671a80-2a26-11ed-a381-77b22c01d775"
+            }
+          ],
+          "RelatingPropertyDefinition": {
+            "id": "576c0778-2a26-11ed-a381-7b1663678c64"
+          }
+        },
+        {
+          "id": "7b8bffb4-2a26-11ed-a381-1370cb7280d6",
+          "Name": "Properties",
+          "GlobalId": "1chcmU_3qHx8HWw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedObjects": [
+            {
+              "id": "7b827bce-2a26-11ed-a381-37e200e3c730"
+            }
+          ],
+          "RelatingPropertyDefinition": {
+            "id": "7b8bfda2-2a26-11ed-a381-3f84f7eaba07"
+          }
+        }
+      ],
+      "IfcSoundPowerLevelMeasure": [],
+      "IfcWarpingConstantMeasure": [],
+      "IfcContextDependentMeasure": [],
+      "IfcDynamicViscosityMeasure": [],
+      "IfcIntegerCountRateMeasure": [],
+      "IfcIonConcentrationMeasure": [],
+      "IfcMaterialProfileSetUsage": [
+        {
+          "id": "572871c0-2a26-11ed-a381-27b125d6418b",
+          "CardinalPoint": 5,
+          "ForProfileSet": {
+            "id": "5511404c-2a26-11ed-a381-bf58fe0a6632"
+          },
+          "ReferenceExtent": null
+        },
+        {
+          "id": "7b8a8ddc-2a26-11ed-a381-c3c933d79fa3",
+          "CardinalPoint": 5,
+          "ForProfileSet": {
+            "id": "7b81260c-2a26-11ed-a381-57e78c328b0d"
+          },
+          "ReferenceExtent": null
+        }
+      ],
+      "IfcAmountOfSubstanceMeasure": [],
+      "IfcLuminousIntensityMeasure": [],
+      "IfcNonNegativeLengthMeasure": [],
+      "IfcPropertySetDefinitionSet": [],
+      "IfcThermalAdmittanceMeasure": [],
+      "IfcThermalResistanceMeasure": [],
+      "IfcVaporPermeabilityMeasure": [],
+      "IfcArbitraryClosedProfileDef": [
+        {
+          "id": "54785864-2a26-11ed-a381-9fc7eae4498e",
+          "OuterCurve": {
+            "id": "517965d6-2a26-11ed-a381-97eb7716da2f"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "548a8322-2a26-11ed-a381-4b1f2f011e97",
+          "OuterCurve": {
+            "id": "52142c2e-2a26-11ed-a381-1f9a6b9b8b24"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "549db528-2a26-11ed-a381-0f901021b084",
+          "OuterCurve": {
+            "id": "52946a10-2a26-11ed-a381-6f7146b0ca5a"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "5500c28a-2a26-11ed-a381-431ab250070b",
+          "OuterCurve": {
+            "id": "530bed9c-2a26-11ed-a381-b7b1d08c7283"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b7dd43e-2a26-11ed-a381-2b97d00b3110",
+          "OuterCurve": {
+            "id": "7b6fce70-2a26-11ed-a381-03768b1249ee"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b7ef0b2-2a26-11ed-a381-bb9f7a667e0d",
+          "OuterCurve": {
+            "id": "7b70e620-2a26-11ed-a381-5b4214fbb6da"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b7f83ec-2a26-11ed-a381-ffefcdd90076",
+          "OuterCurve": {
+            "id": "7b72ab7c-2a26-11ed-a381-2b7477ab32a5"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        },
+        {
+          "id": "7b80b0fa-2a26-11ed-a381-97a778f4f458",
+          "OuterCurve": {
+            "id": "7b75dd7e-2a26-11ed-a381-8f71474906e0"
+          },
+          "ProfileName": null,
+          "ProfileType": "AREA"
+        }
+      ],
+      "IfcCompoundPlaneAngleMeasure": [],
+      "IfcElectricResistanceMeasure": [],
+      "IfcKinematicViscosityMeasure": [],
+      "IfcPositivePlaneAngleMeasure": [],
+      "IfcSoundPressureLevelMeasure": [],
+      "IfcVolumetricFlowRateMeasure": [],
+      "IfcElectricCapacitanceMeasure": [],
+      "IfcElectricConductanceMeasure": [],
+      "IfcMagneticFluxDensityMeasure": [],
+      "IfcModulusOfElasticityMeasure": [
+        {
+          "id": "4f88048a-2a26-11ed-a381-3f8dd7e6f42c",
+          "IfcModulusOfElasticityMeasure": 210000000000
+        },
+        {
+          "id": "7b695478-2a26-11ed-a381-a352ba378935",
+          "IfcModulusOfElasticityMeasure": 210000000000
+        }
+      ],
+      "IfcMoistureDiffusivityMeasure": [],
+      "IfcRotationalFrequencyMeasure": [],
+      "IfcRotationalStiffnessMeasure": [],
+      "IfcTemperatureGradientMeasure": [],
+      "IfcThermalConductivityMeasure": [],
+      "IfcPropertySetDefinitionSelect": [
+        {
+          "id": "576c0778-2a26-11ed-a381-7b1663678c64",
+          "IfcPropertySetDefinitionSelect": {
+            "id": "558ec5ee-2a26-11ed-a381-8b8354cdfb11"
+          }
+        },
+        {
+          "id": "7b8bfda2-2a26-11ed-a381-3f84f7eaba07",
+          "IfcPropertySetDefinitionSelect": {
+            "id": "7b832682-2a26-11ed-a381-b3d2c0e70897"
+          }
+        }
+      ],
+      "IfcSpecificHeatCapacityMeasure": [
+        {
+          "id": "4fde5eca-2a26-11ed-a381-a7f02e669727",
+          "IfcSpecificHeatCapacityMeasure": 1.15
+        },
+        {
+          "id": "7b6a850a-2a26-11ed-a381-bfcd2f2572a4",
+          "IfcSpecificHeatCapacityMeasure": 1.15
+        }
+      ],
+      "IfcThermalTransmittanceMeasure": [],
+      "IfcSectionalAreaIntegralMeasure": [],
+      "IfcGeometricRepresentationContext": [
+        {
+          "id": "53cbbca8-2a26-11ed-a381-b320e6e5ccb1",
+          "Precision": 1e-05,
+          "TrueNorth": {
+            "id": "4d742f98-2a26-11ed-a381-db6ebb3ecf61"
+          },
+          "ContextType": "Model",
+          "ContextIdentifier": null,
+          "WorldCoordinateSystem": {
+            "id": "53cbb0aa-2a26-11ed-a381-e7bbae2842fb"
+          },
+          "CoordinateSpaceDimension": 3
+        },
+        {
+          "id": "7b7abd4e-2a26-11ed-a381-93300ae4f8b6",
+          "Precision": 1e-05,
+          "TrueNorth": {
+            "id": "7b5dd29c-2a26-11ed-a381-bf614441da4e"
+          },
+          "ContextType": "Model",
+          "ContextIdentifier": null,
+          "WorldCoordinateSystem": {
+            "id": "7b7aba42-2a26-11ed-a381-5f2caaecfec9"
+          },
+          "CoordinateSpaceDimension": 3
+        }
+      ],
+      "IfcRelContainedInSpatialStructure": [
+        {
+          "id": "5c2ef266-2a26-11ed-a381-cf40de360925",
+          "Name": "Physical model",
+          "GlobalId": "1ciBRu_3qHxAXlw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "5430af6e-2a26-11ed-a381-cb17b14f7b8a"
+          },
+          "RelatedElements": [
+            {
+              "id": "59e39cbe-2a26-11ed-a381-cbf00eec5f00"
+            }
+          ],
+          "RelatingStructure": {
+            "id": "5786a10a-2a26-11ed-a381-33cd4b8a3316"
+          }
+        },
+        {
+          "id": "7b9cbe62-2a26-11ed-a381-5b608a7fda8b",
+          "Name": "Physical model",
+          "GlobalId": "1ciBRu_3qHxAXlw2f4ZOUQ",
+          "Description": null,
+          "OwnerHistory": {
+            "id": "7b7c25ee-2a26-11ed-a381-773e5576e45b"
+          },
+          "RelatedElements": [
+            {
+              "id": "7b9542c2-2a26-11ed-a381-57bd644d35e7"
+            }
+          ],
+          "RelatingStructure": {
+            "id": "7b8ca108-2a26-11ed-a381-8b425e592bb2"
+          }
+        }
+      ],
+      "IfcTemperatureRateOfChangeMeasure": [],
+      "IfcThermodynamicTemperatureMeasure": [],
+      "IfcModulusOfSubgradeReactionMeasure": [],
+      "IfcIsothermalMoistureCapacityMeasure": [],
+      "IfcThermalExpansionCoefficientMeasure": [
+        {
+          "id": "4fc24528-2a26-11ed-a381-7b3849a72db0",
+          "IfcThermalExpansionCoefficientMeasure": 1.2e-05
+        },
+        {
+          "id": "7b6a1e76-2a26-11ed-a381-ff162c72ade2",
+          "IfcThermalExpansionCoefficientMeasure": 1.2e-05
+        }
+      ],
+      "IfcLuminousIntensityDistributionMeasure": [],
+      "IfcModulusOfLinearSubgradeReactionMeasure": [],
+      "IfcModulusOfRotationalSubgradeReactionMeasure": []
+    }
+  ]
+}

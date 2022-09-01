@@ -13,8 +13,8 @@ def mock_db_name():
 
 
 @pytest.fixture
-def cube_ifc_str(ifc_files_dir, mock_db_name):
-    ifc_io = IfcIO(ifc_files_dir / "MyCube.ifc")
+def cube_ifc_str(files_dir, mock_db_name):
+    ifc_io = IfcIO(files_dir / "MyCube.ifc")
 
     with EdgeIO(db_schema_dir=f"temp/{mock_db_name}/dbschema", ifc_schema="IFC4x1", database=mock_db_name) as io:
         io.create_schema_from_ifc_file(ifc_path=ifc_io.ifc_file)
