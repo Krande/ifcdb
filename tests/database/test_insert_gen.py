@@ -1,8 +1,9 @@
+from itertools import count
+
 import ifcopenshell
 
-from ifcdb.database.base import EntityResolver, Entity
+from ifcdb.database.base import Entity, EntityResolver
 from ifcdb.io.ifc.optimizing import general_optimization
-from itertools import count
 
 
 def test_insert_beam(my_beam_w_holes_ifc):
@@ -28,7 +29,8 @@ def test_insert_beam(my_beam_w_holes_ifc):
     # Adding a single ifc element should return UUID for use later
     bm: ifcopenshell.entity_instance = my_beam_w_holes_optimized.by_type("IfcBeam")[0]
 
-    res = my_beam_w_holes_optimized.get_inverse(bm)
+    _ = my_beam_w_holes_optimized.get_inverse(bm)
+
     insert_entity = er.create_insert_entity(bm)
     assert frozenset(insert_entity.props) == frozenset(
         {
@@ -39,8 +41,7 @@ def test_insert_beam(my_beam_w_holes_ifc):
             "Tag": "MyBeam",
         }
     )
-    _ = insert_entity.to_str()
-    insert_str = er.create_entity_insert_str(bm)
-    er.uuid_map[bm] = Entity("IfcBeam", uuid="a_random_uuid_replacement_for_IfcBeam")
+    insert_str = insert_entity.to_str()
 
+    er.uuid_map[bm] = Entity("IfcBeam", uuid="a_random_uuid_replacement_for_IfcBeam")
     print(insert_str)
