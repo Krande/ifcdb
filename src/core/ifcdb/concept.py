@@ -101,7 +101,9 @@ class EdgeIO:
         related_entities = self.schema_model.get_related_entities(unique_entities)
         self.schema_model.to_esdl_file(esdl_file_path, related_entities, module_name)
 
-    def insert_ifc(self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, limit_ifc_ids: list[int] = None) -> IfcIO:
+    def insert_ifc(
+        self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, limit_ifc_ids: list[int] = None
+    ) -> IfcIO:
         """Upload all IFC elements to EdgeDB instance"""
         ifc_io = IfcIO(ifc_file=ifc_file_path, ifc_str=ifc_file_str)
         ifc_items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()

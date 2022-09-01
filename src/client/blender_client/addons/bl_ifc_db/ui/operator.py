@@ -1,25 +1,16 @@
 from __future__ import annotations
 
-import pathlib
-
 import bpy
+import logging
 import ifcopenshell.api
+import ifcopenshell.util.element
 import os
+import pathlib
 import requests
-from bpy.app.handlers import persistent
-
-import blenderbim.core.project as core
-import blenderbim.tool as tool
-from blenderbim.bim.ifc import IfcStore
-from blenderbim.bim.module.model import product
-
 import tempfile
 
-@persistent
-def load_post(*args):
-    ifcopenshell.api.add_post_listener(
-        "geometry.add_representation", "BlenderBIM.Product.GenerateBox", product.generate_box
-    )
+import blenderbim.tool as tool
+from blenderbim.bim.ifc import IfcStore
 
 
 def run_listener():
@@ -27,7 +18,7 @@ def run_listener():
         from azure.storage.queue import QueueClient
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
-            "Unable to find Azure Storage Queue package. " "Please install using pip install azure-storage-queue"
+            "Unable to find Azure Storage Queue package. Please install using 'pip install azure-storage-queue'"
         )
 
     QueueClient.from_connection_string(os.environ.get("AZ_QUEUE_CONN_STR"), os.environ.get("AZ_QUEUE_NAME"))
@@ -67,34 +58,15 @@ class IfcDb_Login_Operator(bpy.types.Operator):
         props = context.scene.IfcDb_Connection_Props
 
         s = create_session(context)
+
         # Use token to query the REST /users endpoint to add user as IfcPerson to IfcDb and return the class as json
         r = s.post(f"{props.conn_api_url}/users", params={"dbname": props.db_name})
         user_data = r.json()
 
-        # Initialize a project
-        IfcStore.begin_transaction(self)
-        IfcStore.add_transaction_operation(self, rollback=self.rollback, commit=lambda data: True)
-        self._execute(context)
-        self.transaction_data = {"file": tool.Ifc.get()}
-        IfcStore.add_transaction_operation(self, rollback=lambda data: True, commit=self.commit)
-        IfcStore.end_transaction(self)
-
-        ifc = IfcStore.get_file()
-        person = ifc.createIfcPerson(**user_data)
-        bpy.context.scene.BIMOwnerProperties.active_person_id = person.id()
+        props.username = user_data["FamilyName"]
+        props.identification = user_data["Identification"]
 
         return {"FINISHED"}
-
-    def _execute(self, context):
-        props = context.scene.BIMProjectProperties
-        template = None if props.template_file == "0" else props.template_file
-        core.create_project(tool.Ifc, tool.Project, schema=props.export_schema, template=template)
-
-    def rollback(self, data):
-        IfcStore.file = None
-
-    def commit(self, data):
-        IfcStore.file = data["file"]
 
 
 class IfcDb_Pull_Operator(bpy.types.Operator):
@@ -103,7 +75,6 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
     bl_description = "Pull"
 
     def execute(self, context):
-        print("Pulling of IFC data should start now")
         props = context.scene.IfcDb_Connection_Props
         api_url = props.conn_api_url
         s = create_session(context)
@@ -111,34 +82,61 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
             return {"FINISHED"}
 
         r = s.get(f"{api_url}/file", params={"dbname": props.db_name})
-        ifc_str = str(r.content[1:-1], encoding="utf8").replace(r'\n', '\n')
-        IfcStore.purge()
+        ifc_str = str(r.content[1:-1], encoding="utf8").replace(r"\n", "\n")
+
+        if IfcStore.file is None:
+            self.load_new_project(context, ifc_str, props)
+        else:
+            self.merge_into_existing_project(context, ifc_str, props)
+
+        return {"FINISHED"}
+
+    def load_new_project(self, context, ifc_str, props):
         temp_dir = tempfile.gettempdir()
-        tmp_file = pathlib.Path(temp_dir) / 'temp.ifc'
-        print(f'Writing to "{tmp_file}"')
-        with open(tmp_file, 'w') as f:
+        tmp_file = pathlib.Path(temp_dir) / "temp.ifc"
+
+        print(f'Writing to temporary IFC file "{tmp_file}"')
+        with open(tmp_file, "w") as f:
             f.write(ifc_str)
 
         tmp_file = str(tmp_file)
         IfcStore.load_file(tmp_file)
+
         context.scene.BIMProperties.ifc_file = tmp_file
         context.scene.BIMProjectProperties.is_loading = True
         context.scene.BIMProjectProperties.total_elements = len(tool.Ifc.get().by_type("IfcElement"))
 
+        ifc: ifcopenshell.file = IfcStore.get_file()
+        people = {ifcp.Identification: ifcp for ifcp in ifc.by_type("IfcPerson")}
+
+        current_user = people.get(props.identification, None)
+        if current_user is None:
+            current_user = ifc.createIfcPerson(FamilyName=props.username, Identification=props.identification)
+        else:
+            print(f'user "{current_user.Identification}" already exists in DB')
+
+        bpy.context.scene.BIMOwnerProperties.active_person_id = current_user.id()
+
         bpy.ops.bim.load_project_elements()
-        # bpy.ops.bim.load_project(filepath=str(tmp_file))
-        # IfcStore.load_file(tmp_file)
-        # new_ifc = ifcopenshell.file.from_string(r.text)
-        # ifc: ifcopenshell.file = IfcStore.get_file()
-        #
-        # for elem in new_ifc:
-        #     print(f'adding "elem"')
-        #     ifc.add(elem)
 
-        # bpy.ops.bim.load_project_elements()
-        # print("REST RESPONSE: " + r.text)
+    def merge_into_existing_project(self, context, ifc_str, props):
+        print("Updating model with latest data from IFC DB")
+        fold: ifcopenshell.file = IfcStore.get_file()
+        fnew = ifcopenshell.file.from_string(ifc_str)
+        # For now loop over rooted elements and
+        original_project = fold.by_type("IfcProject")[0]
+        merged_project = fold.add(fold.by_type("IfcProject")[0])
 
-        return {"FINISHED"}
+        compare_ifcopenshell_objects_element_by_element(fold, fnew)
+
+        for element in fnew.by_type("IfcRoot"):
+            print(f'Adding element "{element}"')
+            existing_element = fold.by_guid(element.GlobalId)
+            if existing_element is None:
+                fold.add(element)
+            else:
+                ifcopenshell.util.element.replace_attribute(existing_element, merged_project, original_project)
+            print(f"element: {element}, existing: {existing_element}")
 
 
 class IfcDb_Push_Operator(bpy.types.Operator):
@@ -199,3 +197,41 @@ def push_objects():
                 verts.append(tuple(vert.undeformed_co))
             for face in mesh.polygons:
                 faces.append(tuple(face.vertices))
+
+
+def fingerprint(file: ifcopenshell.file):
+    get_info_props = dict(include_identifier=False, recursive=True, return_type=frozenset)
+    return frozenset(inst.get_info(**get_info_props) for inst in file)
+
+
+def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: ifcopenshell.file):
+    results = sorted(fingerprint(f1).symmetric_difference(fingerprint(f2)), key=lambda x: len(str(x)))
+
+    res = [set([name for name, value in result]) for result in results]
+
+    matches = []
+    i = 0
+    while i < len(res):
+        x = res[i]
+        for k, match_eval in enumerate(res):
+            if k == i or x != match_eval:
+                continue
+            found = tuple(sorted([i, k]))
+            if found not in matches:
+                matches.append(found)
+            break
+        i += 1
+
+    # Compare element by element
+    for a, b in matches:
+        m_a = {key: value for key, value in results[a]}
+        m_b = {key: value for key, value in results[b]}
+        ifc_class = m_a["type"]
+        for key, value in m_a.items():
+            other_val = m_b[key]
+            if isinstance(value, frozenset):
+                continue
+            if isinstance(value, tuple) and isinstance(value[0], frozenset):
+                continue
+            if other_val != value:
+                logging.error(f'Diff in Ifc Class "{ifc_class}" property: {key} := "{value}" != "{other_val}"')

@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 
-
+from shared import FILES, ADD_CLASSES
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
 
@@ -17,10 +17,4 @@ def main(database: str, ifc_schema: str, batch_size: int, ifc_files: list[str], 
 
 
 if __name__ == "__main__":
-    main(
-        "ifc001",
-        "IFC4x1",
-        50,
-        ["MyCube.ifc", "cube-advanced-brep.ifc", "tessellated-item.ifc", "MyBeamWithHoles.ifc"],
-        ["IfcTelecomAddress", "IfcMember", "IfcColumn", "IfcPerson", "IfcIndexedPolygonalFace"],
-    )
+    main("ifc001", "IFC4x1", 50, FILES, ADD_CLASSES)

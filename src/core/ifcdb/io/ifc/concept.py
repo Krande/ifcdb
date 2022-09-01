@@ -24,14 +24,17 @@ class IfcIO:
     ifc_str: str = None
     ifc_obj: ifcopenshell.file = None
     schema: str = None
+    optimize: bool = True
 
     def __post_init__(self):
         if self.ifc_file is not None:
             ifc_obj = ifcopenshell.open(str(self.ifc_file))
         else:
             ifc_obj = ifcopenshell.file.from_string(self.ifc_str)
-
-        self.ifc_obj = general_optimization(ifc_obj)
+        if self.optimize:
+            self.ifc_obj = general_optimization(ifc_obj)
+        else:
+            self.ifc_obj = ifc_obj
         self.schema = self.ifc_obj.wrapped_data.schema
 
     def get_ifc_dep_map(self, use_ids=True):
@@ -63,7 +66,7 @@ class IfcIO:
     def get_ifc_entities_from_multiple_ifcs(ifc_paths: list[str | pathlib.Path]) -> list[str]:
         ifc_ents = []
         for ifc_p in ifc_paths:
-            ifc_io = IfcIO(ifc_file=ifc_p)
+            ifc_io = IfcIO(ifc_file=ifc_p, optimize=False)
             res = ifc_io.get_unique_class_entities_of_ifc_content()
             res_set = set(res)
             ifc_ents_set = set(ifc_ents)

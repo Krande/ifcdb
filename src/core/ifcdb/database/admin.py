@@ -100,6 +100,7 @@ class DbMigration:
         specific_entities: list[str] = None,
         batch_size=100,
         module_name: str = "default",
+        begin_step: int = None,
     ):
         schema_model = IfcSchemaModel(ifc_schema)
         schema_model.modify_circular_deps = True
@@ -131,13 +132,17 @@ class DbMigration:
             for imc in schema_model.intermediate_classes.values():
                 imc.written_to_file = False
             current_schema += chunk
-            now = datetime.now().time().strftime('%H:%M:%S')
+            now = datetime.now().time().strftime("%H:%M:%S")
             print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities @ {now}")
             schema_model.to_esdl_file(esdl_file_path, current_schema, module_name)
+            if begin_step is not None:
+                if i < begin_step:
+                    print(f'skipping step {i}')
+                    continue
             self.migration_create()
             self.migration_apply()
             t_fin = time.time()
-            print(f"Completed migration in {t_fin - start:.1f} s")
+            print(f"Completed migration in {t_fin - start:.1f} s\n")
             start = t_fin
             shutil.copy(esdl_file_path, tmp_dir / f"esdl_file.{i}")
             with open(tmp_dir / f"chunk_{i}.txt", "w") as f:
@@ -173,7 +178,7 @@ class DbMigration:
     def _run_edgedb_cli(self, cmd_str, error_type: Type[Exception]):
         res = subprocess.run(cmd_str, cwd=self.dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")
         if res.stderr != "":
-            print(res.stderr)
+            print(res.stderr.strip())
             if "error: " in res.stderr:
                 raise error_type(res.stderr)
 

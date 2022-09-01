@@ -1,16 +1,14 @@
 from __future__ import annotations
 
+import ifcopenshell
 import logging
 from dataclasses import dataclass, field
 from itertools import count
-from typing import Any, ClassVar
-
-import ifcopenshell
+from typing import ClassVar
 
 from ifcdb.schema.model import (
     ArrayModel,
     AttributeModel,
-    EntityModel,
     IfcSchemaModel,
     IfcSchemaType,
     SelectModel,
@@ -36,33 +34,6 @@ class InsertBase:
     def __post_init__(self):
         if self.schema_model is None:
             self.schema_model = IfcSchemaModel(schema_version=self.ifc_schema)
-
-    def create_insert_entity(self, item: _IFC_ENTITY) -> InsertEntityModel:
-        entity = self.schema_model.get_entity_by_name(item.is_a())
-        all_atts = entity.get_entity_atts(item)
-        links = dict()
-        props = dict()
-        for j, att in enumerate(all_atts):
-            name = att.name
-            att_ref = att.get_type_ref()
-            res = getattr(item, name)
-            if isinstance(res, _IFC_ENTITY):
-                links[name] = self.create_insert_entity(res)
-            else:
-                if isinstance(att_ref, ArrayModel):
-                    ptype = att_ref.parameter_type
-                    if isinstance(ptype, EntityModel):
-                        result = []
-                        for r in res:
-                            output = self.create_insert_entity(r)
-                            result.append(output)
-
-                        links[name] = tuple(result)
-                        continue
-
-                props[name] = res
-
-        return InsertEntityModel(entity.name, props, links)
 
     def create_entity_insert_str(self, item: _IFC_ENTITY) -> str:
         entity = self.schema_model.get_entity_by_name(item.is_a())
@@ -220,34 +191,3 @@ class InsertBase:
 class WithRef:
     key: str
     insert_str: str
-
-
-@dataclass
-class FilterModel:
-    filter_prop: str
-
-
-@dataclass
-class InsertEntityModel:
-    name: str
-    props: dict[str, Any] = field(repr=False)
-    links: dict[str, InsertEntityModel] = field(repr=False)
-    filter: FilterModel = None
-
-    def props_str(self):
-        return ",\n".join([f"{key}:= {value}" for key, value in self.props.items()])
-
-    def links_str(self):
-        return ",\n".join([f"{key}:= {value.to_str()}" for key, value in self.links.items()])
-
-    def to_str(self):
-        prop_str = self.props_str()
-        links_str = ""
-        for key, value in self.links.items():
-            if isinstance(value, InsertEntityModel):
-                value = [value]
-
-            for v in value:
-                links_str += f"{key}:= ({v.to_str()})"
-
-        return f"INSERT {self.name} {{\n    {prop_str},{links_str} }};"

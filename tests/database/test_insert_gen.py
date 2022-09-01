@@ -1,5 +1,8 @@
-from ifcdb.database.inserts.sequentially import InsertSeq
+import ifcopenshell
+
+from ifcdb.database.base import EntityResolver, Entity
 from ifcdb.io.ifc.optimizing import general_optimization
+from itertools import count
 
 
 def test_insert_beam(my_beam_w_holes_ifc):
@@ -9,17 +12,24 @@ def test_insert_beam(my_beam_w_holes_ifc):
     assert start_entities == 179
     assert end_entities == 110
 
-    sq = InsertSeq("IFC4x1")
+    er = EntityResolver("IFC4x1")
+    skippable_classes = [
+        "IfcOwnerHistory",
+        "IfcObjectPlacement",
+        "IfcRepresentationContext",
+        "IfcRepresentationItem",
+    ]
 
-    for ifc_owner in my_beam_w_holes_optimized.by_type("IfcOwnerHistory"):
-        sq.uuid_map[ifc_owner] = "a_random_uuid_replacement_for_IfcOwner"
-        # insert_str = sq.create_entity_insert_str(ifc_owner)
-        # print(insert_str)
+    for skip_it in skippable_classes:
+        uuid_id_gen = count(1)
+        for ifc_owner in my_beam_w_holes_optimized.by_type(skip_it):
+            er.uuid_map[ifc_owner] = Entity(skip_it, uuid=f"a_random_uuid_replacement_for_IfcOwner{next(uuid_id_gen)}")
 
     # Adding a single ifc element should return UUID for use later
-    bm = my_beam_w_holes_optimized.by_type("IfcBeam")[0]
+    bm: ifcopenshell.entity_instance = my_beam_w_holes_optimized.by_type("IfcBeam")[0]
 
-    insert_entity = sq.create_insert_entity(bm)
+    res = my_beam_w_holes_optimized.get_inverse(bm)
+    insert_entity = er.create_insert_entity(bm)
     assert frozenset(insert_entity.props) == frozenset(
         {
             "GlobalId": "1Yi29q_3qHx8aIw2f4ZOUQ",
@@ -30,10 +40,7 @@ def test_insert_beam(my_beam_w_holes_ifc):
         }
     )
     _ = insert_entity.to_str()
-    insert_str = sq.create_entity_insert_str(bm)
-    sq.uuid_map[bm] = "a_random_uuid_replacement_for_IfcBeam"
+    insert_str = er.create_entity_insert_str(bm)
+    er.uuid_map[bm] = Entity("IfcBeam", uuid="a_random_uuid_replacement_for_IfcBeam")
 
     print(insert_str)
-
-    for item, my_beam_w_holes_optimized in sq.create_bulk_insert_str(list(my_beam_w_holes_optimized), silent=True):
-        print(my_beam_w_holes_optimized)
