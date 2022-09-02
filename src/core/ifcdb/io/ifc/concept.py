@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import ifcopenshell
 from toposort import toposort, toposort_flatten
@@ -21,7 +21,7 @@ from ifcdb.schema.model import (
 @dataclass
 class IfcIO:
     ifc_file: str | pathlib.Path = None
-    ifc_str: str = None
+    ifc_str: str = field(default=None, repr=False)
     ifc_obj: ifcopenshell.file = None
     schema: str = None
     optimize: bool = True
@@ -32,7 +32,11 @@ class IfcIO:
         else:
             ifc_obj = ifcopenshell.file.from_string(self.ifc_str)
         if self.optimize:
-            self.ifc_obj = general_optimization(ifc_obj)
+            try:
+                self.ifc_obj = general_optimization(ifc_obj)
+            except RuntimeError as e:
+                logging.error(e)
+                self.ifc_obj = ifc_obj
         else:
             self.ifc_obj = ifc_obj
         self.schema = self.ifc_obj.wrapped_data.schema
@@ -75,7 +79,7 @@ class IfcIO:
         return ifc_ents
 
     @staticmethod
-    def to_ifcopenshell_object(res: dict, ism: IfcSchemaModel) -> ifcopenshell.file:
+    def to_ifcopenshell_object(res: dict, ism: IfcSchemaModel, silent=True) -> ifcopenshell.file:
         """Convert the json results from a get_all() method to an ifcopenshell model object"""
         obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
         ordered_results = resolve_order_of_result_entities(obj_set, ism)
@@ -114,7 +118,7 @@ class IfcIO:
                             fix_props[key] = f.create_entity("IfcReal", value)
                         else:
                             fix_props[key] = value
-                elif ifc_class == 'IfcIndexedPolyCurve':
+                elif ifc_class == "IfcIndexedPolyCurve":
                     fix_props = dict()
                     fix_props.update(props)
                     for i, seg in enumerate(props["Segments"]):
@@ -133,12 +137,13 @@ class IfcIO:
             else:
                 ifc_id = None
 
-            if ifc_id is not None:
+            if ifc_id is not None and silent is False:
                 print(ifc_id)
 
             id_map[vid] = IfcNode(ifc_class, vid, props, ifc_id=ifc_id)
 
-        print(f"Number of EdgeDB objects with content = {len(obj_set.keys())}")
+        all_items = sum([len(x) for x in obj_set.values()])
+        print(f"Number of EdgeDB object types = {len(obj_set.keys())} and unique instance = {all_items}")
         return f
 
 

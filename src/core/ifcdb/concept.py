@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import edgedb
-import ifcopenshell
 import json
 import os
 import pathlib
 from dataclasses import dataclass
 from io import StringIO
+
+import edgedb
+import ifcopenshell
 
 from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import GetBulk
@@ -62,8 +63,9 @@ class EdgeIO:
         with DbConfig(self.database) as db_config:
             db_config.create_database()
 
-    def setup_database(self, delete_existing_migrations=False):
-        self.create_database()
+    def setup_database(self, delete_existing_migrations=False, create_new_database=True):
+        if create_new_database:
+            self.create_database()
         self._db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
 
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
@@ -76,6 +78,7 @@ class EdgeIO:
         self,
         ifc_path: str | pathlib.Path | list[str | pathlib.Path] = None,
         ifc_str: str = None,
+        ifc_io_obj: IfcIO = None,
         extra_entities: list[str] = None,
         module_name="default",
     ):
@@ -83,7 +86,7 @@ class EdgeIO:
         if isinstance(ifc_path, list):
             ifc_ents = self.get_entities_from_ifc_files(ifc_path)
         else:
-            ifc_io = IfcIO(ifc_file=ifc_path, ifc_str=ifc_str)
+            ifc_io = IfcIO(ifc_file=ifc_path, ifc_str=ifc_str) if ifc_io_obj is None else ifc_io_obj
             ifc_ents = ifc_io.get_unique_class_entities_of_ifc_content()
         if extra_entities is not None:
             ifc_ents += extra_entities

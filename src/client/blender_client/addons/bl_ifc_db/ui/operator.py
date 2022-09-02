@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import bpy
 import logging
-import ifcopenshell.api
-import ifcopenshell.util.element
 import os
 import pathlib
-import requests
 import tempfile
 
 import blenderbim.tool as tool
+import bpy
+import ifcopenshell.api
+import ifcopenshell.util.element
+import requests
 from blenderbim.bim.ifc import IfcStore
 
 
@@ -150,11 +150,17 @@ class IfcDb_Push_Operator(bpy.types.Operator):
         api_url = props.conn_api_url
 
         s = create_session(context)
-
-        ifc: ifcopenshell.file = IfcStore.get_file()
-        ifc_str = ifc.wrapped_data.to_string()
+        if IfcStore.path is None:
+            logging.warning("IFC project path not found. Please save project before attempting to push")
+            return {"FINISHED"}
         print(api_url)
-        r = s.post(f"{api_url}/file", params={"dbname": props.db_name, "ifc_file_str": ifc_str})
+        files = {"file": open(IfcStore.path, "rb")}
+        print(files)
+        r = s.post(f"{api_url}/fileb", params={"dbname": props.db_name}, files=files)
+
+        # ifc: ifcopenshell.file = IfcStore.get_file()
+        # ifc_str = ifc.wrapped_data.to_string()
+        # r = s.post(f"{api_url}/file", params={"dbname": props.db_name, "ifc_file_str": ifc_str})
         print("REST RESPONSE: " + r.text)
 
         return {"FINISHED"}

@@ -14,3 +14,4 @@ dependencies:
       - edgedb
       - fastapi-azure-auth
       - pydantic[dotenv]
+      - python-multipart

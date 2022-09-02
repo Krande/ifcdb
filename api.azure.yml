@@ -15,4 +15,4 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./azure.env
+      - ./.azure.env

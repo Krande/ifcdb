@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
+import os
+
 import uvicorn
 from app.dependencies import azure_scheme
 
 # For local dev you will have to add parent dir to source directory
 from app.internal import apiconfig
-from app.routers import entities, users, files
+from app.routers import entities, files, users
 from fastapi import APIRouter, FastAPI, Security
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -36,6 +39,9 @@ async def load_config() -> None:
     """
     Load OpenID config on startup.
     """
+    if os.getenv("OPENAPI_CLIENT_ID") is None:
+        logging.warning("Required env OPENAPI_CLIENT_ID was not found. Azure login will not work")
+        return None
     await azure_scheme.openid_config.load_config()
 
 
