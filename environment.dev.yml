@@ -22,3 +22,4 @@ dependencies:
       - pydantic[dotenv]
       - fake-bpy-module-3.2
       - anyio[trio]
+      - python-multipart
