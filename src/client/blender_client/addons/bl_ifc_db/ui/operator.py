@@ -150,9 +150,10 @@ class IfcDb_Push_Operator(bpy.types.Operator):
         api_url = props.conn_api_url
 
         s = create_session(context)
-        if IfcStore.path is None:
+        if IfcStore.file is None:
             logging.warning("IFC project path not found. Please save project before attempting to push")
             return {"FINISHED"}
+
         print(api_url)
         files = {"file": open(IfcStore.path, "rb")}
         print(files)

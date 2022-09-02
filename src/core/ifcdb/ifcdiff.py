@@ -31,7 +31,7 @@ from deepdiff import DeepDiff
 
 
 class IfcDiff:
-    def __init__(self, old_file, new_file, output_file, inverse_classes=None):
+    def __init__(self, old_file, new_file, output_file=None, inverse_classes=None):
         self.old_file = old_file
         self.new_file = new_file
         self.output_file = output_file
@@ -78,18 +78,16 @@ class IfcDiff:
         print(" - {} item(s) were changed either geometrically or with data".format(len(self.change_register.keys())))
         print("# Diff finished in {:.2f} seconds".format(time.time() - start))
 
+    def to_json(self):
+        return {
+            "added": list(self.added_elements),
+            "deleted": list(self.deleted_elements),
+            "changed": self.change_register,
+        }
+
     def export(self):
         with open(self.output_file, "w", encoding="utf-8") as diff_file:
-            json.dump(
-                {
-                    "added": list(self.added_elements),
-                    "deleted": list(self.deleted_elements),
-                    "changed": self.change_register,
-                },
-                diff_file,
-                indent=4,
-                cls=DiffEncoder,
-            )
+            json.dump(self.to_json(), diff_file, indent=4, cls=DiffEncoder)
 
     def load(self):
         print("Loading old file ...")

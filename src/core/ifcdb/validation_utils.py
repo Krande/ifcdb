@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 
 import ifcopenshell
 
@@ -66,7 +67,7 @@ def validate_ifc_objects(f1: ifcopenshell.file, f2: ifcopenshell.file):
     compare_ifcopenshell_objects_element_by_element(f1, f2)
 
     # This assertion does not work as intended
-    # assert fingerprint(f1) == fingerprint(f2)
+    assert fingerprint(f1) == fingerprint(f2)
 
 
 def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: ifcopenshell.file):
@@ -105,9 +106,49 @@ def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: i
 def validate_using_ifc_diff(
     f1: ifcopenshell.file,
     f2: ifcopenshell.file,
-    output_file: str,
+    output_file: str = None,
     inverse_classes: list[str] = None,
 ):
     ifc_diff = IfcDiff(f1, f2, output_file, inverse_classes)
     ifc_diff.diff()
-    ifc_diff.export()
+    return ifc_diff.to_json()
+
+
+@dataclass
+class ElDiff:
+    guid: str
+    diff: dict
+
+
+def element_validator(el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance) -> ElDiff:
+    diff = dict()
+    return ElDiff(el1.GlobalId, diff)
+
+
+def get_elem_ancestry(
+    f: ifcopenshell.file, el: ifcopenshell.entity_instance, ancestry: list[ifcopenshell.entity_instance] = None
+) -> list[ifcopenshell.entity_instance]:
+    if ancestry is None:
+        ancestry = []
+
+    inv = f.get_inverse(el)
+    for i in inv:
+        ancestry.append(i)
+        get_elem_ancestry(f, i, ancestry)
+
+    return ancestry
+
+
+def ifc_validator_v2(f1: ifcopenshell.file, f2: ifcopenshell.file):
+    """Go through element by element"""
+    for el in f1:
+        try:
+            identifier = el.GlobalId
+            other_el = f2.by_guid(identifier)
+        except AttributeError:
+            _ = get_elem_ancestry(f1, el)
+
+        result = element_validator(el, other_el)
+        if len(result.diff) == 0:
+            print(result)
+            continue

@@ -6,8 +6,8 @@ import pathlib
 import shutil
 import subprocess
 import time
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Type
 
 import edgedb
@@ -58,7 +58,7 @@ class DbConfig:
         except edgedb.errors.UnknownDatabaseError as e:
             logging.debug(e)
 
-        print(f"Creating database {self.database}")
+        print(f"Creating database {self.database}\n")
         self.client.execute(DB_CREATE.format(database=self.database))
 
     def delete_database(self, database: str = None):
@@ -120,7 +120,8 @@ class DbMigration:
 
         filtered_ents = list(filter(filter_out_enums, all_ents))
         chunks = []
-        for i in range(0, len(filtered_ents), batch_size):
+        n_ents = len(filtered_ents)
+        for i in range(0, n_ents, batch_size):
             chunks.append(filtered_ents[i : i + batch_size])
 
         current_schema = []
@@ -128,40 +129,39 @@ class DbMigration:
         tmp_dir = self.dbschema_dir / "_temp_dir"
         esdl_file_path = self.dbschema_dir / "default.esdl"
         os.makedirs(tmp_dir, exist_ok=True)
+        curr_size = 0
         for i, chunk in enumerate(chunks, start=1):
             for imc in schema_model.intermediate_classes.values():
                 imc.written_to_file = False
             current_schema += chunk
             now = datetime.now().time().strftime("%H:%M:%S")
-            print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities @ {now}")
+            curr_size += len(chunk)
+            print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities ({curr_size}/{n_ents}) @ {now}")
             schema_model.to_esdl_file(esdl_file_path, current_schema, module_name)
             if begin_step is not None:
                 if i < begin_step:
-                    print(f'skipping step {i}')
+                    print(f"skipping step {i}")
                     continue
             self.migration_create()
             self.migration_apply()
             t_fin = time.time()
             print(f"Completed migration in {t_fin - start:.1f} s\n")
             start = t_fin
+
             shutil.copy(esdl_file_path, tmp_dir / f"esdl_file.{i}")
             with open(tmp_dir / f"chunk_{i}.txt", "w") as f:
                 f.write("\n".join(chunk))
 
     def migration_create(self):
-        server_prefix = f"edgedb --database={self.database} migration create --non-interactive"
-        if self.schema_dir is not None:
-            server_prefix += f"--schema-dir ./{self.schema_dir}"
-        start_print = f'running: "{server_prefix}"'
-        if self.debug_logs:
-            start_print += f' "{server_prefix}" @"{self.dbschema_dir}"'
-
-        print(start_print)
-        self._run_edgedb_cli(server_prefix, MigrationCreateError)
+        self._migration_cmd("create --non-interactive", MigrationCreateError)
         print("migration create complete")
 
     def migration_apply(self):
-        server_prefix = f"edgedb --database={self.database} migration apply"
+        self._migration_cmd("apply", MigrationApplyError)
+        print("migration apply complete")
+
+    def _migration_cmd(self, migration_type: str, error_type: Type[Exception]):
+        server_prefix = f"edgedb --database={self.database} migration {migration_type}"
 
         if self.schema_dir is not None:
             server_prefix += f"--schema-dir ./{self.schema_dir}"
@@ -172,15 +172,16 @@ class DbMigration:
             start_print += f' "{server_prefix}" @"{self.dbschema_dir}"'
 
         print(start_print)
-        self._run_edgedb_cli(server_prefix, MigrationApplyError)
-        print("migration apply complete")
+        self._run_edgedb_cli(server_prefix, error_type)
 
-    def _run_edgedb_cli(self, cmd_str, error_type: Type[Exception]):
+    def _run_edgedb_cli(self, cmd_str, error_type: Type[Exception]) -> None:
         res = subprocess.run(cmd_str, cwd=self.dbschema_dir.parent, shell=True, capture_output=True, encoding="utf8")
-        if res.stderr != "":
-            print(res.stderr.strip())
-            if "error: " in res.stderr:
-                raise error_type(res.stderr)
+        if res.stderr == "":
+            return None
+
+        print(f'cli output -> "{res.stderr.strip()}"')
+        if "error: " in res.stderr:
+            raise error_type(res.stderr)
 
     @property
     def schema_dir(self):
