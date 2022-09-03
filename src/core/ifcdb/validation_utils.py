@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import ifcopenshell
 from deepdiff import DeepDiff
@@ -119,45 +119,49 @@ def validate_using_ifc_diff(
 class ElDiff:
     guid: str
     name: str
+    parent_class_name: str
     diff: dict
 
 
-def element_validator(el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance) -> ElDiff:
-    diff = dict()
-    info1 = el1.get_info(recursive=True, include_identifier=False)
-    info2 = el2.get_info(recursive=True, include_identifier=False)
-    res = DeepDiff(info1, info2)
-    changed_data = res.get("values_changed")
-    if changed_data is not None:
-        diff = changed_data
+@dataclass
+class IfcDiffTool:
+    guid_map: dict[str, dict] = field(default_factory=dict)
+    diffs: list[ElDiff] = field(default_factory=list)
 
-    return ElDiff(el1.GlobalId, el1.Name, diff)
+    def do_diffing(self, f1: ifcopenshell.file, f2: ifcopenshell.file):
+        """Compare 2 ifc files and return list of element diffs"""
+        guids1 = set(x.GlobalId for x in f1.by_type("IfcRoot"))
+        guids2 = set(x.GlobalId for x in f2.by_type("IfcRoot"))
+        res = guids2.difference(guids1)
+        for r in res:
+            if r in guids1:
+                el = f1.by_guid(r)
+                self.diffs.append(ElDiff(r, el.Name, el.is_a(), dict(is_removed=r)))
+            else:
+                el = f2.by_guid(r)
+                info = el.get_info(recursive=True, include_identifier=False)
+                self.diffs.append(ElDiff(r, el.Name, el.is_a(), dict(is_added=info)))
+
+        for el in f1.by_type("IfcRoot"):
+            result = self.element_validator(el, f2.by_guid(el.GlobalId))
+            if len(result.diff) == 0:
+                continue
+            self.diffs.append(result)
+
+    def element_validator(self, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance) -> ElDiff:
+        diff = dict()
+        info1 = el1.get_info(recursive=True, include_identifier=False)
+        info2 = el2.get_info(recursive=True, include_identifier=False)
+
+        res = DeepDiff(info1, info2)
+        keys = list(res)
+        if len(keys) > 0:
+            diff = {key: res[key] for key in keys}
+
+        return ElDiff(el1.GlobalId, el1.Name, el1.is_a(), diff)
 
 
-def get_elem_ancestry(
-    f: ifcopenshell.file, el: ifcopenshell.entity_instance, ancestry: list[ifcopenshell.entity_instance] = None
-) -> list[ifcopenshell.entity_instance]:
-    if ancestry is None:
-        ancestry = []
-
-    inv = f.get_inverse(el)
-    for i in inv:
-        ancestry.append(i)
-        get_elem_ancestry(f, i, ancestry)
-
-    return ancestry
-
-
-def ifc_validator_v2(f1: ifcopenshell.file, f2: ifcopenshell.file) -> list[ElDiff]:
-    """Go through element by element"""
-    diffs = list()
-    for el in f1.by_type("IfcRoot"):
-        identifier = el.GlobalId
-        other_el = f2.by_guid(identifier)
-
-        result = element_validator(el, other_el)
-        if len(result.diff) == 0:
-            continue
-        diffs.append(result)
-
-    return diffs
+def ifc_diff_tool(f1: ifcopenshell.file, f2: ifcopenshell.file) -> IfcDiffTool:
+    tool = IfcDiffTool()
+    tool.do_diffing(f1, f2)
+    return tool
