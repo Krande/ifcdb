@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 
 import ifcopenshell
+from deepdiff import DeepDiff
 
 from ifcdb.ifcdiff import IfcDiff
 
@@ -117,12 +118,20 @@ def validate_using_ifc_diff(
 @dataclass
 class ElDiff:
     guid: str
+    name: str
     diff: dict
 
 
 def element_validator(el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance) -> ElDiff:
     diff = dict()
-    return ElDiff(el1.GlobalId, diff)
+    info1 = el1.get_info(recursive=True, include_identifier=False)
+    info2 = el2.get_info(recursive=True, include_identifier=False)
+    res = DeepDiff(info1, info2)
+    changed_data = res.get("values_changed")
+    if changed_data is not None:
+        diff = changed_data
+
+    return ElDiff(el1.GlobalId, el1.Name, diff)
 
 
 def get_elem_ancestry(
@@ -139,16 +148,16 @@ def get_elem_ancestry(
     return ancestry
 
 
-def ifc_validator_v2(f1: ifcopenshell.file, f2: ifcopenshell.file):
+def ifc_validator_v2(f1: ifcopenshell.file, f2: ifcopenshell.file) -> list[ElDiff]:
     """Go through element by element"""
-    for el in f1:
-        try:
-            identifier = el.GlobalId
-            other_el = f2.by_guid(identifier)
-        except AttributeError:
-            _ = get_elem_ancestry(f1, el)
+    diffs = list()
+    for el in f1.by_type("IfcRoot"):
+        identifier = el.GlobalId
+        other_el = f2.by_guid(identifier)
 
         result = element_validator(el, other_el)
         if len(result.diff) == 0:
-            print(result)
             continue
+        diffs.append(result)
+
+    return diffs
