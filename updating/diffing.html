@@ -135,7 +135,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -216,7 +216,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -227,6 +227,131 @@
 <p><a class="reference internal" href="../index.html"><span class="doc std std-doc">Back to Main Page</span></a></p>
 <p>Ideally there should be a good <code class="docutils literal notranslate"><span class="pre">diffing</span></code> mechanism on local IFC content. So that whatever you have modified on your
 local IFC content is what you send back to the database and check for differences.</p>
+<section id="ifcdifftool">
+<h2>IfcDiffTool<a class="headerlink" href="#ifcdifftool" title="Permalink to this heading">#</a></h2>
+<p>An <code class="docutils literal notranslate"><span class="pre">IfcDiffTool</span></code> class has been created to compare 2 <code class="docutils literal notranslate"><span class="pre">ifcopenshell.file</span></code> objects and store element diffs in three
+lists; <code class="docutils literal notranslate"><span class="pre">changes</span></code>, <code class="docutils literal notranslate"><span class="pre">removed</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">added</span></code>.</p>
+<p>The general idea is to be able to apply the results from an instantiated IfcDiffTool after a diffing has been performed
+onto the original IFC file object or onto an EdgeDB database in order to apply the changes.</p>
+</section>
+<section id="update-examples">
+<h2>Update examples<a class="headerlink" href="#update-examples" title="Permalink to this heading">#</a></h2>
+<p>How do I make changes to nested properties using EdgeQL.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In the following examples some intermediate abstract classes have been removed for purposes of simplifying this example,
+and the classes shown here is therefore not following the IFC standard accurately</p>
+</div>
+<p>The property subject to change is an array float property &#64;index=2 on the <code class="docutils literal notranslate"><span class="pre">Coordinates</span></code> property in
+a <code class="docutils literal notranslate"><span class="pre">IfcCartesianPoint</span></code> class.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">IfcCartesianPoint</span> <span class="n">extending</span> <span class="n">IfcPoint</span> <span class="p">{</span>
+    <span class="n">required</span> <span class="nb">property</span> <span class="n">Coordinates</span> <span class="o">-&gt;</span> <span class="n">array</span><span class="o">&lt;</span><span class="n">float64</span><span class="o">&gt;</span><span class="p">{</span>
+        <span class="n">constraint</span> <span class="n">expression</span> <span class="n">on</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">__subject__</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">__subject__</span><span class="p">)</span> <span class="o">=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">__subject__</span><span class="p">)</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="p">};</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">IfcCartesianPoint</span></code> is a property attached quite far down a nested path from a “rooted” element type
+<code class="docutils literal notranslate"><span class="pre">IfcBuildingElementProxy</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">IfcBuildingElementProxy</span> <span class="n">extending</span> <span class="n">IfcProduct</span> <span class="p">{</span>
+    <span class="nb">property</span> <span class="n">PredefinedType</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="p">{</span>
+        <span class="n">constraint</span> <span class="n">one_of</span> <span class="p">(</span><span class="s1">&#39;COMPLEX&#39;</span><span class="p">,</span><span class="s1">&#39;ELEMENT&#39;</span><span class="p">,</span><span class="s1">&#39;NOTDEFINED&#39;</span><span class="p">,</span><span class="s1">&#39;PARTIAL&#39;</span><span class="p">,</span><span class="s1">&#39;PROVISIONFORSPACE&#39;</span><span class="p">,</span><span class="s1">&#39;PROVISIONFORVOID&#39;</span><span class="p">,</span><span class="s1">&#39;USERDEFINED&#39;</span><span class="p">);</span>
+    <span class="p">};</span>
+<span class="p">}</span>
+
+<span class="n">abstract</span> <span class="nb">type</span> <span class="n">IfcProduct</span> <span class="n">extending</span> <span class="n">IfcObject</span> <span class="p">{</span>
+    <span class="n">link</span> <span class="n">ObjectPlacement</span> <span class="o">-&gt;</span> <span class="n">IfcObjectPlacement</span><span class="p">;</span>
+    <span class="n">link</span> <span class="n">Representation</span> <span class="o">-&gt;</span> <span class="n">IfcProductRepresentation</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">abstract</span> <span class="nb">type</span> <span class="n">IfcProductRepresentation</span>  <span class="p">{</span>
+    <span class="nb">property</span> <span class="n">Name</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">;</span>
+    <span class="nb">property</span> <span class="n">Description</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">;</span>
+    <span class="n">required</span> <span class="n">multi</span> <span class="n">link</span> <span class="n">Representations</span> <span class="o">-&gt;</span> <span class="n">IfcRepresentation</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">abstract</span> <span class="nb">type</span> <span class="n">IfcRepresentation</span>  <span class="p">{</span>
+    <span class="n">required</span> <span class="n">link</span> <span class="n">ContextOfItems</span> <span class="o">-&gt;</span> <span class="n">IfcRepresentationContext</span><span class="p">;</span>
+    <span class="nb">property</span> <span class="n">RepresentationIdentifier</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">;</span>
+    <span class="nb">property</span> <span class="n">RepresentationType</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">;</span>
+    <span class="n">required</span> <span class="n">multi</span> <span class="n">link</span> <span class="n">Items</span> <span class="o">-&gt;</span> <span class="n">IfcRepresentationItem</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">abstract</span> <span class="nb">type</span> <span class="n">IfcRepresentationItem</span>  <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="nb">type</span> <span class="n">IfcExtrudedAreaSolid</span> <span class="n">extending</span> <span class="n">IfcSweptAreaSolid</span> <span class="p">{</span>
+    <span class="n">required</span> <span class="n">link</span> <span class="n">ExtrudedDirection</span> <span class="o">-&gt;</span> <span class="n">IfcDirection</span><span class="p">;</span>
+    <span class="n">required</span> <span class="nb">property</span> <span class="n">Depth</span> <span class="o">-&gt;</span> <span class="n">float64</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">abstract</span> <span class="nb">type</span> <span class="n">IfcSweptAreaSolid</span> <span class="n">extending</span> <span class="n">IfcSolidModel</span> <span class="p">{</span>
+    <span class="n">required</span> <span class="n">link</span> <span class="n">SweptArea</span> <span class="o">-&gt;</span> <span class="n">IfcProfileDef</span><span class="p">;</span>
+    <span class="n">link</span> <span class="n">Position</span> <span class="o">-&gt;</span> <span class="n">IfcAxis2Placement3D</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nb">type</span> <span class="n">IfcAxis2Placement3D</span> <span class="n">extending</span> <span class="n">IfcPlacement</span> <span class="p">{</span>
+    <span class="n">link</span> <span class="n">Axis</span> <span class="o">-&gt;</span> <span class="n">IfcDirection</span><span class="p">;</span>
+    <span class="n">link</span> <span class="n">RefDirection</span> <span class="o">-&gt;</span> <span class="n">IfcDirection</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">abstract</span> <span class="nb">type</span> <span class="n">IfcPlacement</span> <span class="n">extending</span> <span class="n">IfcGeometricRepresentationItem</span> <span class="p">{</span>
+    <span class="n">required</span> <span class="n">link</span> <span class="n">Location</span> <span class="o">-&gt;</span> <span class="n">IfcCartesianPoint</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>So in my first attempt I thought I could simply filter the desired root class and set the property directly like this</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UPDATE</span> <span class="n">IfcBuildingElementProxy</span> <span class="n">FILTER</span> <span class="o">.</span><span class="n">GlobalId</span><span class="o">=&lt;</span><span class="nb">str</span><span class="o">&gt;</span><span class="s1">&#39;2JEeZJAlH7Q8pJnuvrn79y&#39;</span>
+<span class="n">SET</span> <span class="p">{</span> 
+  <span class="n">Representation</span><span class="p">:</span> <span class="p">{</span> <span class="n">Representations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="p">{</span> <span class="n">Items</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="p">{</span> <span class="n">Position</span><span class="p">:</span> <span class="p">{</span> <span class="n">Location</span><span class="p">:</span> <span class="p">{</span> <span class="n">Coordinates</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=-</span><span class="mf">5.68906497955322</span><span class="p">,</span> <span class="p">}}}}}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>However, that failed with the following error:</p>
+<p><img alt="Array Update Attempt #1" src="../_images/edgedb_update_array_attempt1.png" /></p>
+<p>I then tried by massaging the syntax a little:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UPDATE</span> <span class="n">IfcBuildingElementProxy</span> <span class="n">FILTER</span> <span class="o">.</span><span class="n">GlobalId</span><span class="o">=&lt;</span><span class="nb">str</span><span class="o">&gt;</span><span class="s1">&#39;2JEeZJAlH7Q8pJnuvrn79y&#39;</span>
+<span class="n">SET</span> <span class="p">{</span> 
+  <span class="n">Representation</span><span class="o">.</span><span class="n">Representations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Position</span><span class="o">.</span><span class="n">Location</span><span class="o">.</span><span class="n">Coordinates</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=-</span><span class="mf">5.68906497955322</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>which didn’t like my <code class="docutils literal notranslate"><span class="pre">.</span></code> :(</p>
+<p><img alt="img.png" src="../_images/edgedb_update_array_attempt1_5.png" /></p>
+<p>Then inspired by a <a class="reference external" href="https://www.edgedb.com/docs/edgeql/update#with-blocks">with block example</a> from the docs I tried
+the following</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span>
+	<span class="n">point</span> <span class="o">:=</span> <span class="p">(</span><span class="n">select</span> <span class="n">IfcBuildingElementProxy</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">Representations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Position</span><span class="o">.</span><span class="n">Location</span> <span class="n">FILTER</span> <span class="o">.</span><span class="n">GlobalId</span><span class="o">=&lt;</span><span class="nb">str</span><span class="o">&gt;</span><span class="s1">&#39;2JEeZJAlH7Q8pJnuvrn79y&#39;</span><span class="p">)</span>
+<span class="n">update</span> <span class="n">IfcCartesianPoint</span>
+<span class="nb">set</span> <span class="p">{</span>
+	<span class="n">Coordinates</span> <span class="o">:=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mf">5.68906497955322</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>That resulted in a different error</p>
+<p><img alt="Array Update Attempt #1" src="../_images/edgedb_update_array_attempt2.png" /></p>
+<p>Then I tried a lot of different stuff and ended up with something that worked:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span>
+  <span class="n">point</span> <span class="o">:=</span> <span class="p">(</span><span class="n">select</span> <span class="p">(</span><span class="n">select</span> <span class="n">IfcBuildingElementProxy</span> <span class="n">FILTER</span> <span class="o">.</span><span class="n">GlobalId</span><span class="o">=&lt;</span><span class="nb">str</span><span class="o">&gt;</span><span class="s1">&#39;3vJeEVZYzA3vP81uCmY9l4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">Representations</span><span class="o">.</span><span class="n">Items</span><span class="p">[</span><span class="ow">is</span> <span class="n">IfcExtrudedAreaSolid</span><span class="p">]</span><span class="o">.</span><span class="n">Position</span><span class="o">.</span><span class="n">Location</span><span class="p">)</span>
+<span class="n">UPDATE</span> <span class="n">point</span>
+<span class="n">SET</span> <span class="p">{</span> 
+  <span class="n">Coordinates</span> <span class="o">:=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.68906497955322</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>But it only works because there is only 1 element in the <code class="docutils literal notranslate"><span class="pre">Representation</span></code> multi link and the 1 element of type
+<code class="docutils literal notranslate"><span class="pre">IfcExtrudedAreaSolid</span></code> in the <code class="docutils literal notranslate"><span class="pre">Items</span></code> multi link.</p>
+<p>What I would want to do is this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span>
+  <span class="n">point</span> <span class="o">:=</span> <span class="p">(</span><span class="n">select</span> <span class="p">(</span><span class="n">select</span> <span class="n">IfcBuildingElementProxy</span> <span class="n">FILTER</span> <span class="o">.</span><span class="n">GlobalId</span><span class="o">=&lt;</span><span class="nb">str</span><span class="o">&gt;</span><span class="s1">&#39;3vJeEVZYzA3vP81uCmY9l4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">Representations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Items</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="ow">is</span> <span class="n">IfcExtrudedAreaSolid</span><span class="p">]</span><span class="o">.</span><span class="n">Position</span><span class="o">.</span><span class="n">Location</span><span class="p">)</span>
+<span class="n">UPDATE</span> <span class="n">point</span>
+<span class="n">SET</span> <span class="p">{</span> 
+  <span class="n">Coordinates</span> <span class="o">:=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.68906497955322</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>I’ve asked the edgedb devs on help here. Hopefully I’ll get some answers!</p>
+</section>
 </section>
 
         </article>
@@ -274,8 +399,28 @@ local IFC content is what you send back to the database and check for difference
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Updating elements</a><ul>
+<li><a class="reference internal" href="#ifcdifftool">IfcDiffTool</a></li>
+<li><a class="reference internal" href="#update-examples">Update examples</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
