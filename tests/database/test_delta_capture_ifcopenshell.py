@@ -1,4 +1,5 @@
-from ifcdb.validation_utils import apply_diffs_ifcopenshell, ifc_diff_tool
+from ifcdb.diffing.concept import ifc_diff_tool
+from ifcdb.diffing.diff_ifcopen import apply_diffs_ifcopenshell
 
 
 def test_cube_edited(my_cube, my_cube_edited):
@@ -38,4 +39,32 @@ def test_cube_added(my_cube, my_cube_added):
 
     apply_diffs_ifcopenshell(my_cube, res)
 
-    # print(res)
+    diff_tool_2 = ifc_diff_tool(my_cube, my_cube_added)
+
+    assert len(diff_tool_2.changed) == 0
+    assert len(diff_tool_2.added) == 0
+    assert len(diff_tool_2.removed) == 0
+
+    # For debugging only
+    # with open("temp/export.ifc", "w") as f:
+    #     f.write(my_cube.wrapped_data.to_string())
+
+
+def test_cube_removed(my_cube_added, my_cube):
+    res = ifc_diff_tool(my_cube_added, my_cube)
+
+    assert len(res.added) == 0
+    assert len(res.changed) == 1
+    assert len(res.removed) == 1
+
+    apply_diffs_ifcopenshell(my_cube_added, res)
+
+    diff_tool_2 = ifc_diff_tool(my_cube_added, my_cube)
+
+    assert len(diff_tool_2.changed) == 0
+    assert len(diff_tool_2.added) == 0
+    assert len(diff_tool_2.removed) == 0
+
+    # For debugging only
+    # with open("temp/export.ifc", "w") as f:
+    #     f.write(my_cube.wrapped_data.to_string())
