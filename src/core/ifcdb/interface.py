@@ -82,18 +82,18 @@ class EdgeIO:
         extra_entities: list[str] = None,
         module_name="default",
     ):
-        esdl_file_path = self.db_schema_dir / "default.esdl"
         if isinstance(ifc_path, list):
             ifc_ents = self.get_entities_from_ifc_files(ifc_path)
         else:
             ifc_io = IfcIO(ifc_file=ifc_path, ifc_str=ifc_str) if ifc_io_obj is None else ifc_io_obj
             ifc_ents = ifc_io.get_unique_class_entities_of_ifc_content()
+
         if extra_entities is not None:
             ifc_ents += extra_entities
 
         related_entities = self.schema_model.get_related_entities(ifc_ents)
 
-        self.schema_model.to_esdl_file(esdl_file_path, related_entities, module_name)
+        self.schema_model.to_esdl_file(self.db_schema_dir / "default.esdl", related_entities, module_name)
 
     def create_schema(self, entities: list[str] = None, module_name="default"):
         if entities is None:
