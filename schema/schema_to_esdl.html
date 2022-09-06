@@ -237,7 +237,7 @@ schema.</p>
 
 <span class="n">ifc_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;files/tessellated-item.ifc&quot;</span><span class="p">)</span>
 
-<span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="s2">&quot;db/dbschema&quot;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s2">&quot;testdb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>  
+<span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="s2">&quot;db/dbschema&quot;</span><span class="p">,</span> <span class="n">database_name</span><span class="o">=</span><span class="s2">&quot;testdb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>  
     <span class="n">io</span><span class="o">.</span><span class="n">create_schema_from_ifc_file</span><span class="p">(</span><span class="n">ifc_path</span><span class="o">=</span><span class="n">ifc_path</span><span class="p">)</span>
     <span class="n">io</span><span class="o">.</span><span class="n">setup_database</span><span class="p">(</span><span class="n">delete_existing_migrations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
@@ -261,7 +261,7 @@ text size being too large.</p>
 <p>To create a schema using only specific IFC entities (and all related entities) it is possible to do the following.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ifcdb</span> <span class="kn">import</span> <span class="n">EdgeIO</span>
 
-<span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="s2">&quot;db/dbschema&quot;</span><span class="p">,</span> <span class="n">ifc_schema</span><span class="o">=</span><span class="s2">&quot;IFC4X1&quot;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s2">&quot;testdb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">EdgeIO</span><span class="p">(</span><span class="n">db_schema_dir</span><span class="o">=</span><span class="s2">&quot;db/dbschema&quot;</span><span class="p">,</span> <span class="n">ifc_schema</span><span class="o">=</span><span class="s2">&quot;IFC4X1&quot;</span><span class="p">,</span> <span class="n">database_name</span><span class="o">=</span><span class="s2">&quot;testdb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">io</span><span class="p">:</span>
     <span class="n">io</span><span class="o">.</span><span class="n">create_schema</span><span class="p">(</span><span class="n">entities</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;IfcQuantityArea&quot;</span><span class="p">])</span>
     <span class="n">io</span><span class="o">.</span><span class="n">setup_database</span><span class="p">(</span><span class="n">delete_existing_migrations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
