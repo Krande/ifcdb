@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("/file", status_code=HTTPStatus.CREATED, dependencies=[Security(azure_scheme)])
 async def get_file_str(dbname: str, class_filter: list[str] = None) -> str:
     client = get_client(database=dbname)
-    with EdgeIO(client=client, database=dbname) as io:
+    with EdgeIO(client=client, database_name=dbname) as io:
         return io.to_ifc_str(specific_classes=class_filter)
 
 

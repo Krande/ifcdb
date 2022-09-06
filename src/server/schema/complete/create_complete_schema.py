@@ -12,7 +12,7 @@ from ifcdb.validation_utils import (
 def main(ifc_file, validate_data=False):
     ifc_path = top_dir() / "files" / ifc_file
 
-    with EdgeIO(db_schema_dir="complete/dbschema", ifc_schema="IFC4x1", database="complete") as io:
+    with EdgeIO(db_schema_dir="complete/dbschema", ifc_schema="IFC4x1", database_name="complete") as io:
         io.create_schema_from_ifc_file(ifc_path=ifc_path)
         io.setup_database(delete_existing_migrations=True)
         io.insert_ifc()

@@ -16,7 +16,7 @@ def mock_db_name():
 def cube_ifc_str(files_dir, mock_db_name):
     ifc_io = IfcIO(files_dir / "MyCube.ifc")
 
-    with EdgeIO(db_schema_dir=f"temp/{mock_db_name}/dbschema", ifc_schema="IFC4x1", database=mock_db_name) as io:
+    with EdgeIO(db_schema_dir=f"temp/{mock_db_name}/dbschema", ifc_schema="IFC4x1", database_name=mock_db_name) as io:
         io.create_schema_from_ifc_file(ifc_path=ifc_io.ifc_file)
         io.setup_database(delete_existing_migrations=True)
 

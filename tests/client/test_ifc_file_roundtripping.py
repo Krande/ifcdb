@@ -27,7 +27,7 @@ def test_roundtrip_ifc_files_validation(files_dir, ifc_file_name):
 
     ifc_io = IfcIO(ifc_file)
 
-    with EdgeIO(db_schema_dir=db_schema_dir, database=db_name) as io:
+    with EdgeIO(db_schema_dir=db_schema_dir, database_name=db_name) as io:
         # Set up Schema & Database
         if io.database_exists() is False:
             io.create_schema_from_ifc_file(ifc_io_obj=ifc_io)

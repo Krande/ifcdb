@@ -9,7 +9,7 @@ load_dotenv()  # take environment variables from .env.
 
 def main(ifc_file: str, extra_ifc_classes: list[str] = None):
     ifc_path = top_dir() / "files" / ifc_file
-    with EdgeIO(database="small") as io:
+    with EdgeIO(database_name="small") as io:
         io.create_schema_from_ifc_file(ifc_path=ifc_path, extra_entities=extra_ifc_classes)
         io.setup_database(delete_existing_migrations=True)
 
