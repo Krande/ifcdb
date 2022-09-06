@@ -6,6 +6,8 @@ from enum import Enum
 import ifcopenshell
 from deepdiff import DeepDiff
 
+from ifcdb.entities import Entity, get_entity_from_source_dict
+
 
 class ChangeType(Enum):
     CHANGED = "changed"
@@ -19,6 +21,7 @@ class ElDiff:
     change_type: ChangeType
     class_name: str
     diff: dict
+    entity: Entity = None
 
 
 @dataclass
@@ -26,6 +29,7 @@ class IfcDiffTool:
     changed: list[ElDiff] = field(default_factory=list)
     added: list[ElDiff] = field(default_factory=list)
     removed: list[ElDiff] = field(default_factory=list)
+    schema_ver: str = "IFC4x1"
 
     def run(self, f1: ifcopenshell.file, f2: ifcopenshell.file):
         """Compare rooted elements in two ifc files and generate a list of element diffs"""
@@ -61,8 +65,9 @@ class IfcDiffTool:
         res = DeepDiff(info1, info2)
         keys = list(res)
         if len(keys) > 0:
+            entity = get_entity_from_source_dict(info1, schema_ver=self.schema_ver)
             # info2_ = el2.get_info(recursive=False, include_identifier=False)
-            return ElDiff(el1.GlobalId, ChangeType.CHANGED, el1.is_a(), {key: res[key] for key in keys})
+            return ElDiff(el1.GlobalId, ChangeType.CHANGED, el1.is_a(), {key: res[key] for key in keys}, entity)
 
         return None
 

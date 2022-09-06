@@ -2,7 +2,8 @@ from itertools import count
 
 import ifcopenshell
 
-from ifcdb.database.base import Entity, EntityResolver
+from ifcdb.database.inserts.utils import to_insert_str
+from ifcdb.entities import Entity, EntityResolver
 from ifcdb.io.ifc.optimizing import general_optimization
 
 
@@ -41,7 +42,8 @@ def test_insert_beam(my_beam_w_holes_ifc):
             "Tag": "MyBeam",
         }
     )
-    insert_str = insert_entity.to_insert_str()
 
     er.uuid_map[bm] = Entity("IfcBeam", uuid="a_random_uuid_replacement_for_IfcBeam")
+
+    insert_str = to_insert_str(insert_entity)
     print(insert_str)

@@ -1,7 +1,7 @@
 import edgedb
 
-from ifcdb.diffing.concept import ifc_diff_tool
 from ifcdb.diffing.diff_edgedb import apply_diffs_edgedb
+from ifcdb.diffing.tool import ifc_diff_tool
 
 
 def test_cube_edited(my_cube, my_cube_edited):

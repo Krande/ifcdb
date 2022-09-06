@@ -1,5 +1,5 @@
-from ifcdb.diffing.concept import ifc_diff_tool
 from ifcdb.diffing.diff_ifcopen import apply_diffs_ifcopenshell
+from ifcdb.diffing.tool import ifc_diff_tool
 
 
 def test_cube_edited(my_cube, my_cube_edited):

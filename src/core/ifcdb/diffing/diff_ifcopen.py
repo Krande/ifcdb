@@ -7,7 +7,7 @@ import ifcopenshell
 from deepdiff import DeepDiff
 
 if TYPE_CHECKING:
-    from ifcdb.diffing.concept import IfcDiffTool
+    from ifcdb.diffing.tool import IfcDiffTool
 
 
 _RE_COMP = re.compile(r"\[(.*?)\]")
