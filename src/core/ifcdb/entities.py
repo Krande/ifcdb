@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from itertools import count
 from typing import Any
 
 import ifcopenshell
 
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel
 
-_INSERT_COUNTER = count(start=1)
 _IFC_ENTITY = ifcopenshell.entity_instance
+
+
+def get_entity_from_source_dict(source: dict, schema_ver: str = "IFC4x1") -> Entity:
+    er = EntityResolver(schema_ver)
+    return er.create_insert_entity_from_ifc_dict(source)
+
+
+def get_entity_from_source_ifc_elem(item: _IFC_ENTITY, schema_ver: str = "IFC4x1") -> Entity:
+    er = EntityResolver(schema_ver)
+    return er.create_insert_entity_from_ifc_entity(item)
 
 
 @dataclass
@@ -82,26 +90,3 @@ class Entity:
     props: dict[str, Any] = field(repr=False, default_factory=dict)
     links: dict[str, Entity] = field(repr=False, default_factory=dict)
     uuid: str = None
-
-    def props_str(self):
-        return ",\n".join([f"{key}:= {value}" for key, value in self.props.items()])
-
-    def links_str(self):
-        links_str = ""
-        for key, value in self.links.items():
-            if isinstance(value, Entity):
-                value = [value]
-
-            for v in value:
-                if v.uuid is None:
-                    value_str = v.to_insert_str()
-                else:
-                    value_str = f'SELECT {v.name} filter .id = <uuid>"{v.uuid}"'
-                links_str += f"{key}:= ({value_str}),\n"
-        return links_str
-
-    def to_insert_str(self, with_map: dict = None):
-        prop_str = self.props_str()
-        links_str = self.links_str()
-
-        return f"INSERT {self.name} {{\n    {prop_str},\n{links_str} }};"
