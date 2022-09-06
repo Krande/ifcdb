@@ -35,4 +35,4 @@ class MockDb:
 
 @pytest.fixture
 def mock_db_my_beam_with_holes(files_dir) -> MockDb:
-    return MockDb(files_dir / "get_all_res.json")
+    return MockDb(files_dir / "MyBeamWithHoles_get_all_res.json")
