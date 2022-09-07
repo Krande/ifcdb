@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-import edgedb
 from dataclasses import dataclass, field
+from itertools import count
 from typing import TYPE_CHECKING, Any
 
-from itertools import count
+import edgedb
+
 from ifcdb.entities import Entity
 
 if TYPE_CHECKING:
     from ifcdb.diffing.tool import IfcDiffTool, ElDiff
 
+from ifcdb.database.select import EdgeFilter, EdgeSelect, FilterType
+
 from .diff_ifcopen import _RE_COMP
-from ifcdb.database.select import FilterType, EdgeFilter, EdgeSelect
 
 
 def dict_path_to_edgedb_path(path: str) -> str:
@@ -40,22 +42,50 @@ def remove_entity(elem: ElDiff):
 
 
 @dataclass
+class EntityUpdateValue:
+    value: Any
+    old_value: Any
+    key: str = None
+    index: int | None = None
+    len: int | None = None
+
+    def to_update_str(self) -> str:
+        edql_str = ""
+        if self.index is not None:
+            array_str = "["
+            for i in range(0, self.len):
+                if i != 0:
+                    array_str += ", "
+                if i == self.index:
+                    array_str += f"{self.value}"
+                else:
+                    array_str += f".{self.key}[{i}]"
+            array_str += "]"
+            edql_str += f"{self.key} := {array_str}\n"
+        else:
+            edql_str += f"{self.key} := {self.value}\n"
+
+        return edql_str
+
+
+@dataclass
 class EntityPropUpdate:
     root_object: Entity
     property_path: str = field(repr=False)
-    new_value: Any
+    update_value: EntityUpdateValue
+
+    selects: list[EdgeSelect] = field(default=None)
+    last_select: EdgeSelect = field(default=None)
 
     _levels: list[str] = field(default=None)
-
-    insert_key: str = None
-    # Only applicable if the insert key points to an array or tuple
-    insert_index: int | None = None
-    insert_len: int | None = None
 
     def __post_init__(self):
         res = [r.replace("'", "") for r in _RE_COMP.findall(self.property_path)]
         self._levels = [int(r) if r.isnumeric() else r for r in res]
         self.classes = self._get_classes_from_entity_subpath()
+        all_selects = self.resolve_selects()
+        self.selects = all_selects[:-1]
+        self.last_select = all_selects[-1]
 
     def _get_classes_from_entity_subpath(self, entity: Entity = None, classes: list[str] = None, lvl: int = 0):
         if entity is None:
@@ -82,10 +112,12 @@ class EntityPropUpdate:
                 raise ValueError("Unable to trace nested object path")
 
         if isinstance(sub_entity, Entity) is False:
-            self.insert_key = curr_level
+            insert_key = curr_level
+            self.update_value.key = insert_key
             if isinstance(next_level, int):
-                self.insert_index = next_level
-                self.insert_len = len(entity.links.get(curr_level))
+                self.update_value.index = next_level
+                self.update_value.len = len(entity.links.get(curr_level))
+
             return classes
 
         if next_level is not None:
@@ -113,9 +145,10 @@ class EntityPropUpdate:
         return chunks
 
     def resolve_selects(self):
-        root_class = self.root_object.name
         root_guid = self.root_object.props.get("GlobalId")
-        root_select = EdgeSelect("root", root_class, None, filter=EdgeFilter("GlobalId", root_guid, FilterType.STR))
+        root_select = EdgeSelect(
+            "root", self.root_object, None, filter=EdgeFilter("GlobalId", root_guid, FilterType.STR)
+        )
         select_objects = []
 
         prev_ref = root_select
@@ -149,23 +182,6 @@ class EntityPropUpdate:
 
         return [root_select] + select_objects
 
-    def to_update_str(self) -> str:
-        edql_str = ""
-        if self.insert_index is not None:
-            array_str = "["
-            for i in range(0, self.insert_len):
-                if i != 0:
-                    array_str += ", "
-                if i == self.insert_index:
-                    array_str += f"{self.new_value}"
-                else:
-                    array_str += f".{self.insert_key}[{i}]"
-            array_str += "]"
-            edql_str += f"{self.insert_key} := {array_str}\n"
-        else:
-            edql_str += f"{self.insert_key} := {self.new_value}\n"
-        return edql_str
-
 
 @dataclass
 class BulkEntityUpdate:
@@ -175,18 +191,18 @@ class BulkEntityUpdate:
     insert_items: list[EdgeSelect] = field(default_factory=list)
 
     def __post_init__(self):
-        self._create_global_with_statements()
+        self.insert_items = [u.last_select for u in self.updates]
+        self._resolve_global_with_statements()
 
     def _get_unique_entities(self) -> dict:
         unique_entity_paths = dict()
-        select_chunks = [update.resolve_selects() for update in self.updates]
-
+        select_chunks = [update.selects for update in self.updates]
         for update_list in select_chunks:
-            insert_item = update_list.pop(-1)
-            self.insert_items.append(insert_item)
-
             for prop_path in update_list:
-                entity_path = prop_path.entity_top.name
+                res = tuple(
+                    set([r.unique_name if isinstance(r, EdgeSelect) else r.name for r in prop_path.get_ancestry()])
+                )
+                entity_path = prop_path.entity_top.name + f"{res}"
                 if prop_path.entity_path is not None:
                     entity_path += f".{prop_path.entity_path}"
 
@@ -198,7 +214,7 @@ class BulkEntityUpdate:
 
         return unique_entity_paths
 
-    def _create_global_with_statements(self):
+    def _resolve_global_with_statements(self):
         unique_entity_paths = self._get_unique_entities()
         c = count(1)
         for key, value in sorted(unique_entity_paths.items(), key=lambda item: len(item[1]), reverse=True):
@@ -206,7 +222,7 @@ class BulkEntityUpdate:
                 self.local_with_selects[value[0].name] = value[0]
                 continue
 
-            names = set([v.name for v in value])
+            names = set([v.unique_name for v in value])
             if len(names) == 1:
                 common_obj = value[0]
                 name = common_obj.name
@@ -235,37 +251,39 @@ class BulkEntityUpdate:
         upc = count(1)
         for i, insert_item in enumerate(self.insert_items):
             ref_name = insert_item.entity_top
-            if ref_name not in self.global_with_selects.keys():
+            if ref_name.name not in self.global_with_selects.keys():
                 raise ValueError()
 
             update_name = f"update{next(upc)}"
             edql_str += indent + f"{update_name} := (\n"
 
             existing_with_select = self.global_with_selects.get(insert_item.name, None)
-            if existing_with_select is not None and insert_item.entity_path == existing_with_select.entity_path:
-                print('sd')
+            if existing_with_select is not None and insert_item.unique_name == existing_with_select.unique_name:
+                print("sd")
                 pass
             else:
                 edql_str += 2 * indent + f"with\n{3*indent}{insert_item.to_edql_str()}\n"
 
             edql_str += 2 * indent + f"UPDATE {insert_item.name}\n{2*indent}" + "SET {\n"
             prop_update = self.updates[i]
-            edql_str += 3*indent + prop_update.to_update_str()
+            edql_str += 3 * indent + prop_update.update_value.to_update_str()
             edql_str += 2 * indent + "}\n"
             edql_str += indent + "),\n"
 
-        edql_str += '}'
+        edql_str += "}"
         return edql_str
 
 
 def change_entity(client: edgedb.Client, elem: ElDiff) -> str:
     for diff_type, diff in elem.diff.items():
         if diff_type == "values_changed":
-            updates = [EntityPropUpdate(elem.entity, path, values["new_value"]) for path, values in diff.items()]
+            updates = [
+                EntityPropUpdate(elem.entity, path, EntityUpdateValue(values["new_value"], values["old_value"]))
+                for path, values in diff.items()
+            ]
             eu = BulkEntityUpdate(updates)
-            wstr = eu.global_with_str()
             edql_str = eu.to_edql_str()
-            print("s")
+            print(edql_str)
             # pp = PropPath(elem.entity, path, values["new_value"])
             # edql_str = pp.to_edql_update_str(values["new_value"])
             # query_strings.append(edql_str)
