@@ -1,204 +1,204 @@
 {
-  'spatial_stru': [
+  "spatial_stru": [
     {
-      'id': 'fb6d6d2a-f2be-11ec-ac74-23608326f6e7',
-      'RelatingStructure': {
-        'Name': 'Sublevel_1a_2a',
-        'id': 'f6980fd0-f2be-11ec-ac74-abe5fe6aa302',
-        '__type__': {
-          'name': 'default::IfcBuildingStorey'
+      "id": "fb6d6d2a-f2be-11ec-ac74-23608326f6e7",
+      "RelatingStructure": {
+        "Name": "Sublevel_1a_2a",
+        "id": "f6980fd0-f2be-11ec-ac74-abe5fe6aa302",
+        "__type__": {
+          "name": "default::IfcBuildingStorey"
         }
       },
-      'RelatedElements': [
+      "RelatedElements": [
         {
-          'Name': 'bm1_1',
-          'id': 'f96474a6-f2be-11ec-ac74-e796fcfa53d3',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm1_1",
+          "id": "f96474a6-f2be-11ec-ac74-e796fcfa53d3",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         },
         {
-          'Name': 'bm2_1',
-          'id': 'f9835114-f2be-11ec-ac74-d7a2757c5f6b',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm2_1",
+          "id": "f9835114-f2be-11ec-ac74-d7a2757c5f6b",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         }
       ]
     },
     {
-      'id': 'fc9bdab0-f2be-11ec-ac74-0f65b426d92f',
-      'RelatingStructure': {
-        'Name': 'Sublevel_1a_2b',
-        'id': 'f6e3a792-f2be-11ec-ac74-27c26b403536',
-        '__type__': {
-          'name': 'default::IfcBuildingStorey'
+      "id": "fc9bdab0-f2be-11ec-ac74-0f65b426d92f",
+      "RelatingStructure": {
+        "Name": "Sublevel_1a_2b",
+        "id": "f6e3a792-f2be-11ec-ac74-27c26b403536",
+        "__type__": {
+          "name": "default::IfcBuildingStorey"
         }
       },
-      'RelatedElements': [
+      "RelatedElements": [
         {
-          'Name': 'bm1_2',
-          'id': 'f9a3eb4a-f2be-11ec-ac74-cf1a95171902',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm1_2",
+          "id": "f9a3eb4a-f2be-11ec-ac74-cf1a95171902",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         },
         {
-          'Name': 'bm2_2',
-          'id': 'f9c2b6ba-f2be-11ec-ac74-6be716fe30f5',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm2_2",
+          "id": "f9c2b6ba-f2be-11ec-ac74-6be716fe30f5",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         }
       ]
     },
     {
-      'id': 'fdcf31e8-f2be-11ec-ac74-bf2dcb934d2b',
-      'RelatingStructure': {
-        'Name': 'Sublevel_1b_2a',
-        'id': 'f7545384-f2be-11ec-ac74-377646d4e02e',
-        '__type__': {
-          'name': 'default::IfcBuildingStorey'
+      "id": "fdcf31e8-f2be-11ec-ac74-bf2dcb934d2b",
+      "RelatingStructure": {
+        "Name": "Sublevel_1b_2a",
+        "id": "f7545384-f2be-11ec-ac74-377646d4e02e",
+        "__type__": {
+          "name": "default::IfcBuildingStorey"
         }
       },
-      'RelatedElements': [
+      "RelatedElements": [
         {
-          'Name': 'bm1_3',
-          'id': 'f9e27a2c-f2be-11ec-ac74-2b8d83347485',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm1_3",
+          "id": "f9e27a2c-f2be-11ec-ac74-2b8d83347485",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         },
         {
-          'Name': 'bm2_3',
-          'id': 'fa00671c-f2be-11ec-ac74-633752ac01a5',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm2_3",
+          "id": "fa00671c-f2be-11ec-ac74-633752ac01a5",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         }
       ]
     },
     {
-      'id': 'ff022282-f2be-11ec-ac74-0be0117d6d4f',
-      'RelatingStructure': {
-        'Name': 'Sublevel_1b_2b',
-        'id': 'f79ece32-f2be-11ec-ac74-734a465baf79',
-        '__type__': {
-          'name': 'default::IfcBuildingStorey'
+      "id": "ff022282-f2be-11ec-ac74-0be0117d6d4f",
+      "RelatingStructure": {
+        "Name": "Sublevel_1b_2b",
+        "id": "f79ece32-f2be-11ec-ac74-734a465baf79",
+        "__type__": {
+          "name": "default::IfcBuildingStorey"
         }
       },
-      'RelatedElements': [
+      "RelatedElements": [
         {
-          'Name': 'bm1_4',
-          'id': 'fa206256-f2be-11ec-ac74-ef1857ab559b',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm1_4",
+          "id": "fa206256-f2be-11ec-ac74-ef1857ab559b",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         },
         {
-          'Name': 'bm2_4',
-          'id': 'fa3f9342-f2be-11ec-ac74-8b6e0d71f3d5',
-          '__type__': {
-            'name': 'default::IfcBeam'
+          "Name": "bm2_4",
+          "id": "fa3f9342-f2be-11ec-ac74-8b6e0d71f3d5",
+          "__type__": {
+            "name": "default::IfcBeam"
           }
         }
       ]
     }
   ],
-  'rel_aggs': [
+  "rel_aggs": [
     {
-      'id': 'f64d4aea-f2be-11ec-ac74-4bd25461394f',
-      'RelatingObject': {
-        'Name': 'AdaProject',
-        'id': 'f2ef5848-f2be-11ec-ac74-d764e1155ac1',
-        '__type__': {
-          'name': 'default::IfcProject'
+      "id": "f64d4aea-f2be-11ec-ac74-4bd25461394f",
+      "RelatingObject": {
+        "Name": "AdaProject",
+        "id": "f2ef5848-f2be-11ec-ac74-d764e1155ac1",
+        "__type__": {
+          "name": "default::IfcProject"
         }
       },
-      'RelatedObjects': [
+      "RelatedObjects": [
         {
-          'Name': 'SpatialHierarchy1',
-          'id': 'eebd84e8-f2be-11ec-ac74-e7851f987412',
-          '__type__': {
-            'name': 'default::IfcSite'
+          "Name": "SpatialHierarchy1",
+          "id": "eebd84e8-f2be-11ec-ac74-e7851f987412",
+          "__type__": {
+            "name": "default::IfcSite"
           }
         }
       ]
     },
     {
-      'id': 'f67f10ac-f2be-11ec-ac74-97d8164f69c8',
-      'RelatingObject': {
-        'Name': 'SpatialHierarchy1',
-        'id': 'eebd84e8-f2be-11ec-ac74-e7851f987412',
-        '__type__': {
-          'name': 'default::IfcSite'
+      "id": "f67f10ac-f2be-11ec-ac74-97d8164f69c8",
+      "RelatingObject": {
+        "Name": "SpatialHierarchy1",
+        "id": "eebd84e8-f2be-11ec-ac74-e7851f987412",
+        "__type__": {
+          "name": "default::IfcSite"
         }
       },
-      'RelatedObjects': [
+      "RelatedObjects": [
         {
-          'Name': 'Sublevel_1_a',
-          'id': 'f33073d2-f2be-11ec-ac74-2bd20e0060cb',
-          '__type__': {
-            'name': 'default::IfcBuildingStorey'
+          "Name": "Sublevel_1_a",
+          "id": "f33073d2-f2be-11ec-ac74-2bd20e0060cb",
+          "__type__": {
+            "name": "default::IfcBuildingStorey"
           }
         },
         {
-          'Name': 'Sublevel_1_b',
-          'id': 'f4a55d40-f2be-11ec-ac74-4fba246c367c',
-          '__type__': {
-            'name': 'default::IfcBuildingStorey'
+          "Name": "Sublevel_1_b",
+          "id": "f4a55d40-f2be-11ec-ac74-4fba246c367c",
+          "__type__": {
+            "name": "default::IfcBuildingStorey"
           }
         }
       ]
     },
     {
-      'id': 'f7ff5fb8-f2be-11ec-ac74-871cc3c1d1e9',
-      'RelatingObject': {
-        'Name': 'Sublevel_1_a',
-        'id': 'f33073d2-f2be-11ec-ac74-2bd20e0060cb',
-        '__type__': {
-          'name': 'default::IfcBuildingStorey'
+      "id": "f7ff5fb8-f2be-11ec-ac74-871cc3c1d1e9",
+      "RelatingObject": {
+        "Name": "Sublevel_1_a",
+        "id": "f33073d2-f2be-11ec-ac74-2bd20e0060cb",
+        "__type__": {
+          "name": "default::IfcBuildingStorey"
         }
       },
-      'RelatedObjects': [
+      "RelatedObjects": [
         {
-          'Name': 'Sublevel_1a_2a',
-          'id': 'f6980fd0-f2be-11ec-ac74-abe5fe6aa302',
-          '__type__': {
-            'name': 'default::IfcBuildingStorey'
+          "Name": "Sublevel_1a_2a",
+          "id": "f6980fd0-f2be-11ec-ac74-abe5fe6aa302",
+          "__type__": {
+            "name": "default::IfcBuildingStorey"
           }
         },
         {
-          'Name': 'Sublevel_1a_2b',
-          'id': 'f6e3a792-f2be-11ec-ac74-27c26b403536',
-          '__type__': {
-            'name': 'default::IfcBuildingStorey'
+          "Name": "Sublevel_1a_2b",
+          "id": "f6e3a792-f2be-11ec-ac74-27c26b403536",
+          "__type__": {
+            "name": "default::IfcBuildingStorey"
           }
         }
       ]
     },
     {
-      'id': 'f8b88466-f2be-11ec-ac74-af2c16e587aa',
-      'RelatingObject': {
-        'Name': 'Sublevel_1_b',
-        'id': 'f4a55d40-f2be-11ec-ac74-4fba246c367c',
-        '__type__': {
-          'name': 'default::IfcBuildingStorey'
+      "id": "f8b88466-f2be-11ec-ac74-af2c16e587aa",
+      "RelatingObject": {
+        "Name": "Sublevel_1_b",
+        "id": "f4a55d40-f2be-11ec-ac74-4fba246c367c",
+        "__type__": {
+          "name": "default::IfcBuildingStorey"
         }
       },
-      'RelatedObjects': [
+      "RelatedObjects": [
         {
-          'Name': 'Sublevel_1b_2a',
-          'id': 'f7545384-f2be-11ec-ac74-377646d4e02e',
-          '__type__': {
-            'name': 'default::IfcBuildingStorey'
+          "Name": "Sublevel_1b_2a",
+          "id": "f7545384-f2be-11ec-ac74-377646d4e02e",
+          "__type__": {
+            "name": "default::IfcBuildingStorey"
           }
         },
         {
-          'Name': 'Sublevel_1b_2b',
-          'id': 'f79ece32-f2be-11ec-ac74-734a465baf79',
-          '__type__': {
-            'name': 'default::IfcBuildingStorey'
+          "Name": "Sublevel_1b_2b",
+          "id": "f79ece32-f2be-11ec-ac74-734a465baf79",
+          "__type__": {
+            "name": "default::IfcBuildingStorey"
           }
         }
       ]
