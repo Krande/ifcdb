@@ -4,7 +4,6 @@ import json
 import logging
 from dataclasses import dataclass
 
-from ifcdb.admin_utils import clean_name, walk_edge_results_and_make_uuid_map
 from ifcdb.database.builder import EQBuilder
 from ifcdb.database.getters.model import (
     EntityQueryModel,
@@ -16,6 +15,8 @@ from ifcdb.database.utils import (
     flatten_uuid_source,
     get_uuid_refs,
     insert_uuid_objects_from_source,
+    clean_name,
+    walk_edge_results_and_make_uuid_map,
 )
 from ifcdb.schema.model import EntityModel, EnumModel, IntermediateClass, SelectModel, TypeModel, IfcSchemaModel
 
@@ -84,7 +85,6 @@ class GetBulk:
         """Returns all OwnerHistory related objects as a flat dictionary dict[uuid:result]"""
         query_str = self.eq_builder.get_owner_history_str()
         return json.loads(self.client.query_single_json(query_str))
-
 
     def get_object_placements(self) -> dict:
         """Returns all related objects and properties needed to resolve locations of all IFC objects"""

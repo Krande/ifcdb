@@ -5,7 +5,7 @@ import pytest
 
 from ifcdb import EdgeIO
 from ifcdb.io.ifc import IfcIO
-from ifcdb.validation_utils import validate_ifc_objects
+from ifcdb.diffing.utils import validate_ifc_objects
 
 
 @pytest.mark.parametrize(

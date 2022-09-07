@@ -2,7 +2,7 @@ import os
 
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
-from ifcdb.validation_utils import (
+from ifcdb.diffing.utils import (
     validate_ifc_content,
     validate_ifc_objects,
     validate_using_ifc_diff,
