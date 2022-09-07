@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
+from shared import ADD_CLASSES, FILES
 
-from shared import FILES, ADD_CLASSES
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
 
@@ -13,7 +13,7 @@ def main(database: str, ifc_schema: str, batch_size: int, ifc_files: list[str], 
         entities = io.get_entities_from_ifc_files(ifc_paths)
         entities += extra_entities
         io.create_database()
-        io.stepwise_migration(ifc_schema_ver=ifc_schema, entities=entities, batch_size=batch_size)
+        io.stepwise_migration(ifc_schema_ver=ifc_schema, entities=entities, batch_size=batch_size, begin_step=None)
 
 
 if __name__ == "__main__":

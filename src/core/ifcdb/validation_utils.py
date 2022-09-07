@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import logging
 
 import ifcopenshell
 
-from ifcdb.ifcdiff import IfcDiff
+from ifcdb.diffing.ifcdiff import IfcDiff
 
 
 def validate_ifc_content(ofile: ifcopenshell.file, results: dict):
@@ -66,7 +68,7 @@ def validate_ifc_objects(f1: ifcopenshell.file, f2: ifcopenshell.file):
     compare_ifcopenshell_objects_element_by_element(f1, f2)
 
     # This assertion does not work as intended
-    # assert fingerprint(f1) == fingerprint(f2)
+    assert fingerprint(f1) == fingerprint(f2)
 
 
 def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: ifcopenshell.file):
@@ -105,9 +107,9 @@ def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: i
 def validate_using_ifc_diff(
     f1: ifcopenshell.file,
     f2: ifcopenshell.file,
-    output_file: str,
+    output_file: str = None,
     inverse_classes: list[str] = None,
 ):
     ifc_diff = IfcDiff(f1, f2, output_file, inverse_classes)
     ifc_diff.diff()
-    ifc_diff.export()
+    return ifc_diff.to_json()

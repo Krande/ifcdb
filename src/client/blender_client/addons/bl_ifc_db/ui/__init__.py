@@ -1,9 +1,10 @@
 import bpy
 
-from . import operator, panel, prop, handler
+from . import handler, operator, panel, prop
 
 classes = [
     # Props
+    prop.IfcDbChanges,
     prop.IfcDb_Connection_Props,
     # Operators
     operator.IfcDb_Login_Operator,

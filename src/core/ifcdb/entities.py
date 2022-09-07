@@ -1,14 +1,23 @@
 from __future__ import annotations
 
-import ifcopenshell
 from dataclasses import dataclass, field
-from itertools import count
 from typing import Any
+
+import ifcopenshell
 
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel
 
-_INSERT_COUNTER = count(start=1)
 _IFC_ENTITY = ifcopenshell.entity_instance
+
+
+def get_entity_from_source_dict(source: dict, schema_ver: str = "IFC4x1") -> Entity:
+    er = EntityResolver(schema_ver)
+    return er.create_insert_entity_from_ifc_dict(source)
+
+
+def get_entity_from_source_ifc_elem(item: _IFC_ENTITY, schema_ver: str = "IFC4x1") -> Entity:
+    er = EntityResolver(schema_ver)
+    return er.create_insert_entity_from_ifc_entity(item)
 
 
 @dataclass
@@ -23,7 +32,7 @@ class EntityResolver:
         if self.schema_model is None:
             self.schema_model = IfcSchemaModel(schema_version=self.ifc_schema)
 
-    def create_insert_entity(self, item: _IFC_ENTITY) -> Entity:
+    def create_insert_entity_from_ifc_entity(self, item: _IFC_ENTITY) -> Entity:
         existing_entity = self.uuid_map.get(item, None)
         if existing_entity is not None:
             return existing_entity
@@ -37,14 +46,14 @@ class EntityResolver:
             att_ref = att.get_type_ref()
             res = getattr(item, name)
             if isinstance(res, _IFC_ENTITY):
-                links[name] = self.create_insert_entity(res)
+                links[name] = self.create_insert_entity_from_ifc_entity(res)
             else:
                 if isinstance(att_ref, ArrayModel):
                     ptype = att_ref.parameter_type
                     if isinstance(ptype, EntityModel):
                         result = []
                         for r in res:
-                            output = self.create_insert_entity(r)
+                            output = self.create_insert_entity_from_ifc_entity(r)
                             result.append(output)
 
                         links[name] = tuple(result)
@@ -54,6 +63,26 @@ class EntityResolver:
 
         return Entity(entity.name, props, links)
 
+    def create_insert_entity_from_ifc_dict(self, source: dict):
+        props = dict()
+        links = dict()
+        class_type = source.pop("type")
+        for key, value in source.items():
+            if isinstance(value, dict):
+                links[key] = self.create_insert_entity_from_ifc_dict(value)
+            elif isinstance(value, tuple):
+                values = []
+                for val in value:
+                    if isinstance(val, dict):
+                        values.append(self.create_insert_entity_from_ifc_dict(val))
+                    else:
+                        values.append(val)
+                links[key] = tuple(values)
+            else:
+                props[key] = value
+
+        return Entity(class_type, props, links)
+
 
 @dataclass
 class Entity:
@@ -61,26 +90,3 @@ class Entity:
     props: dict[str, Any] = field(repr=False, default_factory=dict)
     links: dict[str, Entity] = field(repr=False, default_factory=dict)
     uuid: str = None
-
-    def props_str(self):
-        return ",\n".join([f"{key}:= {value}" for key, value in self.props.items()])
-
-    def links_str(self):
-        links_str = ""
-        for key, value in self.links.items():
-            if isinstance(value, Entity):
-                value = [value]
-
-            for v in value:
-                if v.uuid is None:
-                    value_str = v.to_str()
-                else:
-                    value_str = f'SELECT {v.name} filter .id = <uuid>"{v.uuid}"'
-                links_str += f"{key}:= ({value_str}),\n"
-        return links_str
-
-    def to_str(self, with_map: dict = None):
-        prop_str = self.props_str()
-        links_str = self.links_str()
-
-        return f"INSERT {self.name} {{\n    {prop_str},\n{links_str} }};"
