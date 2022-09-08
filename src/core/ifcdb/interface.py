@@ -15,6 +15,8 @@ from ifcdb.database.inserts.model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
+from ifcdb.diffing.diff_edgedb import apply_diffs_edgedb
+from ifcdb.diffing.tool import ifc_diff_tool
 
 
 @dataclass
@@ -123,6 +125,15 @@ class EdgeIO:
                 else:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
         return ifc_io
+
+    def update_db_from_ifc_delta(self, original_ifc, modified_ifc):
+        diff_tool = ifc_diff_tool(ifcopenshell.open(original_ifc), ifcopenshell.open(modified_ifc))
+        bulk_updates = apply_diffs_edgedb(diff_tool)
+        for bulk_update in bulk_updates:
+            edql_str = bulk_update.to_edql_str()
+            res = self.client.query(edql_str)
+            print(res)
+            break
 
     def to_ifcopenshell_object(
         self, specific_classes: list[str] = None, only_ifc_entities=True, client=None

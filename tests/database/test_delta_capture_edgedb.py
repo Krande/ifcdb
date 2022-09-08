@@ -12,17 +12,12 @@ def test_cube_edited(my_cube, my_cube_edited):
     assert len(diff_tool.removed) == 0
 
     # Use the apply_diffs_ifcopenshell to apply the diffs recorded by the diff_tool
-    apply_diffs_edgedb(edgedb.create_client(), diff_tool)
+    bulk_updates = apply_diffs_edgedb(diff_tool)
+    # for bulk_update in bulk_updates:
+    #     edql_str = bulk_update.to_edql_str()
+    #     print(edql_str)
 
-    diff_tool_2 = ifc_diff_tool(my_cube, my_cube_edited)
-
-    assert len(diff_tool_2.changed) == 0
-    assert len(diff_tool_2.added) == 0
-    assert len(diff_tool_2.removed) == 0
-
-    # For debugging only
-    # with open("temp/export.ifc", "w") as f:
-    #     f.write(my_cube.wrapped_data.to_string())
+    assert len(bulk_updates) == 2
 
 
 def test_cube_added(my_cube, my_cube_added):

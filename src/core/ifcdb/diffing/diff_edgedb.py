@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import edgedb
+import toposort
 from dataclasses import dataclass, field
 from itertools import count
-from typing import TYPE_CHECKING, Any
-
-import edgedb
+from typing import TYPE_CHECKING, Any, Iterable
 
 from ifcdb.entities import Entity
 
@@ -16,20 +16,32 @@ from ifcdb.database.select import EdgeFilter, EdgeSelect, FilterType
 from .diff_ifcopen import _RE_COMP
 
 
-def dict_path_to_edgedb_path(path: str) -> str:
-    res = _RE_COMP.findall(path)
+def clean_path_elem(elem: str) -> str | int:
+    elem = elem.replace("'", "")
+    if elem.isnumeric():
+        return int(elem)
+    else:
+        return elem
+
+
+def dict_path_to_iterable(path) -> Iterable:
+    return map(clean_path_elem, _RE_COMP.findall(path))
+
+
+def iterable_path_to_edgedb_path(path_iter: Iterable) -> str:
     path_str = ""
-    num_close = 0
-    for r in res:
-        prop = r.replace("'", "")
-        if prop.isnumeric():
-            path_str += f"[{prop}]"
+    for i, elem in enumerate(path_iter):
+        if isinstance(elem, int):
+            path_str += f"[{elem}]"
         else:
-            path_str += ": {"
-            num_close += 1
-            path_str += prop
-    path_str += num_close * "}"
+            if i != 0:
+                path_str += "."
+            path_str += elem
     return path_str
+
+
+def dict_path_to_edgedb_path(path: str) -> str:
+    return iterable_path_to_edgedb_path(dict_path_to_iterable(path))
 
 
 def add_entity(elem: ElDiff):
@@ -78,14 +90,10 @@ class EntityPropUpdate:
     last_select: EdgeSelect = field(default=None)
 
     _levels: list[str] = field(default=None)
+    _classes: list[str] = field(default=None)
 
     def __post_init__(self):
-        res = [r.replace("'", "") for r in _RE_COMP.findall(self.property_path)]
-        self._levels = [int(r) if r.isnumeric() else r for r in res]
-        self.classes = self._get_classes_from_entity_subpath()
-        all_selects = self.resolve_selects()
-        self.selects = all_selects[:-1]
-        self.last_select = all_selects[-1]
+        self._resolve_levels_and_classes()
 
     def _get_classes_from_entity_subpath(self, entity: Entity = None, classes: list[str] = None, lvl: int = 0):
         if entity is None:
@@ -132,7 +140,7 @@ class EntityPropUpdate:
     def _chunk_classes(self):
         chunks = []
         chunk = []
-        for i, (keys, class_name) in enumerate(self.classes):
+        for i, (keys, class_name) in enumerate(self._classes):
             if isinstance(keys, str):
                 chunk.append((keys, class_name))
             else:
@@ -143,6 +151,14 @@ class EntityPropUpdate:
         if len(chunk) > 0:
             chunks.append(chunk)
         return chunks
+
+    def _resolve_levels_and_classes(self):
+        res = [r.replace("'", "") for r in _RE_COMP.findall(self.property_path)]
+        self._levels = [int(r) if r.isnumeric() else r for r in res]
+        self._classes = self._get_classes_from_entity_subpath()
+        all_selects = self.resolve_selects()
+        self.selects = all_selects[:-1]
+        self.last_select = all_selects[-1]
 
     def resolve_selects(self):
         root_guid = self.root_object.props.get("GlobalId")
@@ -192,24 +208,15 @@ class BulkEntityUpdate:
 
     def __post_init__(self):
         self.insert_items = [u.last_select for u in self.updates]
-        self._resolve_global_with_statements()
 
-    def _get_unique_entities(self) -> dict:
+    def _get_unique_entities(self) -> dict[str, list[EdgeSelect]]:
         unique_entity_paths = dict()
         select_chunks = [update.selects for update in self.updates]
         for update_list in select_chunks:
             for prop_path in update_list:
-                res = tuple(
-                    set([r.unique_name if isinstance(r, EdgeSelect) else r.name for r in prop_path.get_ancestry()])
-                )
-                entity_path = prop_path.entity_top.name + f"{res}"
-                if prop_path.entity_path is not None:
-                    entity_path += f".{prop_path.entity_path}"
-
-                epath = entity_path + f"_{prop_path.entity_index}"
+                epath = prop_path.get_absolute_path()
                 if epath not in unique_entity_paths.keys():
                     unique_entity_paths[epath] = []
-
                 unique_entity_paths[epath].append(prop_path)
 
         return unique_entity_paths
@@ -217,27 +224,31 @@ class BulkEntityUpdate:
     def _resolve_global_with_statements(self):
         unique_entity_paths = self._get_unique_entities()
         c = count(1)
-        for key, value in sorted(unique_entity_paths.items(), key=lambda item: len(item[1]), reverse=True):
-            if len(value) == 1:
-                self.local_with_selects[value[0].name] = value[0]
+
+        # Define global variables
+        for key, value in unique_entity_paths.items():
+            name = f"obj{next(c)}"
+            first_entry = value.pop(0)
+            first_entry.name = name
+
+            self.global_with_selects[name] = first_entry
+
+        # resolve internal name references
+        path_ref_map = {value.get_absolute_path(): value for key, value in self.global_with_selects.items()}
+        value_changes = []
+        for key, value in self.global_with_selects.items():
+            if isinstance(value.entity_top, Entity):
                 continue
+            abs_path = value.entity_top.get_absolute_path()
+            existing_parent = path_ref_map.get(abs_path)
+            if existing_parent is not None and value.entity_top != existing_parent:
+                value_changes.append((value, existing_parent))
 
-            names = set([v.unique_name for v in value])
-            if len(names) == 1:
-                common_obj = value[0]
-                name = common_obj.name
-                if name in self.global_with_selects.keys():
-                    name = f"{common_obj.name}_{next(c)}"
-                    for v in value:
-                        v.name = name
-
-                self.global_with_selects[name] = common_obj
-            else:
-                raise ValueError()
-
-            print("sd")
+        for value, replacement in value_changes:
+            value.entity_top = replacement
 
     def global_with_str(self) -> str:
+        self._resolve_global_with_statements()
         global_wstr = "with\n"
         for key, value in self.global_with_selects.items():
             global_wstr += "    " + value.to_edql_str() + "\n"
@@ -246,23 +257,28 @@ class BulkEntityUpdate:
     def to_edql_str(self) -> str:
         edql_str = self.global_with_str() + "\n"
 
+        path_ref_map = {value.get_absolute_path(): value for key, value in self.global_with_selects.items()}
+
         edql_str += "SELECT {\n"
         indent = "    "
         upc = count(1)
         for i, insert_item in enumerate(self.insert_items):
-            ref_name = insert_item.entity_top
-            if ref_name.name not in self.global_with_selects.keys():
-                raise ValueError()
+            parent_abs_path = insert_item.entity_top.get_absolute_path()
+            parent_object = path_ref_map.get(parent_abs_path)
+
+            if insert_item.entity_top != parent_object:
+                insert_item.entity_top = parent_object
+
+            curr_abs_path = insert_item.get_absolute_path()
 
             update_name = f"update{next(upc)}"
             edql_str += indent + f"{update_name} := (\n"
 
-            existing_with_select = self.global_with_selects.get(insert_item.name, None)
-            if existing_with_select is not None and insert_item.unique_name == existing_with_select.unique_name:
-                print("sd")
-                pass
-            else:
+            existing_with_select = path_ref_map.get(curr_abs_path, None)
+            if existing_with_select is None:
                 edql_str += 2 * indent + f"with\n{3*indent}{insert_item.to_edql_str()}\n"
+            else:
+                insert_item.name = existing_with_select.name
 
             edql_str += 2 * indent + f"UPDATE {insert_item.name}\n{2*indent}" + "SET {\n"
             prop_update = self.updates[i]
@@ -274,25 +290,23 @@ class BulkEntityUpdate:
         return edql_str
 
 
-def change_entity(client: edgedb.Client, elem: ElDiff) -> str:
+def change_entity(elem: ElDiff) -> BulkEntityUpdate:
+    updates = []
     for diff_type, diff in elem.diff.items():
         if diff_type == "values_changed":
-            updates = [
+            # find_unique_selects(diff)
+            updates += [
                 EntityPropUpdate(elem.entity, path, EntityUpdateValue(values["new_value"], values["old_value"]))
                 for path, values in diff.items()
             ]
-            eu = BulkEntityUpdate(updates)
-            edql_str = eu.to_edql_str()
-            print(edql_str)
-            # pp = PropPath(elem.entity, path, values["new_value"])
-            # edql_str = pp.to_edql_update_str(values["new_value"])
-            # query_strings.append(edql_str)
-
-    # TODO: create a single compose statement and add client query execution code
-    raise NotImplementedError()
+    eu = BulkEntityUpdate(updates)
+    # edql_str = eu.to_edql_str()
+    # print(edql_str)
+    return eu
 
 
-def apply_diffs_edgedb(client: edgedb.Client, diff_tool: IfcDiffTool):
+def apply_diffs_edgedb(diff_tool: IfcDiffTool) -> list[BulkEntityUpdate]:
+    bulk_updates = []
     for diff_el in diff_tool.added:
         add_entity(diff_el)
 
@@ -300,4 +314,35 @@ def apply_diffs_edgedb(client: edgedb.Client, diff_tool: IfcDiffTool):
         remove_entity(diff_el)
 
     for diff_el in diff_tool.changed:
-        change_entity(client, diff_el)
+        bulk_updates.append(change_entity(diff_el))
+
+    # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
+    return bulk_updates
+
+
+
+def find_unique_selects(source: dict):
+    all_path_deps = dict()
+    value_keys = []
+    for key, value in source.items():
+        path = tuple(dict_path_to_iterable(key))
+        value_keys.append((path[-1], value))
+        all_prev = []
+        for p in path:
+            abs_path = iterable_path_to_edgedb_path(all_prev + [p])
+            parent_path = iterable_path_to_edgedb_path(all_prev)
+            if abs_path not in all_path_deps.keys():
+                all_path_deps[abs_path] = []
+            all_path_deps[abs_path].append(parent_path)
+            all_prev.append(p)
+
+    result_list = list(toposort.toposort(all_path_deps))
+
+    branches = []
+    for result_set in result_list:
+        if len(result_set) > 1:
+            branches.append(result_set)
+
+    # find common paths
+
+    print("sd")

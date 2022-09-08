@@ -33,14 +33,13 @@ class EdgeSelect:
     is_multi_link: bool = False
     filter: EdgeFilter = None
 
-    @property
-    def unique_name(self):
-        uname = self.entity_top.name
-        if self.entity_path is not None:
-            uname += f".{self.entity_path}"
+    def get_absolute_path(self) -> str:
+        if self.entity_path is None:
+            return self.entity_top.name
+        abs_path = f"{self.entity_top.get_absolute_path()}.{self.entity_path}"
         if self.entity_index is not None:
-            uname += f"[{self.entity_index}]"
-        return uname
+            abs_path += f"[{self.entity_index}]"
+        return abs_path
 
     def get_ancestry(self, ancestor=None, ancestors: list[Entity | EdgeSelect] = None):
         if ancestors is None:
@@ -48,10 +47,10 @@ class EdgeSelect:
         if ancestor is None:
             ancestor = self.entity_top
 
-        ancestors.append(ancestor)
-
         if isinstance(ancestor, Entity):
             return ancestors
+
+        ancestors.append(ancestor)
 
         self.get_ancestry(ancestor.entity_top, ancestors)
         return ancestors
