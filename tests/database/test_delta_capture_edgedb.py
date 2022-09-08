@@ -7,7 +7,7 @@ from ifcdb.diffing.tool import ifc_diff_tool
 def test_cube_edited(my_cube, my_cube_edited):
     diff_tool = ifc_diff_tool(my_cube, my_cube_edited)
 
-    assert len(diff_tool.changed) == 2
+    assert len(diff_tool.changed) == 1
     assert len(diff_tool.added) == 0
     assert len(diff_tool.removed) == 0
 
@@ -17,7 +17,10 @@ def test_cube_edited(my_cube, my_cube_edited):
     #     edql_str = bulk_update.to_edql_str()
     #     print(edql_str)
 
-    assert len(bulk_updates) == 2
+    assert len(bulk_updates) == 1
+
+    update1 = bulk_updates[0]
+    assert len(update1.insert_items) == 5
 
 
 def test_cube_added(my_cube, my_cube_added):
