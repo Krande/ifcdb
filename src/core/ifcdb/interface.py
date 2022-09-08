@@ -8,6 +8,7 @@ from io import StringIO
 
 import edgedb
 import ifcopenshell
+from dotenv import load_dotenv
 
 from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import GetBulk
@@ -28,10 +29,13 @@ class EdgeIO:
     ifc_schema: str = "IFC4x1"
     debug_log: bool = False
     schema_model: IfcSchemaModel = None
+    load_env: bool = False
 
     def __post_init__(self):
         self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
         self.schema_model = IfcSchemaModel(self.ifc_schema)
+        if self.load_env:
+            load_dotenv()
 
         if self.client is None:
             self.client = self.default_client()

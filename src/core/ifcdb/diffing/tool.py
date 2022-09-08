@@ -104,7 +104,8 @@ def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:
                         grand_parent[grand_parent_key] = tuple(list_copy)
                     else:
                         parent.pop(parent_key)
-            for key, value in d.items():
+            copy_d = copy.deepcopy(d)
+            for key, value in copy_d.items():
                 walk(value, parents + [d], keys + [key])
 
         elif isinstance(d, tuple):

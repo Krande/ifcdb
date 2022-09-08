@@ -1,5 +1,3 @@
-import edgedb
-
 from ifcdb.diffing.diff_edgedb import apply_diffs_edgedb
 from ifcdb.diffing.tool import ifc_diff_tool
 
@@ -30,7 +28,7 @@ def test_cube_added(my_cube, my_cube_added):
     assert len(diff_tool.changed) == 1
     assert len(diff_tool.removed) == 0
 
-    apply_diffs_edgedb(edgedb.create_client(), diff_tool)
+    _ = apply_diffs_edgedb(diff_tool)
 
     diff_tool_2 = ifc_diff_tool(my_cube, my_cube_added)
 
@@ -39,7 +37,7 @@ def test_cube_added(my_cube, my_cube_added):
     assert len(diff_tool_2.removed) == 0
 
     # For debugging only
-    # with open("temp/export.ifc", "w") as f:
+    # with open("temp/added.ifc", "w") as f:
     #     f.write(my_cube.wrapped_data.to_string())
 
 
@@ -50,7 +48,7 @@ def test_cube_removed(my_cube_added, my_cube):
     assert len(diff_tool.changed) == 1
     assert len(diff_tool.removed) == 1
 
-    apply_diffs_edgedb(edgedb.create_client(), diff_tool)
+    _ = apply_diffs_edgedb(diff_tool)
 
     diff_tool_2 = ifc_diff_tool(my_cube_added, my_cube)
 
@@ -59,5 +57,5 @@ def test_cube_removed(my_cube_added, my_cube):
     assert len(diff_tool_2.removed) == 0
 
     # For debugging only
-    # with open("temp/export.ifc", "w") as f:
+    # with open("temp/removed.ifc", "w") as f:
     #     f.write(my_cube.wrapped_data.to_string())
