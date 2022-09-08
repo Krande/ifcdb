@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-import edgedb
-import toposort
 from dataclasses import dataclass, field
 from itertools import count
 from typing import TYPE_CHECKING, Any, Iterable
 
-from ifcdb.entities import Entity
+import toposort
+
+from ifcdb.entities import Entity, EntityResolver
 
 if TYPE_CHECKING:
     from ifcdb.diffing.tool import IfcDiffTool, ElDiff
 
+from ifcdb.database.inserts.utils import to_insert_str
 from ifcdb.database.select import EdgeFilter, EdgeSelect, FilterType
 
 from .diff_ifcopen import _RE_COMP
@@ -45,12 +46,11 @@ def dict_path_to_edgedb_path(path: str) -> str:
 
 
 def add_entity(elem: ElDiff):
-    _ = "SELECT (INSERT"
-    raise NotImplementedError()
+    return EntityResolver.create_insert_entity_from_ifc_dict(elem.diff)
 
 
 def remove_entity(elem: ElDiff):
-    raise NotImplementedError()
+    return EntityResolver.create_insert_entity_from_ifc_dict(elem.diff)
 
 
 @dataclass
@@ -200,8 +200,31 @@ class EntityPropUpdate:
 
 
 @dataclass
+class BulkEntityRemoval:
+    entities: list[Entity]
+
+    def to_edql_str(self):
+        insert_str = ""
+        for entity in self.entities:
+            insert_str += to_insert_str(entity)
+        return insert_str
+
+
+@dataclass
+class BulkEntityInsert:
+    entities: list[Entity]
+
+    def to_edql_str(self):
+        insert_str = ""
+        for entity in self.entities:
+            insert_str += to_insert_str(entity)
+        return insert_str
+
+
+@dataclass
 class BulkEntityUpdate:
     updates: list[EntityPropUpdate]
+
     global_with_selects: dict[str, EdgeSelect] = field(default_factory=dict)
     local_with_selects: dict[str, EdgeSelect] = field(default_factory=dict)
     insert_items: list[EdgeSelect] = field(default_factory=list)
@@ -290,7 +313,7 @@ class BulkEntityUpdate:
         return edql_str
 
 
-def change_entity(elem: ElDiff) -> BulkEntityUpdate:
+def change_entity(elem: ElDiff) -> BulkEntityUpdate | None:
     updates = []
     for diff_type, diff in elem.diff.items():
         if diff_type == "values_changed":
@@ -299,26 +322,29 @@ def change_entity(elem: ElDiff) -> BulkEntityUpdate:
                 EntityPropUpdate(elem.entity, path, EntityUpdateValue(values["new_value"], values["old_value"]))
                 for path, values in diff.items()
             ]
+    if len(updates) == 0:
+        return None
     eu = BulkEntityUpdate(updates)
     # edql_str = eu.to_edql_str()
     # print(edql_str)
     return eu
 
 
-def apply_diffs_edgedb(diff_tool: IfcDiffTool) -> list[BulkEntityUpdate]:
+def create_edgedb_diff_objects(diff_tool: IfcDiffTool) -> list[BulkEntityUpdate | BulkEntityInsert | BulkEntityRemoval]:
     bulk_updates = []
     for diff_el in diff_tool.added:
-        add_entity(diff_el)
+        bulk_updates.append(add_entity(diff_el))
 
     for diff_el in diff_tool.removed:
-        remove_entity(diff_el)
+        bulk_updates.append(remove_entity(diff_el))
 
     for diff_el in diff_tool.changed:
-        bulk_updates.append(change_entity(diff_el))
+        change_object = change_entity(diff_el)
+        if change_object is not None:
+            bulk_updates.append(change_object)
 
     # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
     return bulk_updates
-
 
 
 def find_unique_selects(source: dict):

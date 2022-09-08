@@ -63,18 +63,21 @@ class EntityResolver:
 
         return Entity(entity.name, props, links)
 
-    def create_insert_entity_from_ifc_dict(self, source: dict):
+    @staticmethod
+    def create_insert_entity_from_ifc_dict(source: dict):
         props = dict()
         links = dict()
+
         class_type = source.pop("type")
+
         for key, value in source.items():
             if isinstance(value, dict):
-                links[key] = self.create_insert_entity_from_ifc_dict(value)
+                links[key] = EntityResolver.create_insert_entity_from_ifc_dict(value)
             elif isinstance(value, tuple):
                 values = []
                 for val in value:
                     if isinstance(val, dict):
-                        values.append(self.create_insert_entity_from_ifc_dict(val))
+                        values.append(EntityResolver.create_insert_entity_from_ifc_dict(val))
                     else:
                         values.append(val)
                 links[key] = tuple(values)

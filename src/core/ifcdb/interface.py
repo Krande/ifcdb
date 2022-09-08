@@ -14,7 +14,7 @@ from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import GetBulk
 from ifcdb.database.inserts.model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
-from ifcdb.diffing.diff_edgedb import apply_diffs_edgedb
+from ifcdb.diffing.diff_edgedb import create_edgedb_diff_objects
 from ifcdb.diffing.tool import ifc_diff_tool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
@@ -132,7 +132,7 @@ class EdgeIO:
 
     def update_db_from_ifc_delta(self, original_ifc, modified_ifc):
         diff_tool = ifc_diff_tool(ifcopenshell.open(original_ifc), ifcopenshell.open(modified_ifc))
-        bulk_updates = apply_diffs_edgedb(diff_tool)
+        bulk_updates = create_edgedb_diff_objects(diff_tool)
 
         for tx in self.client.transaction():
             with tx:
