@@ -22,8 +22,9 @@ def links_str(entity: Entity):
     return lstr
 
 
-def to_insert_str(entity: Entity, with_map: dict = None):
+def to_insert_str(entity: Entity):
     prop_str = props_str(entity)
     lstr = links_str(entity)
-
-    return f"INSERT {entity.name} {{\n    {prop_str},\n{lstr} }};"
+    if prop_str != '':
+        prop_str += ',\n'
+    return f"INSERT {entity.name} {{\n    {prop_str}{lstr} }};"

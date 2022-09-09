@@ -14,7 +14,7 @@ from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import GetBulk
 from ifcdb.database.inserts.model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
-from ifcdb.diffing.diff_edgedb import create_edgedb_diff_objects
+from ifcdb.database.bulk_handler import create_edgedb_bulk_entity_handler
 from ifcdb.diffing.tool import ifc_diff_tool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
@@ -132,14 +132,11 @@ class EdgeIO:
 
     def update_db_from_ifc_delta(self, original_ifc, modified_ifc):
         diff_tool = ifc_diff_tool(ifcopenshell.open(original_ifc), ifcopenshell.open(modified_ifc))
-        bulk_updates = create_edgedb_diff_objects(diff_tool)
+        bulk_entity_handler = create_edgedb_bulk_entity_handler(diff_tool)
 
         for tx in self.client.transaction():
             with tx:
-                for bulk_update in bulk_updates:
-                    edql_str = bulk_update.to_edql_str()
-                    res = tx.query_json(edql_str)
-                    print(res)
+                bulk_entity_handler.to_edql_str(tx)
 
     def to_ifcopenshell_object(
         self, specific_classes: list[str] = None, only_ifc_entities=True, client=None

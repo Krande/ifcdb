@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-
 import ifcopenshell
+from dataclasses import dataclass, field
+from typing import Any, Iterable
 
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel
 
@@ -64,7 +63,7 @@ class EntityResolver:
         return Entity(entity.name, props, links)
 
     @staticmethod
-    def create_insert_entity_from_ifc_dict(source: dict):
+    def create_insert_entity_from_ifc_dict(source: dict) -> Entity:
         props = dict()
         links = dict()
 
@@ -75,12 +74,17 @@ class EntityResolver:
                 links[key] = EntityResolver.create_insert_entity_from_ifc_dict(value)
             elif isinstance(value, tuple):
                 values = []
+                contains_linked_items = False
                 for val in value:
                     if isinstance(val, dict):
+                        contains_linked_items = True
                         values.append(EntityResolver.create_insert_entity_from_ifc_dict(val))
                     else:
                         values.append(val)
-                links[key] = tuple(values)
+                if contains_linked_items:
+                    links[key] = tuple(values)
+                else:
+                    props[key] = tuple(values)
             else:
                 props[key] = value
 
@@ -91,5 +95,67 @@ class EntityResolver:
 class Entity:
     name: str
     props: dict[str, Any] = field(repr=False, default_factory=dict)
-    links: dict[str, Entity] = field(repr=False, default_factory=dict)
+    links: dict[str, Entity | tuple | dict] = field(repr=False, default_factory=dict)
     uuid: str = None
+
+
+@dataclass
+class EntityRef:
+    entity: Entity
+    parent: Entity | None
+    key: str | None
+
+
+def walk_links(value: Entity | dict | tuple, parent: Entity = None, key: str = None) -> Iterable[EntityRef]:
+    if isinstance(value, Entity):
+        if parent is not None:
+            yield EntityRef(value, parent, key)
+        for e in walk_links(value.links, value, key):
+            yield e
+    elif isinstance(value, dict):
+        for skey, svalue in value.items():
+            if key is None:
+                key_str = skey
+            else:
+                key_str = f"{key}.{skey}"
+            for e in walk_links(svalue, parent, key_str):
+                yield e
+    elif isinstance(value, tuple):
+        for i, v in enumerate(value):
+            for e in walk_links(v, parent, f"{key}[{i}]"):
+                yield e
+    else:
+        raise NotImplementedError(f'Unknown link value type "{value}"')
+
+
+def entity_to_dict(entity: Entity) -> dict:
+    new_d = dict(type=entity.name)
+    new_d.update(entity.props)
+    new_d.update(traverse_dicts(entity.links))
+    return new_d
+
+
+def traverse_tuples(source: tuple) -> tuple:
+    output = []
+    for value in source:
+        if isinstance(value, Entity):
+            output.append(entity_to_dict(value))
+        elif isinstance(value, dict):
+            output.append(traverse_dicts(value))
+        else:
+            output.append(value)
+
+    return tuple(output)
+
+
+def traverse_dicts(source: dict):
+    new_d = dict()
+    for key, value in source.items():
+        if isinstance(value, Entity):
+            new_d[key] = entity_to_dict(value)
+        elif isinstance(value, tuple):
+            new_d[key] = traverse_tuples(value)
+        else:
+            new_d[key] = value
+
+    return new_d

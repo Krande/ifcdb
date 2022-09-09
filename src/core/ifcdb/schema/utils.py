@@ -1,10 +1,9 @@
-from typing import ClassVar, Union
-
 import ifcopenshell
+from typing import Union
 
 wrap = ifcopenshell.ifcopenshell_wrapper
 
-BASE_TYPES: ClassVar[dict[wrap.simple_type, str]] = {
+BASE_TYPES: dict[wrap.simple_type, str] = {
     "binary": "bytes",
     "logical": "bool",
     "number": "int64",
