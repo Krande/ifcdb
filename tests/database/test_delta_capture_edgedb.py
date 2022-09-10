@@ -39,8 +39,8 @@ def test_cube_added(my_cube, my_cube_added):
 
     assert len(updated_element.insert_items) == 1
 
-    # edql_str = bulk_entity_handler.to_edql_str()
-    # print("sd")
+    edql_str = bulk_entity_handler.to_edql_str()
+    print(edql_str)
     # For debugging only
     # with open("temp/added.ifc", "w") as f:
     #     f.write(my_cube.wrapped_data.to_string())

@@ -5,7 +5,7 @@ from ifcdb.diffing.tool import ifc_diff_tool
 def test_cube_edited(my_cube, my_cube_edited):
     diff_tool = ifc_diff_tool(my_cube, my_cube_edited)
 
-    assert len(diff_tool.changed) == 2
+    assert len(diff_tool.changed) == 1
     assert len(diff_tool.added) == 0
     assert len(diff_tool.removed) == 0
 
