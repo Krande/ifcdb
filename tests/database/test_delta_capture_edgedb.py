@@ -1,4 +1,4 @@
-from ifcdb.database.bulk_handler import create_edgedb_bulk_entity_handler, BulkEntityUpdate
+from ifcdb.database.bulk_handler import create_edgedb_bulk_entity_handler
 from ifcdb.diffing.tool import ifc_diff_tool
 from ifcdb.entities import Entity
 
@@ -36,11 +36,11 @@ def test_cube_added(my_cube, my_cube_added):
     assert isinstance(new_entity, Entity)
 
     updated_element = bulk_entity_handler.updates[0]
-    assert isinstance(updated_element, BulkEntityUpdate)
+
     assert len(updated_element.insert_items) == 1
 
-    edql_str = bulk_entity_handler.to_edql_str()
-    print("sd")
+    # edql_str = bulk_entity_handler.to_edql_str()
+    # print("sd")
     # For debugging only
     # with open("temp/added.ifc", "w") as f:
     #     f.write(my_cube.wrapped_data.to_string())

@@ -31,6 +31,7 @@ class IfcDiffTool:
     changed: list[ElDiff] = field(default_factory=list)
     added: list[ElDiff] = field(default_factory=list)
     removed: list[ElDiff] = field(default_factory=list)
+
     schema_ver: str = "IFC4x1"
 
     def run(self, f1: ifcopenshell.file, f2: ifcopenshell.file):
@@ -81,6 +82,24 @@ def ifc_diff_tool(f1: ifcopenshell.file, f2: ifcopenshell.file) -> IfcDiffTool:
     tool = IfcDiffTool()
     tool.run(f1, f2)
     return tool
+
+
+@dataclass
+class EntityTool:
+    linked_objects: dict[str, Entity]
+    entity: Entity
+
+
+def ifcopen_entity_walk(el: ifcopenshell.entity_instance) -> EntityTool:
+
+    linked_objects: dict[ifcopenshell.entity_instance, Entity]
+
+    def walk(source):
+        nonlocal linked_objects
+        info = source.get_info(recursive=False, include_identifier=False)
+        for key, value in info.items():
+            if isinstance(value, ifcopenshell.entity_instance):
+                _ = linked_objects.get(value, None)
 
 
 def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:

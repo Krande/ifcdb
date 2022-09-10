@@ -68,20 +68,18 @@ class EntityPropUpdate:
         curr_level = self._levels[lvl]
         next_level_idx = lvl + 1
         next_level = None
-        if next_level_idx < len(self._levels) and isinstance(self._levels[next_level_idx], int):
-            next_level = self._levels[next_level_idx]
-            intermediate_level = entity.links.get(curr_level)
-            if self.update_type == PropUpdateType.ADD_TO_ITERABLE and next_level > len(intermediate_level) - 1:
-                self.update_value.key = curr_level
-                self.update_value.index = next_level
-                return classes
-
-            sub_entity = intermediate_level[next_level]
-            lvl += 1
+        sub_entity = entity.links.get(curr_level)
+        if sub_entity is not None:
+            if next_level_idx < len(self._levels) and isinstance(self._levels[next_level_idx], int):
+                next_level = self._levels[next_level_idx]
+                intermediate_level = sub_entity
+                if self.update_type == PropUpdateType.ADD_TO_ITERABLE and next_level > len(intermediate_level) - 1:
+                    self.update_value.key = curr_level
+                    self.update_value.index = next_level
+                    return classes
+                sub_entity = intermediate_level[next_level]
+                lvl += 1
         else:
-            sub_entity = entity.links.get(curr_level)
-
-        if sub_entity is None:
             sub_entity = entity.props.get(curr_level)
             if sub_entity is None:
                 raise ValueError("Unable to trace nested object path")
