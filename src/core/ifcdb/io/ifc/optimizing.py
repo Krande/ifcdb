@@ -32,7 +32,7 @@ def recycle_non_rooted(ifc_file: ifcopenshell.file) -> ifcopenshell.file:
     return ifc_file.from_string(new)
 
 
-def general_optimization(ifc_file):
+def general_optimization(ifc_file) -> ifcopenshell.file:
     def generate_instances_and_references():
         """
         Generator which yields an entity id and
@@ -71,7 +71,7 @@ def general_optimization(ifc_file):
         inst = ifc_file[id]
         info = inst.get_info(include_identifier=False, recursive=True, return_type=frozenset)
         if info in info_to_id:
-            mapped = instance_mapping[inst] = instance_mapping[ifc_file[info_to_id[info]]]
+            _ = instance_mapping[inst] = instance_mapping[ifc_file[info_to_id[info]]]
 
         else:
             info_to_id[info] = id

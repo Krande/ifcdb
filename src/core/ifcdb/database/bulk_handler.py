@@ -1,20 +1,32 @@
 from __future__ import annotations
 
-import edgedb
 from dataclasses import dataclass, field
 from itertools import count
+from typing import TYPE_CHECKING
 
-from ifcdb.diffing.tool import IfcDiffTool, ElDiff
-from ifcdb.entities import Entity, EntityResolver
+import edgedb
+
+from ifcdb.entities import Entity
+
 from .inserts.bulk_insert import BulkEntityInsert
 from .remove.bulk_removal import BulkEntityRemoval
-from .updates.bulk_updates import BulkEntityUpdate, EntityUpdateValue, EntityPropUpdate, PropUpdateType
+from .updates.bulk_updates import (
+    BulkEntityUpdate,
+    EntityPropUpdate,
+    EntityUpdateValue,
+    PropUpdateType,
+)
+
+if TYPE_CHECKING:
+    from ifcdb.diffing.tool import EntityDiffChange, IfcDiffTool
 
 
 @dataclass
 class BulkEntityHandler:
-    inserts: BulkEntityInsert
-    removals: BulkEntityRemoval
+    ifc_diff_tool: IfcDiffTool
+
+    inserts: BulkEntityInsert = None
+    removals: BulkEntityRemoval = None
     updates: list[BulkEntityUpdate] = field(default_factory=list)
 
     insert_map: dict[str, Entity] = field(default_factory=dict)
@@ -22,10 +34,16 @@ class BulkEntityHandler:
     uuid_map: dict[Entity, str] = field(default_factory=dict)
 
     def __post_init__(self):
-        self.insert_map = {el.props.get("GlobalId"): el for el in self.inserts.entities}
+        self.inserts = BulkEntityInsert(self.ifc_diff_tool.added)
+        self.removals = BulkEntityRemoval(self.ifc_diff_tool.removed)
+        self.add_changes()
 
-    def add_changes(self, changed: list[ElDiff]) -> None:
-        for diff_el in changed:
+        self.insert_map = {el.added.entity.props.get("GlobalId"): el for el in self.inserts.entities}
+
+    def add_changes(
+        self,
+    ) -> None:
+        for diff_el in self.ifc_diff_tool.changed:
             change_object = self.change_entity(diff_el)
             if change_object is not None:
                 self.updates.append(change_object)
@@ -48,7 +66,7 @@ class BulkEntityHandler:
 
         return add_objects
 
-    def change_entity(self, elem: ElDiff) -> BulkEntityUpdate | None:
+    def change_entity(self, elem: EntityDiffChange) -> BulkEntityUpdate | None:
         updates = []
         for diff_type, diff in elem.diff.items():
             if diff_type == "values_changed":
@@ -78,22 +96,3 @@ class BulkEntityHandler:
             query_str += update.to_edql_str(use_select_wrapper=False)
         query_str += "}"
         return query_str
-
-
-def create_edgedb_bulk_entity_handler(diff_tool: IfcDiffTool) -> BulkEntityHandler:
-    inserts = BulkEntityInsert([add_entity(diff_el) for diff_el in diff_tool.added])
-    removals = BulkEntityRemoval([remove_entity(diff_el) for diff_el in diff_tool.removed])
-
-    bulk_entity_handler = BulkEntityHandler(inserts, removals)
-    bulk_entity_handler.add_changes(diff_tool.changed)
-    # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
-    return bulk_entity_handler
-
-
-def add_entity(elem: ElDiff) -> Entity:
-
-    return EntityResolver.create_insert_entity_from_ifc_dict(elem.diff)
-
-
-def remove_entity(elem: ElDiff):
-    return EntityResolver.create_insert_entity_from_ifc_dict(elem.diff)

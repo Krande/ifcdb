@@ -1,6 +1,4 @@
-from ifcdb.database.bulk_handler import create_edgedb_bulk_entity_handler
 from ifcdb.diffing.tool import ifc_diff_tool
-from ifcdb.entities import Entity
 
 
 def test_cube_edited(my_cube, my_cube_edited):
@@ -11,14 +9,14 @@ def test_cube_edited(my_cube, my_cube_edited):
     assert len(diff_tool.removed) == 0
 
     # Use the apply_diffs_ifcopenshell to apply the diffs recorded by the diff_tool
-    bulk_entity_handler = create_edgedb_bulk_entity_handler(diff_tool)
+    bulk_entity_handler = diff_tool.to_bulk_entity_handler()
     assert len(bulk_entity_handler.updates) == 1
 
     update1 = bulk_entity_handler.updates[0]
     assert len(update1.insert_items) == 5
 
-    # edql_str = update1.to_edql_str()
-    # print(edql_str)
+    edql_str = update1.to_edql_str()
+    print(edql_str)
 
 
 def test_cube_added(my_cube, my_cube_added):
@@ -28,12 +26,13 @@ def test_cube_added(my_cube, my_cube_added):
     assert len(diff_tool.changed) == 1
     assert len(diff_tool.removed) == 0
 
-    bulk_entity_handler = create_edgedb_bulk_entity_handler(diff_tool)
+    bulk_entity_handler = diff_tool.to_bulk_entity_handler()
     assert len(bulk_entity_handler.inserts.entities) == 1
     assert len(bulk_entity_handler.updates) == 1
 
     new_entity = bulk_entity_handler.inserts.entities[0]
-    assert isinstance(new_entity, Entity)
+    assert new_entity.guid == "0V5VOywXLEaQbV_VYResiJ"
+    assert new_entity.class_name == "IfcBuildingElementProxy"
 
     updated_element = bulk_entity_handler.updates[0]
 
@@ -53,7 +52,7 @@ def test_cube_removed(my_cube_added, my_cube):
     assert len(diff_tool.changed) == 1
     assert len(diff_tool.removed) == 1
 
-    _ = create_edgedb_bulk_entity_handler(diff_tool)
+    _ = diff_tool.to_bulk_entity_handler()
 
     diff_tool_2 = ifc_diff_tool(my_cube_added, my_cube)
 

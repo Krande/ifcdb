@@ -8,7 +8,14 @@ from enum import Enum
 import ifcopenshell
 from deepdiff import DeepDiff
 
-from ifcdb.entities import Entity, get_entity_from_source_dict
+from ifcdb.database.bulk_handler import BulkEntityHandler
+from ifcdb.entities import (
+    Entity,
+    EntityResolver,
+    EntityTool,
+    get_entity_from_source_dict,
+)
+from ifcdb.io.ifc.optimizing import general_optimization
 
 
 class ChangeType(Enum):
@@ -18,24 +25,42 @@ class ChangeType(Enum):
 
 
 @dataclass
-class ElDiff:
+class EntityDiffBase:
     guid: str
-    change_type: ChangeType
     class_name: str
+
+
+@dataclass
+class EntityDiffChange(EntityDiffBase):
     diff: dict
     entity: Entity = None
 
 
 @dataclass
+class EntityDiffAdd(EntityDiffBase):
+    added: EntityTool
+
+
+@dataclass
+class EntityDiffRemove(EntityDiffBase):
+    pass
+
+
+@dataclass
 class IfcDiffTool:
-    changed: list[ElDiff] = field(default_factory=list)
-    added: list[ElDiff] = field(default_factory=list)
-    removed: list[ElDiff] = field(default_factory=list)
+    changed: list[EntityDiffChange] = field(default_factory=list)
+    added: list[EntityDiffAdd] = field(default_factory=list)
+    removed: list[EntityDiffRemove] = field(default_factory=list)
 
     schema_ver: str = "IFC4x1"
+    optimize_before_diffing: bool = True
 
     def run(self, f1: ifcopenshell.file, f2: ifcopenshell.file):
         """Compare rooted elements in two ifc files and generate a list of element diffs"""
+        if self.optimize_before_diffing:
+            f1 = general_optimization(f1)
+            f2 = general_optimization(f2)
+
         guids1 = set(x.GlobalId for x in f1.by_type("IfcRoot"))
         guids2 = set(x.GlobalId for x in f2.by_type("IfcRoot"))
 
@@ -44,12 +69,12 @@ class IfcDiffTool:
 
         for guid in removed:
             el = f1.by_guid(guid)
-            self.removed.append(ElDiff(guid, ChangeType.REMOVED, el.is_a(), dict()))
+            self.removed.append(EntityDiffRemove(guid, el.is_a()))
 
         for guid in added:
             el = f2.by_guid(guid)
-            info = el.get_info(recursive=True, include_identifier=False)
-            self.added.append(ElDiff(guid, ChangeType.ADDED, el.is_a(), info))
+            entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(el)
+            self.added.append(EntityDiffAdd(guid, el.is_a(), entity_tool))
 
         for el in f1.by_type("IfcRoot"):
             guid = el.GlobalId
@@ -61,7 +86,9 @@ class IfcDiffTool:
 
             self.changed.append(result)
 
-    def element_validator(self, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance) -> ElDiff | None:
+    def element_validator(
+        self, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance
+    ) -> EntityDiffChange | None:
         info1 = el1.get_info(recursive=True, include_identifier=False)
         info2 = el2.get_info(recursive=True, include_identifier=False)
 
@@ -73,33 +100,19 @@ class IfcDiffTool:
         keys = list(res)
         if len(keys) > 0:
             entity = get_entity_from_source_dict(info1, schema_ver=self.schema_ver)
-            return ElDiff(el1.GlobalId, ChangeType.CHANGED, el1.is_a(), {key: res[key] for key in keys}, entity)
+            return EntityDiffChange(el1.GlobalId, el1.is_a(), {key: res[key] for key in keys}, entity)
 
         return None
+
+    def to_bulk_entity_handler(self: IfcDiffTool) -> BulkEntityHandler:
+        # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
+        return BulkEntityHandler(self)
 
 
 def ifc_diff_tool(f1: ifcopenshell.file, f2: ifcopenshell.file) -> IfcDiffTool:
     tool = IfcDiffTool()
     tool.run(f1, f2)
     return tool
-
-
-@dataclass
-class EntityTool:
-    linked_objects: dict[str, Entity]
-    entity: Entity
-
-
-def ifcopen_entity_walk(el: ifcopenshell.entity_instance) -> EntityTool:
-
-    linked_objects: dict[ifcopenshell.entity_instance, Entity]
-
-    def walk(source):
-        nonlocal linked_objects
-        info = source.get_info(recursive=False, include_identifier=False)
-        for key, value in info.items():
-            if isinstance(value, ifcopenshell.entity_instance):
-                _ = linked_objects.get(value, None)
 
 
 def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:

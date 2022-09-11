@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-import ifcopenshell
 from dataclasses import dataclass, field
+from itertools import count
 from typing import Any, Iterable
 
+import ifcopenshell
+
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel
+from ifcdb.utils import change_case
 
 _IFC_ENTITY = ifcopenshell.entity_instance
+_INSERT_COUNT = count(1)
 
 
 def get_entity_from_source_dict(source: dict, schema_ver: str = "IFC4x1") -> Entity:
@@ -90,6 +94,54 @@ class EntityResolver:
 
         return Entity(class_type, props, links)
 
+    @staticmethod
+    def create_entity_tool_from_ifcopenshell_entity(el: ifcopenshell.entity_instance) -> EntityTool:
+        linked_objects: dict[ifcopenshell.entity_instance, Entity] = dict()
+
+        def walk(source) -> Entity | dict | tuple:
+            nonlocal linked_objects
+            if isinstance(source, ifcopenshell.entity_instance):
+                existing_obj = linked_objects.get(source, None)
+                if existing_obj is not None:
+                    return existing_obj
+                info = source.get_info(recursive=False, include_identifier=False)
+                props = dict()
+                links = dict()
+                for key, value in info.items():
+                    if key in ("type",):
+                        continue
+                    if isinstance(value, ifcopenshell.entity_instance):
+                        links[key] = walk(value)
+                    elif isinstance(value, tuple):
+                        res = walk(value)
+                        if value_contains_link(res):
+                            links[key] = res
+                        else:
+                            props[key] = res
+                    elif isinstance(value, dict):
+                        res = walk(value)
+                        if value_contains_link(res):
+                            links[key] = res
+                        else:
+                            props[key] = res
+                    else:
+                        props[key] = value
+                new_entity = Entity(source.is_a(), props, links)
+                linked_objects[source] = new_entity
+                return new_entity
+            elif isinstance(source, tuple):
+                return tuple([walk(v) for v in source])
+            elif isinstance(source, dict):
+                return {key: walk(value) for key, value in source.items()}
+            elif isinstance(source, (float, str, int)):
+                return source
+            else:
+                raise NotImplementedError(f'Unsupported type "{type(source)}"')
+
+        top_entity = walk(el)
+        entity_identifier_map = {x.temp_unique_identifier: x for x in linked_objects.values()}
+        return EntityTool(top_entity, entity_identifier_map)
+
 
 @dataclass
 class Entity:
@@ -97,6 +149,10 @@ class Entity:
     props: dict[str, Any] = field(repr=False, default_factory=dict)
     links: dict[str, Entity | tuple | dict] = field(repr=False, default_factory=dict)
     uuid: str = None
+    temp_unique_identifier: str = None
+
+    def __post_init__(self):
+        self.temp_unique_identifier = f"{change_case(self.name)}_{next(_INSERT_COUNT)}"
 
 
 @dataclass
@@ -159,3 +215,25 @@ def traverse_dicts(source: dict):
             new_d[key] = value
 
     return new_d
+
+
+@dataclass
+class EntityTool:
+    entity: Entity
+    linked_objects: dict[str, Entity]
+
+
+def value_contains_link(source: tuple | dict) -> bool:
+    if isinstance(source, tuple):
+        for v in source:
+            return value_contains_link(v)
+    if isinstance(source, dict):
+        for key, value in source.items():
+            return value_contains_link(value)
+    else:
+        if isinstance(source, ifcopenshell.entity_instance):
+            return True
+        elif isinstance(source, Entity):
+            return True
+        else:
+            return False

@@ -3,18 +3,20 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from itertools import count, groupby
 from operator import attrgetter
+from typing import TYPE_CHECKING
 
 from deepdiff import DeepDiff
 
 from ifcdb.database.select import EdgeSelect
-from ifcdb.entities import Entity, entity_to_dict, walk_links
+from ifcdb.entities import Entity, walk_links
 
-from .utils import to_insert_str
+if TYPE_CHECKING:
+    from ifcdb.diffing.tool import EntityDiffAdd
 
 
 @dataclass
 class BulkEntityInsert:
-    entities: list[Entity]
+    entities: list[EntityDiffAdd]
     with_map: dict[str, EdgeSelect] = field(default_factory=dict)
 
     def merge_identical_objects(self):
@@ -44,14 +46,13 @@ class BulkEntityInsert:
             # dicts = [entity_to_dict(v.entity) for v in value]
             # frozen_dicts = [frozenset(x) for x in dicts]
             # unique_values = set([frozenset(entity_to_dict(v.entity)) for v in value])
-            # print("sd")
+            print("sd")
         print("sd")
 
     def to_edql_str(self, variable_counter: count = None):
-        self.merge_identical_objects()
         insert_str = ""
         for entity in self.entities:
-            istr = to_insert_str(entity)
+            istr = to_bulk_insert_str(entity)
             if variable_counter is not None:
                 new_name = f"insert{next(variable_counter)}"
                 insert_str += f"{new_name} := ({istr}),\n"
@@ -60,7 +61,57 @@ class BulkEntityInsert:
         return insert_str
 
 
-def compare_two_entities(e1: Entity, e2: Entity) -> bool:
-    e1info = entity_to_dict(e1)
-    e2info = entity_to_dict(e2)
-    return frozenset(e2info) == frozenset(e1info)
+def to_links_str(entity: Entity, sep=", "):
+    lstr = ""
+    for key, value in entity.links.items():
+        if value is None:
+            continue
+
+        if isinstance(value, Entity):
+            value = [value]
+
+        for v in value:
+            if v.uuid is None:
+                value_str = v.temp_unique_identifier
+            else:
+                value_str = f'SELECT {v.name} filter .id = <uuid>"{v.uuid}"'
+            lstr += f"{key}:= {value_str}{sep}"
+    return lstr
+
+
+def to_bulk_insert_str(entity: EntityDiffAdd):
+    insert_str = "with\n"
+    indent = 4 * " "
+    for key, value in entity.added.linked_objects.items():
+        if value == entity.added.entity:
+            continue
+        props = ""
+        props_writable = {p: v for p, v in value.props.items() if v is not None}
+        if len(props_writable) > 0:
+            props = to_props_str(value)
+        links = ""
+        if len(value.links) > 0:
+            if len(props_writable) > 0:
+                links += ", "
+            links += to_links_str(value)
+        insert_str += indent + f"{key} := (INSERT {value.name} {{ {props}{links} }}),\n"
+
+    prop_str = to_props_str(entity.added.entity, sep=f",\n{indent}")
+    lstr = to_links_str(entity.added.entity, sep=f",\n{indent}")
+    if prop_str != "":
+        prop_str += f",\n{indent}"
+    insert_str += f"INSERT {entity.class_name} {{\n{indent}{prop_str}{lstr} }};"
+    return insert_str
+
+
+def value_writer(value) -> str:
+    if isinstance(value, str):
+        return f"'{value}'"
+    elif isinstance(value, tuple):
+        return f"{list(value)}"
+    else:
+        return value
+
+
+def to_props_str(entity: Entity, sep=", "):
+    return sep.join([f"{key}:= {value_writer(value)}" for key, value in entity.props.items() if value is not None])
