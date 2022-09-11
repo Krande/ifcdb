@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
@@ -29,11 +30,29 @@ class EntityDiffBase:
     guid: str
     class_name: str
 
+    def to_json_file(self, filepath):
+        ...
+
 
 @dataclass
 class EntityDiffChange(EntityDiffBase):
     diff: dict
     entity: Entity = None
+
+    def to_json_file(self, filepath):
+        export_dict = dict(diff=self.diff, guid=self.guid, class_name=self.class_name)
+        with open(filepath, "w") as f:
+            json.dump(export_dict, f, indent=4)
+
+    @staticmethod
+    def from_json_file(filepath, ifc_obj: ifcopenshell.file) -> EntityDiffChange:
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        guid = data['guid']
+        item = ifc_obj.by_guid(guid)
+        er = EntityResolver(ifc_obj.wrapped_data.schema)
+        entity = er.create_insert_entity_from_ifc_entity(item)
+        return EntityDiffChange(guid, data['class_name'], data["diff"], entity)
 
 
 @dataclass
@@ -104,7 +123,7 @@ class IfcDiffTool:
 
         return None
 
-    def to_bulk_entity_handler(self: IfcDiffTool) -> BulkEntityHandler:
+    def to_bulk_entity_handler(self) -> BulkEntityHandler:
         # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
         return BulkEntityHandler(self)
 

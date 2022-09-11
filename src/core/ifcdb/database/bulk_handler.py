@@ -30,7 +30,6 @@ class BulkEntityHandler:
     updates: list[BulkEntityUpdate] = field(default_factory=list)
 
     insert_map: dict[str, Entity] = field(default_factory=dict)
-
     uuid_map: dict[Entity, str] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -39,9 +38,7 @@ class BulkEntityHandler:
         self.removals = BulkEntityRemoval(self.ifc_diff_tool.removed)
         self.add_changes()
 
-    def add_changes(
-        self,
-    ) -> None:
+    def add_changes(self) -> None:
         for diff_el in self.ifc_diff_tool.changed:
             change_object = self.change_entity(diff_el)
             if change_object is not None:

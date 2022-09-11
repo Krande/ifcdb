@@ -129,8 +129,7 @@ class EdgeIO:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
         return ifc_io
 
-    def update_db_from_ifc_delta(self, original_ifc, modified_ifc):
-        diff_tool = ifc_diff_tool(ifcopenshell.open(original_ifc), ifcopenshell.open(modified_ifc))
+    def update_from_diff_tool(self, diff_tool):
         bulk_entity_handler = diff_tool.to_bulk_entity_handler()
 
         for tx in self.client.transaction():
@@ -139,6 +138,10 @@ class EdgeIO:
                 print(query_str)
                 rs = tx.query_single_json(query_str)
                 print(rs)
+
+    def update_db_from_ifc_delta(self, original_ifc, modified_ifc):
+        diff_tool = ifc_diff_tool(ifcopenshell.open(original_ifc), ifcopenshell.open(modified_ifc))
+        self.update_from_diff_tool(diff_tool)
 
     def to_ifcopenshell_object(
         self, specific_classes: list[str] = None, only_ifc_entities=True, client=None

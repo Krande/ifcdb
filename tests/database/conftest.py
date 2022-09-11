@@ -11,17 +11,17 @@ from ifcdb.schema.model import IfcSchemaModel
 
 @pytest.fixture
 def my_cube(files_dir) -> ifcopenshell.file:
-    return ifcopenshell.open(files_dir / "MyCube.ifc")
+    return ifcopenshell.open(files_dir / "MyCube/MyCube.ifc")
 
 
 @pytest.fixture
 def my_cube_edited(files_dir) -> ifcopenshell.file:
-    return ifcopenshell.open(files_dir / "MyCubeEdited.ifc")
+    return ifcopenshell.open(files_dir / "MyCube/MyCubeEdited.ifc")
 
 
 @pytest.fixture
 def my_cube_added(files_dir) -> ifcopenshell.file:
-    return ifcopenshell.open(files_dir / "MyCubeAdded.ifc")
+    return ifcopenshell.open(files_dir / "MyCube/MyCubeAdded.ifc")
 
 
 @dataclass

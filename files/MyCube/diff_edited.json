@@ -1,0 +1,28 @@
+{
+  "class_name": "IfcBuildingElementProxy",
+  "guid": "3vJeEVZYzA3vP81uCmY9l4",
+  "diff": {
+    "values_changed": {
+      "root['Representation']['Representations'][0]['Items'][0]['Position']['Location']['Coordinates'][2]": {
+        "new_value": -5.68906497955322,
+        "old_value": -1.0
+      },
+      "root['Representation']['Representations'][0]['Items'][0]['Position']['RefDirection']['DirectionRatios'][0]": {
+        "new_value": -1.0,
+        "old_value": 1.0
+      },
+      "root['Representation']['Representations'][0]['Items'][0]['Depth']": {
+        "new_value": 11.3781298010066,
+        "old_value": 2.0
+      },
+      "root['Representation']['Representations'][1]['Items'][0]['Corner']['Coordinates'][2]": {
+        "new_value": -5.68906497955322,
+        "old_value": -1.0
+      },
+      "root['Representation']['Representations'][1]['Items'][0]['ZDim']": {
+        "new_value": 11.3781299591064,
+        "old_value": 2.0
+      }
+    }
+  }
+}
