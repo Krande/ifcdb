@@ -69,9 +69,10 @@ class EntityPropUpdate:
         next_level_idx = lvl + 1
         next_level = None
         sub_entity = entity.links.get(curr_level)
+        if next_level_idx < len(self._levels) and isinstance(self._levels[next_level_idx], int):
+            next_level = self._levels[next_level_idx]
         if sub_entity is not None:
-            if next_level_idx < len(self._levels) and isinstance(self._levels[next_level_idx], int):
-                next_level = self._levels[next_level_idx]
+            if next_level is not None:
                 intermediate_level = sub_entity
                 if self.update_type == PropUpdateType.ADD_TO_ITERABLE and next_level > len(intermediate_level) - 1:
                     self.update_value.key = curr_level
@@ -89,7 +90,7 @@ class EntityPropUpdate:
             self.update_value.key = insert_key
             if isinstance(next_level, int):
                 self.update_value.index = next_level
-                self.update_value.len = len(entity.links.get(curr_level))
+                self.update_value.len = len(sub_entity)
 
             return classes
 
@@ -236,7 +237,6 @@ class BulkEntityUpdate:
 
         if insert_item.entity_top != parent_object:
             insert_item.entity_top = parent_object
-
         edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
         edql_str += 3 * self.indent + prop_update.update_value.to_update_str()
         edql_str += 2 * self.indent + "}\n"
@@ -245,16 +245,19 @@ class BulkEntityUpdate:
 
     def _append_property_str(self, insert_item: EdgeSelect, prop_update: EntityPropUpdate, path_ref_map) -> str:
         edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
-        entity: Entity = prop_update.update_value.value
-        guid = entity.props.get("GlobalId")
-        select_str = f"select {entity.name} FILTER .GlobalId=<str>'{guid}'"
+        entity = prop_update.update_value.value
+        select_str = f"select {entity.class_name} FILTER .GlobalId=<str>'{entity.guid}'"
         edql_str += 3 * self.indent + f"{prop_update.update_value.key} += ({select_str})\n"
         edql_str += 2 * self.indent + "}\n"
 
         return edql_str
 
-    def to_edql_str(self, use_select_wrapper=True) -> str:
-        edql_str = self.global_with_str() + "\n"
+    def to_edql_str(self, use_select_wrapper=True, variable_assignment=None) -> str:
+        edql_str = ""
+        if variable_assignment is not None:
+            edql_str = f"{variable_assignment} := (\n"
+
+        # edql_str += self.global_with_str() + "\n"
 
         path_ref_map = {value.get_absolute_path(): value for key, value in self.global_with_selects.items()}
 
@@ -267,8 +270,17 @@ class BulkEntityUpdate:
             update_name = f"update{next(upc)}"
             edql_str += self.indent + f"{update_name} := (\n"
 
+            # Check if the insert_item path is already selected
             curr_abs_path = insert_item.get_absolute_path()
             existing_with_select = path_ref_map.get(curr_abs_path, None)
+
+            # Check if the insert_item entity top path is already selected
+            if isinstance(insert_item.entity_top, EdgeSelect):
+                entity_top_abs_path = insert_item.entity_top.get_absolute_path()
+                res = path_ref_map.get(entity_top_abs_path, None)
+                if res is not None:
+                    insert_item.entity_top = res
+
             if existing_with_select is None:
                 edql_str += 2 * self.indent + f"with\n{3 * self.indent}{insert_item.to_edql_str()}\n"
             else:
@@ -284,4 +296,6 @@ class BulkEntityUpdate:
             edql_str += self.indent + "),\n"
         if use_select_wrapper:
             edql_str += "}\n"
+        if variable_assignment is not None:
+            edql_str += ")\n"
         return edql_str

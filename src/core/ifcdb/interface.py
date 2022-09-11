@@ -135,7 +135,10 @@ class EdgeIO:
 
         for tx in self.client.transaction():
             with tx:
-                bulk_entity_handler.to_edql_str(tx)
+                query_str = bulk_entity_handler.to_edql_str(tx)
+                print(query_str)
+                rs = tx.query_single_json(query_str)
+                print(rs)
 
     def to_ifcopenshell_object(
         self, specific_classes: list[str] = None, only_ifc_entities=True, client=None
