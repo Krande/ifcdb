@@ -1,3 +1,5 @@
+import os
+
 import ifcopenshell as ifc
 
 from ifcdb import EdgeIO
@@ -9,12 +11,12 @@ CUBE_DIR = top_dir() / "files/MyCube"
 
 
 def create_revert_diff_from_two_files():
-    diff = IfcDiffTool()
-    diff.run(ifc.open(CUBE_DIR / "MyCubeEdited.ifc"), ifc.open(CUBE_DIR / "MyCube.ifc"))
+    diff = IfcDiffTool(ifc.open(CUBE_DIR / "MyCubeEdited.ifc"), ifc.open(CUBE_DIR / "MyCube.ifc"))
     diff.changed[0].to_json_file("diff_revert.json")
 
 
 def edit_file(io: EdgeIO):
+    os.makedirs('temp', exist_ok=True)
     old_ifc_file = "temp/old.ifc"
     new_ifc_file = "temp/new.ifc"
 
@@ -23,16 +25,16 @@ def edit_file(io: EdgeIO):
     with open(old_ifc_file, "w") as f:
         f.write(ifc_obj.wrapped_data.to_string())
 
-    diff_json = CUBE_DIR / "diff_revert.json"
+    diff_json = CUBE_DIR / "diff_edited.json"
     diff_change = EntityDiffChange.from_json_file(diff_json, ifc_obj)
 
-    ifc_diff_tool = IfcDiffTool([diff_change])
+    ifc_diff_tool = IfcDiffTool(ifc_obj, changed=[diff_change])
     apply_diffs_ifcopenshell(ifc_obj, ifc_diff_tool)
 
     with open(new_ifc_file, "w") as f:
         f.write(ifc_obj.wrapped_data.to_string())
 
-    io.update_from_diff_tool(ifc_diff_tool)
+    # io.update_from_diff_tool(ifc_diff_tool)
 
 
 def main():

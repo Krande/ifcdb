@@ -44,5 +44,25 @@ def expreader_ifc4x1(ifc_4x1_exp_file) -> ExpReader:
 
 
 @pytest.fixture
-def my_beam_w_holes_ifc(files_dir):
-    return ifcopenshell.open(files_dir / "MyBeam_w_holes/MyBeamWithHoles.ifc")
+def my_beam_w_holes_ifc_filepath(files_dir):
+    return files_dir / "MyBeam_w_holes/MyBeamWithHoles.ifc"
+
+
+@pytest.fixture
+def my_cube_ifc_filepath(files_dir):
+    return files_dir / "MyCube/MyCube.ifc"
+
+
+@pytest.fixture
+def my_cube_edited_ifc_filepath(files_dir):
+    return files_dir / "MyCube/MyCubeEdited.ifc"
+
+
+@pytest.fixture
+def my_cube_added_ifc_filepath(files_dir):
+    return files_dir / "MyCube/MyCubeAdded.ifc"
+
+
+@pytest.fixture
+def my_beam_w_holes_ifc(my_beam_w_holes_ifc_filepath):
+    return ifcopenshell.open(my_beam_w_holes_ifc_filepath)

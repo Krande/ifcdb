@@ -44,12 +44,16 @@ async def post_file(file: UploadFile, user: User = Depends(azure_scheme), dbname
     ifc_io = IfcIO(ifc_str=str(ifc_str, encoding="utf-8"))
     client = get_client(database=dbname)
 
-    sq = InsertSeq(ifc_io.schema)
-    for tx in client.transaction():
-        with tx:
-            for item, insert_str in sq.create_bulk_insert_str(ifc_io.get_ifc_objects_by_sorted_insert_order_flat()):
-                single_json = tx.query_single_json(insert_str)
-                query_res = json.loads(single_json)
-                sq.uuid_map[item] = query_res["id"]
+    with EdgeIO("ifc001", client=client) as io:
+        existing_ifc_obj = io.to_ifcopenshell_object()
+        io.update_db_from_ifc_delta(existing_ifc_obj, ifc_io.ifc_obj)
+
+    # sq = InsertSeq(ifc_io.schema)
+    # for tx in client.transaction():
+    #     with tx:
+    #         for item, insert_str in sq.create_bulk_insert_str(ifc_io.get_ifc_objects_by_sorted_insert_order_flat()):
+    #             single_json = tx.query_single_json(insert_str)
+    #             query_res = json.loads(single_json)
+    #             sq.uuid_map[item] = query_res["id"]
 
     return "SUCCESS"

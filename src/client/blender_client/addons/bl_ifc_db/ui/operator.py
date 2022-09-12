@@ -159,9 +159,6 @@ class IfcDb_Push_Operator(bpy.types.Operator):
         print(files)
         r = s.post(f"{api_url}/fileb", params={"dbname": props.db_name}, files=files)
 
-        # ifc: ifcopenshell.file = IfcStore.get_file()
-        # ifc_str = ifc.wrapped_data.to_string()
-        # r = s.post(f"{api_url}/file", params={"dbname": props.db_name, "ifc_file_str": ifc_str})
         print("REST RESPONSE: " + r.text)
 
         return {"FINISHED"}

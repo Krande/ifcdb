@@ -1,9 +1,9 @@
 from ifcdb.diffing.diff_ifcopen import apply_diffs_ifcopenshell
-from ifcdb.diffing.tool import ifc_diff_tool
+from ifcdb.diffing.tool import IfcDiffTool
 
 
 def test_cube_edited(my_cube, my_cube_edited):
-    diff_tool = ifc_diff_tool(my_cube, my_cube_edited)
+    diff_tool = IfcDiffTool(my_cube, my_cube_edited)
 
     assert len(diff_tool.changed) == 1
     assert len(diff_tool.added) == 0
@@ -19,7 +19,7 @@ def test_cube_edited(my_cube, my_cube_edited):
 
     # Use the apply_diffs_ifcopenshell to apply the diffs recorded by the diff_tool
     apply_diffs_ifcopenshell(my_cube, diff_tool)
-    diff_tool_2 = ifc_diff_tool(my_cube, my_cube_edited)
+    diff_tool_2 = IfcDiffTool(my_cube, my_cube_edited)
 
     assert len(diff_tool_2.changed) == 0
     assert len(diff_tool_2.added) == 0
@@ -31,7 +31,7 @@ def test_cube_edited(my_cube, my_cube_edited):
 
 
 def test_cube_added(my_cube, my_cube_added):
-    res = ifc_diff_tool(my_cube, my_cube_added)
+    res = IfcDiffTool(my_cube, my_cube_added)
 
     assert len(res.added) == 1
     assert len(res.changed) == 1
@@ -39,7 +39,7 @@ def test_cube_added(my_cube, my_cube_added):
 
     apply_diffs_ifcopenshell(my_cube, res)
 
-    diff_tool_2 = ifc_diff_tool(my_cube, my_cube_added)
+    diff_tool_2 = IfcDiffTool(my_cube, my_cube_added)
 
     assert len(diff_tool_2.changed) == 0
     assert len(diff_tool_2.added) == 0
@@ -51,7 +51,7 @@ def test_cube_added(my_cube, my_cube_added):
 
 
 def test_cube_removed(my_cube_added, my_cube):
-    res = ifc_diff_tool(my_cube_added, my_cube)
+    res = IfcDiffTool(my_cube_added, my_cube)
 
     assert len(res.added) == 0
     assert len(res.changed) == 1
@@ -59,7 +59,7 @@ def test_cube_removed(my_cube_added, my_cube):
 
     apply_diffs_ifcopenshell(my_cube_added, res)
 
-    diff_tool_2 = ifc_diff_tool(my_cube_added, my_cube)
+    diff_tool_2 = IfcDiffTool(my_cube_added, my_cube)
 
     assert len(diff_tool_2.changed) == 0
     assert len(diff_tool_2.added) == 0

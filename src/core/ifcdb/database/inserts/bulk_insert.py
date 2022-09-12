@@ -12,48 +12,62 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class EdgeInsert:
+    entity: Entity
+
+    def to_edql_str(self):
+        props = ""
+        props_writable = {p: v for p, v in self.entity.props.items() if v is not None}
+        if len(props_writable) > 0:
+            props = to_props_str(self.entity)
+        links = ""
+        if len(self.entity.links) > 0:
+            if len(props_writable) > 0:
+                links += ", "
+            links += to_links_str(self.entity)
+        return f"INSERT {self.entity.name} {{ {props}{links} }}"
+
+
+@dataclass
 class BulkEntityInsert:
     entities: list[EntityDiffAdd]
     with_map: dict[str, EdgeSelect] = field(default_factory=dict)
 
     indent: str = 4 * " "
 
-    def get_global_with_str(self):
+    def get_global_with_str(self, indent_override: str = None):
         insert_str = "with\n"
-        indent = 4 * " "
-        for entity in self.entities:
-            for key, value in entity.added.linked_objects.items():
-                if value == entity.added.entity:
+        indent = self.indent if indent_override is None else indent_override
+        for entity_add in self.entities:
+            for key, value in entity_add.added.linked_objects.items():
+                if value == entity_add.added.entity:
                     continue
-                props = ""
-                props_writable = {p: v for p, v in value.props.items() if v is not None}
-                if len(props_writable) > 0:
-                    props = to_props_str(value)
-                links = ""
-                if len(value.links) > 0:
-                    if len(props_writable) > 0:
-                        links += ", "
-                    links += to_links_str(value)
-                insert_str += indent + f"{key} := (INSERT {value.name} {{ {props}{links} }}),\n"
+                insert = EdgeInsert(value)
+                insert_str += indent + f"{key} := ({insert.to_edql_str()}),\n"
         return insert_str
 
-    def get_insert_str(self, entity: EntityDiffAdd):
+    def get_insert_str(self, entity: EntityDiffAdd, indent_override: str = None):
+        indent = self.indent if indent_override is None else indent_override
         insert_str = ""
-        prop_str = to_props_str(entity.added.entity, sep=f",\n{self.indent}")
-        lstr = to_links_str(entity.added.entity, sep=f",\n{self.indent}")
+        prop_str = to_props_str(entity.added.entity, sep=f",\n{indent}")
+        lstr = to_links_str(entity.added.entity, sep=f",\n{indent}")
         if prop_str != "":
-            prop_str += f",\n{self.indent}"
-        insert_str += f"INSERT {entity.class_name} {{\n{self.indent}{prop_str}{lstr} }}"
+            prop_str += f",\n{indent}"
+        insert_str += f"INSERT {entity.class_name} {{\n{indent}{prop_str}{lstr} }}\n"
         return insert_str
 
     def to_edql_str(self, variable_counter: count = None):
-        global_with_str = self.get_global_with_str()
+        extra_with_indent = None
+        if variable_counter is not None:
+            extra_with_indent = self.indent * 2
+
+        global_with_str = self.get_global_with_str(extra_with_indent)
         insert_str = ""
         for entity in self.entities:
-            istr = self.get_insert_str(entity)
+            istr = self.get_insert_str(entity, indent_override=extra_with_indent)
             if variable_counter is not None:
                 new_name = f"insert{next(variable_counter)}"
-                insert_str += f"{new_name} := ({global_with_str}{istr}),\n"
+                insert_str += f"{new_name} := (\n{self.indent}{global_with_str}{self.indent}{istr}),\n"
             else:
                 insert_str += global_with_str + istr
         return insert_str

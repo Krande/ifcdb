@@ -1,15 +1,11 @@
-from dotenv import load_dotenv
-from shared import ADD_CLASSES, FILES
-
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
-
-load_dotenv()  # take environment variables from .env.
+from shared import ADD_CLASSES, FILES
 
 
 def main(database: str, ifc_schema: str, batch_size: int, ifc_files: list[str], extra_entities: list[str]):
     ifc_paths = [top_dir() / "files" / f for f in ifc_files]
-    with EdgeIO(database) as io:
+    with EdgeIO(database, load_env=True) as io:
         entities = io.get_entities_from_ifc_files(ifc_paths)
         entities += extra_entities
         io.create_database()

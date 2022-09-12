@@ -98,7 +98,7 @@ class EntityResolver:
     def create_entity_tool_from_ifcopenshell_entity(el: ifcopenshell.entity_instance) -> EntityTool:
         linked_objects: dict[ifcopenshell.entity_instance, Entity] = dict()
 
-        def walk(source) -> Entity | dict | tuple:
+        def walk(source) -> Entity | dict | tuple | float | int | str:
             nonlocal linked_objects
             if isinstance(source, ifcopenshell.entity_instance):
                 existing_obj = linked_objects.get(source, None)

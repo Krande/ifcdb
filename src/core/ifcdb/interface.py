@@ -14,14 +14,13 @@ from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import GetBulk
 from ifcdb.database.inserts.model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
-from ifcdb.diffing.tool import ifc_diff_tool
+from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
 
 
 @dataclass
 class EdgeIO:
-
     database_name: str
     client: edgedb.Client | edgedb.AsyncIOClient = None
     db_schema_dir: str | pathlib.Path = "dbschema"
@@ -134,13 +133,15 @@ class EdgeIO:
 
         for tx in self.client.transaction():
             with tx:
-                query_str = bulk_entity_handler.to_edql_str(tx)
+                query_str = bulk_entity_handler.to_edql_str()
                 print(query_str)
                 rs = tx.query_single_json(query_str)
                 print(rs)
 
     def update_db_from_ifc_delta(self, original_ifc, modified_ifc):
-        diff_tool = ifc_diff_tool(ifcopenshell.open(original_ifc), ifcopenshell.open(modified_ifc))
+        old_file = original_ifc if isinstance(original_ifc, ifcopenshell.file) else ifcopenshell.open(original_ifc)
+        new_file = modified_ifc if isinstance(modified_ifc, ifcopenshell.file) else ifcopenshell.open(modified_ifc)
+        diff_tool = IfcDiffTool(old_file, new_file)
         self.update_from_diff_tool(diff_tool)
 
     def to_ifcopenshell_object(

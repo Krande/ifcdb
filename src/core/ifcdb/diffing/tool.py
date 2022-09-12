@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import copy
+import ifcopenshell
 import json
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
-
-import ifcopenshell
 from deepdiff import DeepDiff
 
 from ifcdb.database.bulk_handler import BulkEntityHandler
@@ -17,12 +15,6 @@ from ifcdb.entities import (
     get_entity_from_source_dict,
 )
 from ifcdb.io.ifc.optimizing import general_optimization
-
-
-class ChangeType(Enum):
-    CHANGED = "changed"
-    REMOVED = "removed"
-    ADDED = "added"
 
 
 @dataclass
@@ -48,11 +40,11 @@ class EntityDiffChange(EntityDiffBase):
     def from_json_file(filepath, ifc_obj: ifcopenshell.file) -> EntityDiffChange:
         with open(filepath, "r") as f:
             data = json.load(f)
-        guid = data['guid']
+        guid = data["guid"]
         item = ifc_obj.by_guid(guid)
         er = EntityResolver(ifc_obj.wrapped_data.schema)
         entity = er.create_insert_entity_from_ifc_entity(item)
-        return EntityDiffChange(guid, data['class_name'], data["diff"], entity)
+        return EntityDiffChange(guid, data["class_name"], data["diff"], entity)
 
 
 @dataclass
@@ -67,15 +59,23 @@ class EntityDiffRemove(EntityDiffBase):
 
 @dataclass
 class IfcDiffTool:
+    f1: ifcopenshell.file
+    f2: ifcopenshell.file = None
+    schema_ver: str = "IFC4x1"
+    optimize_before_diffing: bool = True
+
     changed: list[EntityDiffChange] = field(default_factory=list)
     added: list[EntityDiffAdd] = field(default_factory=list)
     removed: list[EntityDiffRemove] = field(default_factory=list)
 
-    schema_ver: str = "IFC4x1"
-    optimize_before_diffing: bool = True
+    def __post_init__(self):
+        if self.f2 is not None:
+            self._run()
 
-    def run(self, f1: ifcopenshell.file, f2: ifcopenshell.file):
+    def _run(self):
         """Compare rooted elements in two ifc files and generate a list of element diffs"""
+        f1 = self.f1
+        f2 = self.f2
         if self.optimize_before_diffing:
             f1 = general_optimization(f1)
             f2 = general_optimization(f2)
@@ -99,13 +99,13 @@ class IfcDiffTool:
             guid = el.GlobalId
             if guid in removed or guid in added:
                 continue
-            result = self.element_validator(el, f2.by_guid(guid))
+            result = self.compare_rooted_elements(el, f2.by_guid(guid))
             if result is None:
                 continue
 
             self.changed.append(result)
 
-    def element_validator(
+    def compare_rooted_elements(
         self, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance
     ) -> EntityDiffChange | None:
         info1 = el1.get_info(recursive=True, include_identifier=False)
@@ -126,12 +126,6 @@ class IfcDiffTool:
     def to_bulk_entity_handler(self) -> BulkEntityHandler:
         # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
         return BulkEntityHandler(self)
-
-
-def ifc_diff_tool(f1: ifcopenshell.file, f2: ifcopenshell.file) -> IfcDiffTool:
-    tool = IfcDiffTool()
-    tool.run(f1, f2)
-    return tool
 
 
 def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:

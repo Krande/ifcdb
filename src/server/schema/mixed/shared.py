@@ -1,4 +1,4 @@
-FILES = ["MyCube.ifc", "cube-advanced-brep.ifc", "tessellated-item.ifc", "MyBeamWithHoles.ifc"]
+FILES = ["MyCube/MyCube.ifc", "cube-advanced-brep.ifc", "tessellated-item.ifc", "MyBeam_w_holes/MyBeamWithHoles.ifc"]
 ADD_CLASSES = [
     "IfcTelecomAddress",
     "IfcMember",

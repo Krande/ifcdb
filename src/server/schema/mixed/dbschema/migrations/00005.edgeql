@@ -1,36 +1,19 @@
-CREATE MIGRATION m1w2ygugn54cnr7mfuk76mjgddmbmaick3wvtat52i475wvoecxwcq
-    ONTO m1f7rcycsakxiakx64fysodle6pp4exot7rqrhepltmkzijvuqdmia
+CREATE MIGRATION m17zc3stjz2xcjzwgriu3gghpjlapl2zheb5keymruxsudhq7jociq
+    ONTO m177bp43lj5j3lsj4lskpsijqodbbb6rfszovqluakrevko5tbteya
 {
   CREATE TYPE default::IfcAxis2Placement {
       CREATE LINK IfcAxis2Placement -> (default::IfcAxis2Placement3D | default::IfcAxis2Placement2D);
   };
-  CREATE ABSTRACT TYPE default::IfcObjectDefinition EXTENDING default::IfcRoot;
-  CREATE ABSTRACT TYPE default::IfcPropertyDefinition EXTENDING default::IfcRoot;
-  CREATE TYPE default::IfcDefinitionSelect {
-      CREATE LINK IfcDefinitionSelect -> (default::IfcPropertyDefinition | default::IfcObjectDefinition);
-  };
-  CREATE ABSTRACT TYPE default::IfcPropertySetDefinition EXTENDING default::IfcPropertyDefinition;
-  CREATE TYPE default::IfcPropertySetDefinitionSet {
-      CREATE REQUIRED MULTI LINK IfcPropertySetDefinitionSet -> default::IfcPropertySetDefinition;
-  };
-  CREATE TYPE default::IfcPropertySetDefinitionSelect {
-      CREATE LINK IfcPropertySetDefinitionSelect -> (default::IfcPropertySetDefinition | default::IfcPropertySetDefinitionSet);
-  };
-  CREATE TYPE default::IfcClosedShell EXTENDING default::IfcConnectedFaceSet;
-  CREATE ABSTRACT TYPE default::IfcManifoldSolidBrep EXTENDING default::IfcSolidModel {
-      CREATE REQUIRED LINK Outer -> default::IfcClosedShell;
-  };
-  CREATE TYPE default::IfcAdvancedBrep EXTENDING default::IfcManifoldSolidBrep;
   CREATE TYPE default::IfcRepresentationMap {
-      CREATE REQUIRED LINK MappingOrigin -> default::IfcAxis2Placement;
+      CREATE REQUIRED LINK MappingOrigin -> (default::IfcAxis2Placement3D | default::IfcAxis2Placement2D);
       CREATE REQUIRED LINK MappedRepresentation -> default::IfcRepresentation;
   };
   CREATE TYPE default::IfcLocalPlacement EXTENDING default::IfcObjectPlacement {
-      CREATE REQUIRED LINK RelativePlacement -> default::IfcAxis2Placement;
+      CREATE REQUIRED LINK RelativePlacement -> (default::IfcAxis2Placement3D | default::IfcAxis2Placement2D);
       CREATE LINK PlacementRelTo -> default::IfcObjectPlacement;
   };
   CREATE TYPE default::IfcGeometricRepresentationContext EXTENDING default::IfcRepresentationContext {
-      CREATE LINK WorldCoordinateSystem -> default::IfcAxis2Placement;
+      CREATE LINK WorldCoordinateSystem -> (default::IfcAxis2Placement3D | default::IfcAxis2Placement2D);
       CREATE LINK TrueNorth -> default::IfcDirection;
       CREATE PROPERTY CoordinateSpaceDimension -> std::int64;
       CREATE PROPERTY Precision -> std::float64;
@@ -43,6 +26,29 @@ CREATE MIGRATION m1w2ygugn54cnr7mfuk76mjgddmbmaick3wvtat52i475wvoecxwcq
       };
       CREATE PROPERTY UserDefinedTargetView -> std::str;
   };
+  CREATE ABSTRACT TYPE default::IfcObjectDefinition EXTENDING default::IfcRoot;
+  CREATE ABSTRACT TYPE default::IfcPropertyDefinition EXTENDING default::IfcRoot;
+  CREATE TYPE default::IfcDefinitionSelect {
+      CREATE LINK IfcDefinitionSelect -> (default::IfcPropertyDefinition | default::IfcObjectDefinition);
+  };
+  CREATE ABSTRACT TYPE default::IfcPropertySetDefinition EXTENDING default::IfcPropertyDefinition;
+  CREATE TYPE default::IfcPropertySetDefinitionSet {
+      CREATE REQUIRED MULTI LINK IfcPropertySetDefinitionSet -> default::IfcPropertySetDefinition;
+  };
+  CREATE TYPE default::IfcPropertySetDefinitionSelect {
+      CREATE LINK IfcPropertySetDefinitionSelect -> (default::IfcPropertySetDefinitionSet | default::IfcPropertySetDefinition);
+  };
+  CREATE ABSTRACT TYPE default::IfcRelationship EXTENDING default::IfcRoot;
+  CREATE ABSTRACT TYPE default::IfcRelDefines EXTENDING default::IfcRelationship;
+  CREATE TYPE default::IfcRelDefinesByProperties EXTENDING default::IfcRelDefines {
+      CREATE REQUIRED LINK RelatingPropertyDefinition -> (default::IfcPropertySetDefinitionSet | default::IfcPropertySetDefinition);
+      CREATE REQUIRED MULTI LINK RelatedObjects -> default::IfcObjectDefinition;
+  };
+  CREATE TYPE default::IfcClosedShell EXTENDING default::IfcConnectedFaceSet;
+  CREATE ABSTRACT TYPE default::IfcManifoldSolidBrep EXTENDING default::IfcSolidModel {
+      CREATE REQUIRED LINK Outer -> default::IfcClosedShell;
+  };
+  CREATE TYPE default::IfcAdvancedBrep EXTENDING default::IfcManifoldSolidBrep;
   CREATE TYPE default::IfcBSplineSurfaceWithKnots EXTENDING default::IfcBSplineSurface {
       CREATE REQUIRED PROPERTY KnotSpec -> std::str {
           CREATE CONSTRAINT std::one_of('PIECEWISE_BEZIER_KNOTS', 'QUASI_UNIFORM_KNOTS', 'UNIFORM_KNOTS', 'UNSPECIFIED');
@@ -104,12 +110,11 @@ CREATE MIGRATION m1w2ygugn54cnr7mfuk76mjgddmbmaick3wvtat52i475wvoecxwcq
       CREATE REQUIRED LINK ConversionFactor -> default::IfcMeasureWithUnit;
       CREATE REQUIRED PROPERTY Name -> std::str;
   };
-  CREATE ABSTRACT TYPE default::IfcRelationship EXTENDING default::IfcRoot;
   CREATE ABSTRACT TYPE default::IfcRelAssociates EXTENDING default::IfcRelationship {
       CREATE REQUIRED MULTI LINK RelatedObjects -> default::IfcDefinitionSelect;
   };
   CREATE TYPE default::IfcRelAssociatesMaterial EXTENDING default::IfcRelAssociates {
-      CREATE REQUIRED LINK RelatingMaterial -> default::IfcMaterialSelect;
+      CREATE REQUIRED LINK RelatingMaterial -> ((default::IfcMaterialDefinition | default::IfcMaterialUsageDefinition) | default::IfcMaterialList);
   };
   CREATE ABSTRACT TYPE default::IfcFeatureElement EXTENDING default::IfcElement;
   CREATE TYPE default::IfcTypeObject EXTENDING default::IfcObjectDefinition {
@@ -144,7 +149,6 @@ CREATE MIGRATION m1w2ygugn54cnr7mfuk76mjgddmbmaick3wvtat52i475wvoecxwcq
       CREATE REQUIRED PROPERTY OverallWidth -> std::float64;
       CREATE REQUIRED PROPERTY WebThickness -> std::float64;
   };
-  CREATE ABSTRACT TYPE default::IfcRelDefines EXTENDING default::IfcRelationship;
   CREATE TYPE default::IfcRelDefinesByType EXTENDING default::IfcRelDefines {
       CREATE REQUIRED MULTI LINK RelatedObjects -> default::IfcObject;
       CREATE REQUIRED LINK RelatingType -> default::IfcTypeObject;
@@ -153,10 +157,6 @@ CREATE MIGRATION m1w2ygugn54cnr7mfuk76mjgddmbmaick3wvtat52i475wvoecxwcq
   CREATE TYPE default::IfcRelAggregates EXTENDING default::IfcRelDecomposes {
       CREATE REQUIRED MULTI LINK RelatedObjects -> default::IfcObjectDefinition;
       CREATE REQUIRED LINK RelatingObject -> default::IfcObjectDefinition;
-  };
-  CREATE TYPE default::IfcRelDefinesByProperties EXTENDING default::IfcRelDefines {
-      CREATE REQUIRED MULTI LINK RelatedObjects -> default::IfcObjectDefinition;
-      CREATE REQUIRED LINK RelatingPropertyDefinition -> default::IfcPropertySetDefinitionSelect;
   };
   CREATE TYPE default::IfcRectangleProfileDef EXTENDING default::IfcParameterizedProfileDef {
       CREATE REQUIRED PROPERTY XDim -> std::float64;

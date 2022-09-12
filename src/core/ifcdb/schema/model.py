@@ -123,6 +123,7 @@ class AttributeModel:
         return self.edge_model.get_entity_by_name(result.name())
 
     def to_str(self):
+
         array_ref = self.array_ref()
         value_ref = self.entity_ref()
         prefix_str = "" if self.optional is True else "required "
@@ -150,9 +151,15 @@ class AttributeModel:
                         value_name = imc.name
             else:
                 value_name = array_ref.to_str()
-        elif isinstance(value_ref, (EntityModel, SelectModel)):
+        elif isinstance(value_ref, EntityModel):
             prefix_str += "link"
             value_name = value_ref.name
+        elif isinstance(value_ref, SelectModel):
+            prefix_str += "link"
+            if self.edge_model.select_types_unwrap:
+                value_name = " | ".join([x.name for x in value_ref.get_select_entities()])
+            else:
+                value_name = value_ref.name
         elif isinstance(value_ref, EnumModel):
             prefix_str += "property"
             items_str = ",".join(f"'{x}'" for x in value_ref.get_enum_items())
@@ -399,6 +406,7 @@ class TypeModel(EntityBaseModel):
 
     def get_base_type(self):
         return get_base_type_name(self.entity)
+
     def get_cur_decl(self):
         cur_decl = self.entity
         while hasattr(cur_decl, "declared_type") is True:

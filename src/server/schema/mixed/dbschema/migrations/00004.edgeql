@@ -1,5 +1,5 @@
-CREATE MIGRATION m1f7rcycsakxiakx64fysodle6pp4exot7rqrhepltmkzijvuqdmia
-    ONTO m1ymni3sbqr56owqda3dllymalfw3aks3z54ptezekpt3si4zqva5q
+CREATE MIGRATION m177bp43lj5j3lsj4lskpsijqodbbb6rfszovqluakrevko5tbteya
+    ONTO m1h2dhmlpcqaeso62rbfdwxltrisnmm4hxpwqenxpk3otaznmdrmxa
 {
   CREATE TYPE default::IfcCartesianPointList3D EXTENDING default::IfcCartesianPointList {
       CREATE REQUIRED PROPERTY CoordList -> array<tuple<std::float64, std::float64, std::float64>>;
@@ -16,7 +16,7 @@ CREATE MIGRATION m1f7rcycsakxiakx64fysodle6pp4exot7rqrhepltmkzijvuqdmia
       CREATE PROPERTY PnIndex -> tuple<std::int64>;
   };
   CREATE TYPE default::IfcValue {
-      CREATE LINK IfcValue -> (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((default::IfcLinearVelocityMeasure | default::IfcMassMeasure) | default::IfcAmountOfSubstanceMeasure) | default::IfcEnergyMeasure) | default::IfcContextDependentMeasure) | default::IfcNormalisedRatioMeasure) | default::IfcReal) | default::IfcBoolean) | default::IfcMagneticFluxMeasure) | default::IfcTemperatureGradientMeasure) | default::IfcBinary) | default::IfcElectricVoltageMeasure) | default::IfcPowerMeasure) | default::IfcElectricCapacitanceMeasure) | default::IfcMonetaryMeasure) | default::IfcForceMeasure) | default::IfcIonConcentrationMeasure) | default::IfcMassDensityMeasure) | default::IfcSolidAngleMeasure) | default::IfcLogical) | default::IfcPositivePlaneAngleMeasure) | default::IfcCompoundPlaneAngleMeasure) | default::IfcPositiveRatioMeasure) | default::IfcLengthMeasure) | default::IfcNumericMeasure) | default::IfcCurvatureMeasure) | default::IfcIdentifier) | default::IfcTime) | default::IfcPositiveLengthMeasure) | default::IfcParameterValue) | default::IfcLuminousIntensityDistributionMeasure) | default::IfcIsothermalMoistureCapacityMeasure) | default::IfcIntegerCountRateMeasure) | default::IfcThermodynamicTemperatureMeasure) | default::IfcLuminousFluxMeasure) | default::IfcMoistureDiffusivityMeasure) | default::IfcSectionalAreaIntegralMeasure) | default::IfcHeatFluxDensityMeasure) | default::IfcText) | default::IfcRadioActivityMeasure) | default::IfcModulusOfSubgradeReactionMeasure) | default::IfcFrequencyMeasure) | default::IfcSoundPowerLevelMeasure) | default::IfcLabel) | default::IfcSoundPowerMeasure) | default::IfcMassPerLengthMeasure) | default::IfcMassFlowRateMeasure) | default::IfcVolumetricFlowRateMeasure) | default::IfcIlluminanceMeasure) | default::IfcTorqueMeasure) | default::IfcInteger) | default::IfcPressureMeasure) | default::IfcModulusOfLinearSubgradeReactionMeasure) | default::IfcComplexNumber) | default::IfcAngularVelocityMeasure) | default::IfcTemperatureRateOfChangeMeasure) | default::IfcElectricResistanceMeasure) | default::IfcAreaDensityMeasure) | default::IfcRatioMeasure) | default::IfcThermalAdmittanceMeasure) | default::IfcSoundPressureMeasure) | default::IfcWarpingMomentMeasure) | default::IfcElectricChargeMeasure) | default::IfcVolumeMeasure) | default::IfcVaporPermeabilityMeasure) | default::IfcHeatingValueMeasure) | default::IfcMomentOfInertiaMeasure) | default::IfcRotationalFrequencyMeasure) | default::IfcThermalExpansionCoefficientMeasure) | default::IfcDescriptiveMeasure) | default::IfcAbsorbedDoseMeasure) | default::IfcPositiveInteger) | default::IfcTimeStamp) | default::IfcDynamicViscosityMeasure) | default::IfcPHMeasure) | default::IfcLinearMomentMeasure) | default::IfcPlaneAngleMeasure) | default::IfcNonNegativeLengthMeasure) | default::IfcDateTime) | default::IfcShearModulusMeasure) | default::IfcModulusOfElasticityMeasure) | default::IfcAreaMeasure) | default::IfcSectionModulusMeasure) | default::IfcThermalConductivityMeasure) | default::IfcRotationalMassMeasure) | default::IfcElectricConductanceMeasure) | default::IfcSoundPressureLevelMeasure) | default::IfcModulusOfRotationalSubgradeReactionMeasure) | default::IfcRotationalStiffnessMeasure) | default::IfcThermalResistanceMeasure) | default::IfcInductanceMeasure) | default::IfcWarpingConstantMeasure) | default::IfcLinearStiffnessMeasure) | default::IfcAccelerationMeasure) | default::IfcSpecificHeatCapacityMeasure) | default::IfcLinearForceMeasure) | default::IfcMagneticFluxDensityMeasure) | default::IfcPlanarForceMeasure) | default::IfcElectricCurrentMeasure) | default::IfcLuminousIntensityMeasure) | default::IfcDoseEquivalentMeasure) | default::IfcThermalTransmittanceMeasure) | default::IfcKinematicViscosityMeasure) | default::IfcCountMeasure) | default::IfcTimeMeasure) | default::IfcDuration) | default::IfcMolecularWeightMeasure) | default::IfcDate);
+      CREATE LINK IfcValue -> (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((default::IfcNormalisedRatioMeasure | default::IfcVolumeMeasure) | default::IfcElectricChargeMeasure) | default::IfcHeatingValueMeasure) | default::IfcMassDensityMeasure) | default::IfcForceMeasure) | default::IfcIdentifier) | default::IfcParameterValue) | default::IfcMagneticFluxMeasure) | default::IfcInteger) | default::IfcFrequencyMeasure) | default::IfcThermalTransmittanceMeasure) | default::IfcText) | default::IfcThermalExpansionCoefficientMeasure) | default::IfcLengthMeasure) | default::IfcLinearVelocityMeasure) | default::IfcContextDependentMeasure) | default::IfcTemperatureRateOfChangeMeasure) | default::IfcCurvatureMeasure) | default::IfcLabel) | default::IfcRadioActivityMeasure) | default::IfcMomentOfInertiaMeasure) | default::IfcDescriptiveMeasure) | default::IfcAbsorbedDoseMeasure) | default::IfcIsothermalMoistureCapacityMeasure) | default::IfcPHMeasure) | default::IfcEnergyMeasure) | default::IfcIonConcentrationMeasure) | default::IfcSoundPressureLevelMeasure) | default::IfcVolumetricFlowRateMeasure) | default::IfcMassMeasure) | default::IfcSectionalAreaIntegralMeasure) | default::IfcSoundPowerMeasure) | default::IfcRotationalFrequencyMeasure) | default::IfcLuminousFluxMeasure) | default::IfcModulusOfSubgradeReactionMeasure) | default::IfcPowerMeasure) | default::IfcIlluminanceMeasure) | default::IfcShearModulusMeasure) | default::IfcSoundPowerLevelMeasure) | default::IfcWarpingConstantMeasure) | default::IfcThermalResistanceMeasure) | default::IfcBoolean) | default::IfcCountMeasure) | default::IfcNonNegativeLengthMeasure) | default::IfcRotationalStiffnessMeasure) | default::IfcLogical) | default::IfcPositiveRatioMeasure) | default::IfcComplexNumber) | default::IfcSectionModulusMeasure) | default::IfcMagneticFluxDensityMeasure) | default::IfcThermalConductivityMeasure) | default::IfcSolidAngleMeasure) | default::IfcHeatFluxDensityMeasure) | default::IfcThermodynamicTemperatureMeasure) | default::IfcInductanceMeasure) | default::IfcMolecularWeightMeasure) | default::IfcAreaDensityMeasure) | default::IfcLinearStiffnessMeasure) | default::IfcBinary) | default::IfcLinearMomentMeasure) | default::IfcTemperatureGradientMeasure) | default::IfcTimeStamp) | default::IfcPressureMeasure) | default::IfcPositiveInteger) | default::IfcDateTime) | default::IfcKinematicViscosityMeasure) | default::IfcElectricVoltageMeasure) | default::IfcAmountOfSubstanceMeasure) | default::IfcModulusOfLinearSubgradeReactionMeasure) | default::IfcRatioMeasure) | default::IfcModulusOfElasticityMeasure) | default::IfcElectricConductanceMeasure) | default::IfcPositivePlaneAngleMeasure) | default::IfcTimeMeasure) | default::IfcRotationalMassMeasure) | default::IfcAccelerationMeasure) | default::IfcElectricResistanceMeasure) | default::IfcMassFlowRateMeasure) | default::IfcTime) | default::IfcLuminousIntensityDistributionMeasure) | default::IfcPositiveLengthMeasure) | default::IfcSoundPressureMeasure) | default::IfcDate) | default::IfcTorqueMeasure) | default::IfcElectricCapacitanceMeasure) | default::IfcLinearForceMeasure) | default::IfcSpecificHeatCapacityMeasure) | default::IfcDoseEquivalentMeasure) | default::IfcNumericMeasure) | default::IfcDynamicViscosityMeasure) | default::IfcWarpingMomentMeasure) | default::IfcReal) | default::IfcDuration) | default::IfcMassPerLengthMeasure) | default::IfcVaporPermeabilityMeasure) | default::IfcModulusOfRotationalSubgradeReactionMeasure) | default::IfcAngularVelocityMeasure) | default::IfcMonetaryMeasure) | default::IfcLuminousIntensityMeasure) | default::IfcMoistureDiffusivityMeasure) | default::IfcIntegerCountRateMeasure) | default::IfcThermalAdmittanceMeasure) | default::IfcCompoundPlaneAngleMeasure) | default::IfcAreaMeasure) | default::IfcPlaneAngleMeasure) | default::IfcPlanarForceMeasure) | default::IfcElectricCurrentMeasure);
   };
   CREATE TYPE default::IfcDerivedUnit {
       CREATE REQUIRED MULTI LINK Elements -> default::IfcDerivedUnitElement;
@@ -25,11 +25,20 @@ CREATE MIGRATION m1f7rcycsakxiakx64fysodle6pp4exot7rqrhepltmkzijvuqdmia
       };
       CREATE PROPERTY UserDefinedType -> std::str;
   };
+  CREATE ABSTRACT TYPE default::IfcSimpleProperty EXTENDING default::IfcProperty;
+  CREATE TYPE default::IfcPropertySingleValue EXTENDING default::IfcSimpleProperty {
+      CREATE LINK NominalValue -> ((default::IfcDerivedMeasureValue | default::IfcMeasureValue) | default::IfcSimpleValue);
+      CREATE LINK Unit -> ((default::IfcDerivedUnit | default::IfcMonetaryUnit) | default::IfcNamedUnit);
+  };
+  CREATE TYPE default::IfcMeasureWithUnit {
+      CREATE REQUIRED LINK ValueComponent -> ((default::IfcDerivedMeasureValue | default::IfcMeasureValue) | default::IfcSimpleValue);
+      CREATE REQUIRED LINK UnitComponent -> ((default::IfcDerivedUnit | default::IfcMonetaryUnit) | default::IfcNamedUnit);
+  };
   CREATE TYPE default::IfcUnit {
-      CREATE LINK IfcUnit -> ((default::IfcNamedUnit | default::IfcMonetaryUnit) | default::IfcDerivedUnit);
+      CREATE LINK IfcUnit -> ((default::IfcDerivedUnit | default::IfcMonetaryUnit) | default::IfcNamedUnit);
   };
   CREATE TYPE default::IfcMaterialSelect {
-      CREATE LINK IfcMaterialSelect -> ((default::IfcMaterialDefinition | default::IfcMaterialList) | default::IfcMaterialUsageDefinition);
+      CREATE LINK IfcMaterialSelect -> ((default::IfcMaterialList | default::IfcMaterialUsageDefinition) | default::IfcMaterialDefinition);
   };
   CREATE TYPE default::IfcFaceBound EXTENDING default::IfcTopologicalRepresentationItem {
       CREATE REQUIRED LINK Bound -> default::IfcLoop;
@@ -154,10 +163,6 @@ CREATE MIGRATION m1f7rcycsakxiakx64fysodle6pp4exot7rqrhepltmkzijvuqdmia
   CREATE TYPE default::IfcMaterialProperties EXTENDING default::IfcExtendedProperties {
       CREATE REQUIRED LINK Material -> default::IfcMaterialDefinition;
   };
-  CREATE TYPE default::IfcMeasureWithUnit {
-      CREATE REQUIRED LINK UnitComponent -> default::IfcUnit;
-      CREATE REQUIRED LINK ValueComponent -> default::IfcValue;
-  };
   CREATE ABSTRACT TYPE default::IfcRoot {
       CREATE LINK OwnerHistory -> default::IfcOwnerHistory;
       CREATE PROPERTY Description -> std::str;
@@ -165,11 +170,6 @@ CREATE MIGRATION m1f7rcycsakxiakx64fysodle6pp4exot7rqrhepltmkzijvuqdmia
       CREATE PROPERTY Name -> std::str;
   };
   CREATE TYPE default::IfcProductDefinitionShape EXTENDING default::IfcProductRepresentation;
-  CREATE ABSTRACT TYPE default::IfcSimpleProperty EXTENDING default::IfcProperty;
-  CREATE TYPE default::IfcPropertySingleValue EXTENDING default::IfcSimpleProperty {
-      CREATE LINK NominalValue -> default::IfcValue;
-      CREATE LINK Unit -> default::IfcUnit;
-  };
   CREATE ABSTRACT TYPE default::IfcShapeModel EXTENDING default::IfcRepresentation;
   CREATE TYPE default::IfcShapeRepresentation EXTENDING default::IfcShapeModel;
   CREATE ABSTRACT TYPE default::IfcSolidModel EXTENDING default::IfcGeometricRepresentationItem;
