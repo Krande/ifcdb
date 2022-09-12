@@ -1,0 +1,9 @@
+IfcBuildingElementType
+IfcBuildingStorey
+IfcColumn
+IfcFeatureElementSubtraction
+IfcMember
+IfcSite
+IfcBeamType
+IfcOpeningElement
+IfcRelVoidsElement
