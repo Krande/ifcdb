@@ -4,7 +4,7 @@ import logging
 import os
 import pathlib
 from dataclasses import dataclass, field
-from typing import ClassVar, Dict, List, Union, TypeVar
+from typing import ClassVar, Dict, List, TypeVar, Union
 
 import ifcopenshell
 from toposort import toposort_flatten
@@ -156,7 +156,7 @@ class AttributeModel:
             value_name = value_ref.name
         elif isinstance(value_ref, SelectModel):
             prefix_str += "link"
-            if self.edge_model.select_types_unwrap:
+            if self.edge_model.select_types_unwrap and value_ref.name not in ("IfcValue", "IfcUnit"):
                 value_name = " | ".join([x.name for x in value_ref.get_select_entities()])
             else:
                 value_name = value_ref.name

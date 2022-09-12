@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import ifcopenshell
 import logging
 from dataclasses import dataclass, field
 from itertools import count
 from typing import ClassVar
+
+import ifcopenshell
 
 from ifcdb.schema.model import (
     ArrayModel,
@@ -93,7 +94,8 @@ class InsertBase:
                 ref_str = f"(INSERT {aname} {{ {aname} := {unique_ref_name_a} }})"
             else:
                 ref_str = entity_str
-        elif isinstance(att_ref, SelectModel):
+        elif isinstance(att_ref, SelectModel) and att_ref.name not in ("IfcAxis2Placement",):
+            # TODO: Align treatment of SELECT entities across schema_gen, entity inserts here and in bulk_insert
             aname = att_ref.name
             unique_ref_name_a = f"ifc_{res_id + 100000}"
             with_map[unique_ref_name_a] = WithRef(unique_ref_name_a, entity_str)

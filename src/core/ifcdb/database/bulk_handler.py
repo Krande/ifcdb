@@ -83,14 +83,21 @@ class BulkEntityHandler:
     def get_global_with_str(self):
         # TODO: combined global_with_selects
         global_wstr = "with\n"
+        all_with_statements = dict()
         written = False
+        for key, value in self.inserts.inserts.items():
+            all_with_statements[key] = value
+
         for update in self.updates:
             update._resolve_global_with_statements()
             if len(update.global_with_selects.keys()) == 0:
                 continue
-            written = True
             for key, value in update.global_with_selects.items():
-                global_wstr += "    " + value.to_edql_str() + "\n"
+                all_with_statements[key] = value
+
+        for key, value in all_with_statements.items():
+            global_wstr += "    " + value.to_edql_str() + "\n"
+            written = True
         if written is False:
             return ""
         return global_wstr
@@ -102,7 +109,7 @@ class BulkEntityHandler:
         c = count(1)
         query_str = self.get_global_with_str()
         query_str += "SELECT {\n"
-        query_str += self.inserts.to_edql_str(c)
+        query_str += self.inserts.to_edql_str(c, embed_with_statement=False)
         query_str += self.removals.to_edql_str(c)
         for update in self.updates:
             query_str += update.to_edql_str(use_select_wrapper=False, variable_assignment=f"global_{next(c)}")

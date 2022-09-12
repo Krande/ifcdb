@@ -128,7 +128,7 @@ class EdgeIO:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
         return ifc_io
 
-    def update_from_diff_tool(self, diff_tool):
+    def update_from_diff_tool(self, diff_tool: IfcDiffTool):
         bulk_entity_handler = diff_tool.to_bulk_entity_handler()
 
         for tx in self.client.transaction():

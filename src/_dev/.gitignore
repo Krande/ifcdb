@@ -1,3 +1,5 @@
 *
 !.gitignore
-!cube_edit.py
+!00_cube_upload.py
+!01_cube_edit.py
+!02_cube_revert.py

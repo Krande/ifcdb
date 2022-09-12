@@ -13,9 +13,10 @@ if TYPE_CHECKING:
 
 @dataclass
 class EdgeInsert:
+    name: str
     entity: Entity
 
-    def to_edql_str(self):
+    def to_edql_str(self, assign_to_variable=True):
         props = ""
         props_writable = {p: v for p, v in self.entity.props.items() if v is not None}
         if len(props_writable) > 0:
@@ -25,25 +26,33 @@ class EdgeInsert:
             if len(props_writable) > 0:
                 links += ", "
             links += to_links_str(self.entity)
-        return f"INSERT {self.entity.name} {{ {props}{links} }}"
+        if assign_to_variable:
+            return f"{self.name} := (INSERT {self.entity.name} {{ {props}{links} }}),"
+        else:
+            return f"INSERT {self.entity.name} {{ {props}{links} }}"
 
 
 @dataclass
 class BulkEntityInsert:
     entities: list[EntityDiffAdd]
-    with_map: dict[str, EdgeSelect] = field(default_factory=dict)
+
+    inserts: dict[str, EdgeInsert] = field(default_factory=dict)
+    selects: dict[str, EdgeSelect] = field(default_factory=dict)
 
     indent: str = 4 * " "
 
-    def get_global_with_str(self, indent_override: str = None):
-        insert_str = "with\n"
-        indent = self.indent if indent_override is None else indent_override
+    def __post_init__(self):
         for entity_add in self.entities:
             for key, value in entity_add.added.linked_objects.items():
                 if value == entity_add.added.entity:
                     continue
-                insert = EdgeInsert(value)
-                insert_str += indent + f"{key} := ({insert.to_edql_str()}),\n"
+                self.inserts[key] = EdgeInsert(key, value)
+
+    def get_global_with_str(self, indent_override: str = None):
+        insert_str = "with\n"
+        indent = self.indent if indent_override is None else indent_override
+        for key, insert in self.inserts.items():
+            insert_str += indent + f"{key} := ({insert.to_edql_str()}),\n"
         return insert_str
 
     def get_insert_str(self, entity: EntityDiffAdd, indent_override: str = None):
@@ -56,12 +65,14 @@ class BulkEntityInsert:
         insert_str += f"INSERT {entity.class_name} {{\n{indent}{prop_str}{lstr} }}\n"
         return insert_str
 
-    def to_edql_str(self, variable_counter: count = None):
+    def to_edql_str(self, variable_counter: count = None, embed_with_statement=True):
         extra_with_indent = None
         if variable_counter is not None:
             extra_with_indent = self.indent * 2
 
-        global_with_str = self.get_global_with_str(extra_with_indent)
+        global_with_str = ""
+        if embed_with_statement:
+            global_with_str = self.get_global_with_str(extra_with_indent)
         insert_str = ""
         for entity in self.entities:
             istr = self.get_insert_str(entity, indent_override=extra_with_indent)

@@ -856,13 +856,13 @@ module default {
     }
 
     type IfcMeasureWithUnit  {
-        required link ValueComponent -> IfcDerivedMeasureValue | IfcMeasureValue | IfcSimpleValue;
-        required link UnitComponent -> IfcDerivedUnit | IfcMonetaryUnit | IfcNamedUnit;
+        required link ValueComponent -> IfcValue;
+        required link UnitComponent -> IfcUnit;
     }
 
     type IfcPropertySingleValue extending IfcSimpleProperty {
-        link NominalValue -> IfcDerivedMeasureValue | IfcMeasureValue | IfcSimpleValue;
-        link Unit -> IfcDerivedUnit | IfcMonetaryUnit | IfcNamedUnit;
+        link NominalValue -> IfcValue;
+        link Unit -> IfcUnit;
     }
 
     abstract type IfcRoot  {
