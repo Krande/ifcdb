@@ -856,13 +856,13 @@ module default {
     }
 
     type IfcMeasureWithUnit  {
-        required link ValueComponent -> IfcValue;
-        required link UnitComponent -> IfcUnit;
+        required link ValueComponent -> IfcDerivedMeasureValue | IfcMeasureValue | IfcSimpleValue;
+        required link UnitComponent -> IfcDerivedUnit | IfcMonetaryUnit | IfcNamedUnit;
     }
 
     type IfcPropertySingleValue extending IfcSimpleProperty {
-        link NominalValue -> IfcValue;
-        link Unit -> IfcUnit;
+        link NominalValue -> IfcDerivedMeasureValue | IfcMeasureValue | IfcSimpleValue;
+        link Unit -> IfcDerivedUnit | IfcMonetaryUnit | IfcNamedUnit;
     }
 
     abstract type IfcRoot  {
@@ -954,7 +954,7 @@ module default {
     type IfcGeometricRepresentationContext extending IfcRepresentationContext {
         property CoordinateSpaceDimension -> int64;
         property Precision -> float64;
-        link WorldCoordinateSystem -> IfcAxis2Placement;
+        link WorldCoordinateSystem -> IfcAxis2Placement2D | IfcAxis2Placement3D;
         link TrueNorth -> IfcDirection;
     }
 
@@ -970,7 +970,7 @@ module default {
 
     type IfcLocalPlacement extending IfcObjectPlacement {
         link PlacementRelTo -> IfcObjectPlacement;
-        required link RelativePlacement -> IfcAxis2Placement;
+        required link RelativePlacement -> IfcAxis2Placement2D | IfcAxis2Placement3D;
     }
 
     abstract type IfcManifoldSolidBrep extending IfcSolidModel {
@@ -1002,7 +1002,7 @@ module default {
     }
 
     type IfcRepresentationMap  {
-        required link MappingOrigin -> IfcAxis2Placement;
+        required link MappingOrigin -> IfcAxis2Placement2D | IfcAxis2Placement3D;
         required link MappedRepresentation -> IfcRepresentation;
     }
 
@@ -1057,7 +1057,7 @@ module default {
     }
 
     type IfcRelAssociatesMaterial extending IfcRelAssociates {
-        required link RelatingMaterial -> IfcMaterialSelect;
+        required link RelatingMaterial -> IfcMaterialDefinition | IfcMaterialList | IfcMaterialUsageDefinition;
     }
 
     type IfcRelDefinesByType extending IfcRelDefines {
@@ -1091,7 +1091,7 @@ module default {
 
     type IfcRelDefinesByProperties extending IfcRelDefines {
         required multi link RelatedObjects -> IfcObjectDefinition;
-        required link RelatingPropertyDefinition -> IfcPropertySetDefinitionSelect;
+        required link RelatingPropertyDefinition -> IfcPropertySetDefinition | IfcPropertySetDefinitionSet;
     }
 
     abstract type IfcSpatialStructureElement extending IfcSpatialElement {
