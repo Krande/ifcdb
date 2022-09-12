@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 from ifcdb import EdgeIO
-from ifcdb.diffing.tool import ifc_diff_tool
+from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
 
 
@@ -38,7 +38,7 @@ def test_roundtrip_ifc_files_validation(files_dir, ifc_file_name):
 
         # Query & Validate Data using IfcOpenShell
         ifc_obj = io.to_ifcopenshell_object()
-        tool = ifc_diff_tool(ifc_io.ifc_obj, ifc_obj)
+        tool = IfcDiffTool(ifc_io.ifc_obj, ifc_obj)
 
         assert len(tool.added) == 0
         assert len(tool.changed) == 0
