@@ -59,3 +59,19 @@ def test_cube_removed(my_cube_added, my_cube):
     # For debugging only
     # with open("temp/removed.ifc", "w") as f:
     #     f.write(my_cube.wrapped_data.to_string())
+
+
+def test_cube_wipe(my_cube, empty_ifc_model):
+    diff_tool = IfcDiffTool(my_cube, empty_ifc_model)
+
+    assert len(diff_tool.removed) == 9
+    assert len(diff_tool.added) == 0
+    assert len(diff_tool.changed) == 0
+
+    bulk_entity_handler = diff_tool.to_bulk_entity_handler()
+
+    edql_str = bulk_entity_handler.to_edql_str()
+    print(edql_str)
+    # For debugging only
+    # with open("temp/removed.ifc", "w") as f:
+    #     f.write(my_cube.wrapped_data.to_string())

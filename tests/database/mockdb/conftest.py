@@ -10,6 +10,11 @@ from ifcdb.schema.model import IfcSchemaModel
 
 
 @pytest.fixture
+def empty_ifc_model():
+    return ifcopenshell.file(schema="IFC4x1")
+
+
+@pytest.fixture
 def my_cube(my_cube_ifc_filepath) -> ifcopenshell.file:
     return ifcopenshell.open(my_cube_ifc_filepath)
 
