@@ -1,3 +1,5 @@
+import os
+
 from ifcdb.diffing.diff_ifcopen import apply_diffs_ifcopenshell
 from ifcdb.diffing.tool import IfcDiffTool
 
@@ -8,7 +10,8 @@ def test_cube_edited(my_cube, my_cube_edited):
     assert len(diff_tool.changed) == 1
     assert len(diff_tool.added) == 0
     assert len(diff_tool.removed) == 0
-
+    os.makedirs("temp", exist_ok=True)
+    diff_tool.to_json_file("temp/edited_non_indented.json", indent=None)
     el_1 = diff_tool.changed[0]
 
     items_path = "root['Representation']['Representations'][0]['Items']"

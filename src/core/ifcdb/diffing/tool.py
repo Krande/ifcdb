@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import copy
-import ifcopenshell
 import json
 import logging
 from dataclasses import dataclass, field
+
+import ifcopenshell
 from deepdiff import DeepDiff
 
 from ifcdb.database.bulk_handler import BulkEntityHandler
@@ -22,6 +23,9 @@ class EntityDiffBase:
     guid: str
     class_name: str
 
+    def to_dict(self):
+        ...
+
     def to_json_file(self, filepath):
         ...
 
@@ -31,10 +35,12 @@ class EntityDiffChange(EntityDiffBase):
     diff: dict
     entity: Entity = None
 
+    def to_dict(self):
+        return dict(diff=self.diff, guid=self.guid, class_name=self.class_name)
+
     def to_json_file(self, filepath):
-        export_dict = dict(diff=self.diff, guid=self.guid, class_name=self.class_name)
         with open(filepath, "w") as f:
-            json.dump(export_dict, f, indent=4)
+            json.dump(self.to_dict(), f, indent=4)
 
     @staticmethod
     def from_json_file(filepath, ifc_obj: ifcopenshell.file) -> EntityDiffChange:
@@ -51,10 +57,14 @@ class EntityDiffChange(EntityDiffBase):
 class EntityDiffAdd(EntityDiffBase):
     added: EntityTool
 
+    def to_dict(self) -> dict:
+        return dict(class_name=self.class_name, entity=self.added.entity.to_dict())
+
 
 @dataclass
 class EntityDiffRemove(EntityDiffBase):
-    pass
+    def to_dict(self) -> dict:
+        return dict(guid=self.guid)
 
 
 @dataclass
@@ -126,6 +136,17 @@ class IfcDiffTool:
     def to_bulk_entity_handler(self) -> BulkEntityHandler:
         # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
         return BulkEntityHandler(self)
+
+    def to_dict(self) -> dict:
+        return dict(
+            changed=[x.to_dict() for x in self.changed],
+            added=[x.to_dict() for x in self.added],
+            removed=[x.to_dict() for x in self.removed],
+        )
+
+    def to_json_file(self, filepath, indent=4) -> None:
+        with open(filepath, "w") as f:
+            json.dump(self.to_dict(), f, indent=indent)
 
 
 def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:

@@ -54,6 +54,7 @@ queries/large_queries
 :caption: Updating Elements
 
 updating/diffing
+updating/diffing_issue
 ```
 
 ```{toctree}

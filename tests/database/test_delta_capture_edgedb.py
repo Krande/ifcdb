@@ -1,3 +1,5 @@
+import ifcopenshell
+
 from ifcdb.diffing.tool import IfcDiffTool
 
 
@@ -63,3 +65,12 @@ def test_cube_removed(my_cube_added, my_cube):
     # For debugging only
     # with open("temp/removed.ifc", "w") as f:
     #     f.write(my_cube.wrapped_data.to_string())
+
+
+def test_cube_upload_to_blank_db(my_cube):
+    f = ifcopenshell.file(schema="IFC4x1")
+    diff_tool = IfcDiffTool(f, my_cube)
+    bulk_handler = diff_tool.to_bulk_entity_handler()
+    # res = bulk_handler.inserts.inserts["ifc_product_definition_shape_85"]
+    edql_str = bulk_handler.to_edql_str()
+    print(edql_str)

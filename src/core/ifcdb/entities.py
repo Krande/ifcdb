@@ -154,6 +154,12 @@ class Entity:
     def __post_init__(self):
         self.temp_unique_identifier = f"{change_case(self.name)}_{next(_INSERT_COUNT)}"
 
+    def to_dict(self) -> dict:
+        new_d = dict(type=self.name)
+        new_d.update(self.props)
+        new_d.update(traverse_dicts(self.links))
+        return new_d
+
 
 @dataclass
 class EntityRef:
@@ -184,18 +190,11 @@ def walk_links(value: Entity | dict | tuple, parent: Entity = None, key: str = N
         raise NotImplementedError(f'Unknown link value type "{value}"')
 
 
-def entity_to_dict(entity: Entity) -> dict:
-    new_d = dict(type=entity.name)
-    new_d.update(entity.props)
-    new_d.update(traverse_dicts(entity.links))
-    return new_d
-
-
 def traverse_tuples(source: tuple) -> tuple:
     output = []
     for value in source:
         if isinstance(value, Entity):
-            output.append(entity_to_dict(value))
+            output.append(value.to_dict())
         elif isinstance(value, dict):
             output.append(traverse_dicts(value))
         else:
@@ -208,9 +207,11 @@ def traverse_dicts(source: dict):
     new_d = dict()
     for key, value in source.items():
         if isinstance(value, Entity):
-            new_d[key] = entity_to_dict(value)
+            new_d[key] = value.to_dict()
         elif isinstance(value, tuple):
             new_d[key] = traverse_tuples(value)
+        elif isinstance(value, dict):
+            new_d[key] = traverse_dicts(value)
         else:
             new_d[key] = value
 

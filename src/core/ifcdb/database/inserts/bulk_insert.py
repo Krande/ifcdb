@@ -84,21 +84,31 @@ class BulkEntityInsert:
         return insert_str
 
 
+def link_select(v: Entity, wrap_select=False) -> str:
+    if v.uuid is None:
+        return v.temp_unique_identifier
+    else:
+        if wrap_select:
+            return f"(SELECT {v.name} filter .id = <uuid>'{v.uuid}')"
+        else:
+            return f"SELECT {v.name} filter .id = <uuid>'{v.uuid}'"
+
+
 def to_links_str(entity: Entity, sep=", "):
     lstr = ""
+
     for key, value in entity.links.items():
         if value is None:
             continue
 
         if isinstance(value, Entity):
-            value = [value]
-
-        for v in value:
-            if v.uuid is None:
-                value_str = v.temp_unique_identifier
-            else:
-                value_str = f'SELECT {v.name} filter .id = <uuid>"{v.uuid}"'
-            lstr += f"{key}:= {value_str}{sep}"
+            lstr += f"{key}:= {link_select(value)}{sep}"
+        elif isinstance(value, tuple):
+            lstr += f"{key}:= {{"
+            lstr += ",".join([link_select(v, wrap_select=True) for v in value])
+            lstr += f"}}{sep}"
+        else:
+            raise NotImplementedError(f"Currently unsupported: {type(value)}")
     return lstr
 
 

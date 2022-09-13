@@ -7,9 +7,7 @@ import ifcopenshell
 from deepdiff import DeepDiff
 
 if TYPE_CHECKING:
-    from ifcdb.diffing.tool import IfcDiffTool, EntityDiffAdd
-
-from ifcdb.entities import entity_to_dict
+    from ifcdb.diffing.tool import EntityDiffAdd, IfcDiffTool
 
 _RE_COMP = re.compile(r"\[(.*?)\]")
 
@@ -103,7 +101,7 @@ def get_existing_type(f: ifcopenshell.file, class_type: str, class_info: dict) -
 
 
 def add_elem(f: ifcopenshell.file, entity_add: EntityDiffAdd):
-    source = entity_to_dict(entity_add.added.entity)
+    source = entity_add.added.entity.to_dict()
     # check for existing elements by globalid
     class_type = source.pop("type")
     owner = source.get("OwnerHistory")
