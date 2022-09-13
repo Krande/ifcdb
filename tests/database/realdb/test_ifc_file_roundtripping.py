@@ -21,7 +21,7 @@ def test_roundtrip_ifc_files_validation(files_dir, ifc_file_name):
     db_name = ifc_file_name.replace(".ifc", "").replace("-", "_")
     ifc_file = files_dir / ifc_file_name
 
-    db_schema_dir = pathlib.Path("temp").resolve().absolute() / db_name / "dbschema"
+    db_schema_dir = pathlib.Path("../client/temp").resolve().absolute() / db_name / "dbschema"
     if db_schema_dir.exists():
         shutil.rmtree(db_schema_dir)
 

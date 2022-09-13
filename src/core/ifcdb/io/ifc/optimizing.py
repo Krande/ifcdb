@@ -38,8 +38,8 @@ def general_optimization(ifc_file) -> ifcopenshell.file:
         Generator which yields an entity id and
         the set of all of its references contained in its attributes.
         """
-        for inst in ifc_file:
-            yield inst.id(), set(i.id() for i in ifc_file.traverse(inst)[1:] if i.id())
+        for prod in ifc_file:
+            yield prod.id(), set(i.id() for i in ifc_file.traverse(prod)[1:] if i.id())
 
     instance_mapping = {}
     optimized_file = ifcopenshell.file(schema=ifc_file.schema)
@@ -67,14 +67,14 @@ def general_optimization(ifc_file) -> ifcopenshell.file:
 
     info_to_id = {}
 
-    for id in toposort(dict(generate_instances_and_references())):
-        inst = ifc_file[id]
+    for ifc_id in toposort(dict(generate_instances_and_references())):
+        inst = ifc_file[ifc_id]
         info = inst.get_info(include_identifier=False, recursive=True, return_type=frozenset)
         if info in info_to_id:
             _ = instance_mapping[inst] = instance_mapping[ifc_file[info_to_id[info]]]
 
         else:
-            info_to_id[info] = id
+            info_to_id[info] = ifc_id
             instance_mapping[inst] = optimized_file.create_entity(inst.is_a(), *map(map_value, inst))
 
     start_entities = len(list(ifc_file))

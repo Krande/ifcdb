@@ -1,5 +1,5 @@
 *
 !.gitignore
-!00_cube_upload.py
-!01_cube_edit.py
-!02_cube_revert.py
+!cube_tools.py
+!cube_edit.py
+!optimize_ifc_files.py

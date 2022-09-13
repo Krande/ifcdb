@@ -2,18 +2,30 @@ from itertools import count
 
 import ifcopenshell
 
+from ifcdb.database.inserts.sequentially import InsertSeq
 from ifcdb.database.inserts.utils import to_entity_insert_str
+from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.entities import Entity, EntityResolver
-from ifcdb.io.ifc.optimizing import general_optimization
+from ifcdb.io.ifc.concept import IfcIO
+
+
+def test_cube_upload_to_blank_db_using_bulk_handler(my_cube):
+    f = ifcopenshell.file(schema="IFC4x1")
+    diff_tool = IfcDiffTool(f, my_cube)
+    bulk_handler = diff_tool.to_bulk_entity_handler()
+    # res = bulk_handler.inserts.inserts["ifc_product_definition_shape_85"]
+    edql_str = bulk_handler.to_edql_str()
+    print(edql_str)
+
+
+def test_cube_upload_to_blank_db_using_sequential_insert(my_cube):
+    ifc_io = IfcIO(ifc_obj=my_cube)
+    sq = InsertSeq(ifc_io.schema)
+    for item, insert_str in sq.create_bulk_insert_str(ifc_io.get_ifc_objects_by_sorted_insert_order_flat()):
+        print(insert_str)
 
 
 def test_insert_beam(my_beam_w_holes_ifc):
-    start_entities = len(list(my_beam_w_holes_ifc))
-    my_beam_w_holes_optimized = general_optimization(my_beam_w_holes_ifc)
-    end_entities = len(list(my_beam_w_holes_optimized))
-    assert start_entities == 179
-    assert end_entities == 110
-
     er = EntityResolver("IFC4x1")
     skippable_classes = [
         "IfcOwnerHistory",
@@ -24,13 +36,13 @@ def test_insert_beam(my_beam_w_holes_ifc):
 
     for skip_it in skippable_classes:
         uuid_id_gen = count(1)
-        for ifc_owner in my_beam_w_holes_optimized.by_type(skip_it):
+        for ifc_owner in my_beam_w_holes_ifc.by_type(skip_it):
             er.uuid_map[ifc_owner] = Entity(skip_it, uuid=f"a_random_uuid_replacement_for_IfcOwner{next(uuid_id_gen)}")
 
     # Adding a single ifc element should return UUID for use later
-    bm: ifcopenshell.entity_instance = my_beam_w_holes_optimized.by_type("IfcBeam")[0]
+    bm: ifcopenshell.entity_instance = my_beam_w_holes_ifc.by_type("IfcBeam")[0]
 
-    _ = my_beam_w_holes_optimized.get_inverse(bm)
+    _ = my_beam_w_holes_ifc.get_inverse(bm)
 
     insert_entity = er.create_insert_entity_from_ifc_entity(bm)
     assert frozenset(insert_entity.props) == frozenset(

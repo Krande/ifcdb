@@ -29,16 +29,20 @@ class IfcIO:
     def __post_init__(self):
         if self.ifc_file is not None:
             ifc_obj = ifcopenshell.open(str(self.ifc_file))
-        else:
+        elif self.ifc_str is not None:
             ifc_obj = ifcopenshell.file.from_string(self.ifc_str)
+        elif self.ifc_obj is not None:
+            ifc_obj = self.ifc_obj
+        else:
+            raise ValueError('You must add either "ifc_file", "ifc_str" or "ifc_obj" to the constructor')
+
         if self.optimize:
             try:
                 self.ifc_obj = general_optimization(ifc_obj)
             except RuntimeError as e:
                 logging.error(e)
                 self.ifc_obj = ifc_obj
-        else:
-            self.ifc_obj = ifc_obj
+
         self.schema = self.ifc_obj.wrapped_data.schema
 
     def get_ifc_dep_map(self, use_ids=True):
@@ -92,6 +96,8 @@ class IfcIO:
             ifc_class = instance_data.get("class")
             instance_props = instance_data.get("props")
             vid = instance_data.get("id")
+            # if ifc_class == 'IfcBuildingElementProxy':
+            #     print('sd')
             props = get_props(ifc_class, instance_props, id_map, ism)
             if ifc_class in ism.intermediate_classes.keys():
                 id_map[vid] = IfcNode(ifc_class, vid, props, intermediate_class=ism.intermediate_classes[ifc_class])

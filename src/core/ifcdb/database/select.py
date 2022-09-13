@@ -62,7 +62,7 @@ class EdgeSelect:
         if self.use_agg_array:
             return f"array_agg({entity_path})[{self.entity_index}]"
         else:
-            select_str = f"{entity_path}"
+            select_str = f"{entity_path} ORDER BY .id"
             if self.entity_index != 0:
                 select_str += f" offset {self.entity_index}"
             select_str += " limit 1"

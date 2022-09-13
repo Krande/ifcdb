@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import ifcopenshell
 from deepdiff import DeepDiff
@@ -39,23 +40,65 @@ def get_elem_paths(elem: ifcopenshell.entity_instance, path: str, is_append_obj=
     return levels, indices
 
 
-def replace_value(elem: ifcopenshell.entity_instance, path: str, new_value) -> None:
-    levels, indices = get_elem_paths(elem, path)
+@dataclass
+class IfcValueToChange:
+    entity: ifcopenshell.entity_instance
+    index: str | int
+    value: Any
 
-    parent_entity = levels[-3]
-    parent_index = indices[-2]
-    last_entity = levels[-2]
-    last_index = indices[-1]
-    if isinstance(last_entity, tuple):
-        list_ver = list(levels[-2])
-        list_ver[last_index] = new_value
-        result = tuple(list_ver)
-        if isinstance(parent_entity, ifcopenshell.entity_instance):
-            setattr(parent_entity, parent_index, result)
+
+@dataclass
+class IfcEntityValueEditor:
+    f: ifcopenshell.file
+    elem: ifcopenshell.entity_instance
+    path: str
+    new_value: Any
+
+    def __post_init__(self):
+        self.levels, self.indices = get_elem_paths(self.elem, self.path)
+
+        self.parent_entity = self.levels[-3]
+        self.parent_index = self.indices[-2]
+        self.last_entity = self.levels[-2]
+        self.last_index = self.indices[-1]
+
+    def update_tuple(self) -> tuple:
+        list_ver = list(self.levels[-2])
+        list_ver[self.last_index] = self.new_value
+        return tuple(list_ver)
+
+    def get_new_value(self) -> IfcValueToChange:
+        parent_entity = self.parent_entity
+        f = self.f
+
+        # If this object is linked to other objects, a new object should be created instead
+        if isinstance(parent_entity, ifcopenshell.entity_instance) and len(f.get_inverse(parent_entity)) > 1:
+            inverse_entity = self.levels[-4]
+            inverse_index = self.indices[-3]
+            res = parent_entity.get_info(include_identifier=False)
+            res.pop("type")
+            if isinstance(self.last_entity, tuple):
+                res[self.parent_index] = self.update_tuple()
+                new_entity = f.create_entity(parent_entity.is_a(), **res)
+            else:
+                raise NotImplementedError()
+
+            return IfcValueToChange(inverse_entity, inverse_index, new_entity)
+
+        if isinstance(self.last_entity, tuple):
+            result = self.update_tuple()
+            if isinstance(parent_entity, ifcopenshell.entity_instance):
+                return IfcValueToChange(parent_entity, self.parent_index, result)
+            else:
+                raise NotImplementedError("This is not yet supported")
         else:
-            raise NotImplementedError("This is not yet supported")
-    else:
-        setattr(last_entity, last_index, new_value)
+            new_value = IfcValueToChange(self.last_entity, self.last_index, self.new_value)
+
+        return new_value
+
+    def replace_value(self) -> None:
+        new_value = self.get_new_value()
+        setattr(new_value.entity, new_value.index, new_value.value)
 
 
 def add_iterable_item(f: ifcopenshell.file, elem: ifcopenshell.entity_instance, path: str, value: dict):
@@ -131,18 +174,19 @@ def apply_diffs_ifcopenshell(f: ifcopenshell.file, diff_tool: IfcDiffTool):
     for diff_el in diff_tool.added:
         add_elem(f, diff_el)
 
-    for diff_el in diff_tool.removed:
-        remove_elem(f, diff_el.guid)
-
     for diff_el in diff_tool.changed:
         old_ifc_elem: ifcopenshell.entity_instance = f.by_guid(diff_el.guid)
         for diff_type, diff in diff_el.diff.items():
             for diff_path, value_change in diff.items():
                 if diff_type == "values_changed":
-                    replace_value(old_ifc_elem, diff_path, value_change["new_value"])
+                    ifc_eve = IfcEntityValueEditor(f, old_ifc_elem, diff_path, value_change["new_value"])
+                    ifc_eve.replace_value()
                 elif diff_type == "iterable_item_added":
                     add_iterable_item(f, old_ifc_elem, diff_path, value_change)
                 elif diff_type == "iterable_item_removed":
                     pass
                 else:
                     raise NotImplementedError(f'Change type "{diff_type}" is not yet supported')
+
+    for diff_el in diff_tool.removed:
+        remove_elem(f, diff_el.guid)

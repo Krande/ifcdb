@@ -118,6 +118,8 @@ class IfcDiffTool:
     def compare_rooted_elements(
         self, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance
     ) -> EntityDiffChange | None:
+        if el1.GlobalId == "0HquQdG3r6nwZ_pzUh9Qfx":
+            print("sd")
         info1 = el1.get_info(recursive=True, include_identifier=False)
         info2 = el2.get_info(recursive=True, include_identifier=False)
 
@@ -147,6 +149,10 @@ class IfcDiffTool:
     def to_json_file(self, filepath, indent=4) -> None:
         with open(filepath, "w") as f:
             json.dump(self.to_dict(), f, indent=indent)
+
+    @property
+    def contains_changes(self) -> bool:
+        return len(self.added) + len(self.changed) + len(self.removed) > 0
 
 
 def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:

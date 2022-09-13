@@ -128,21 +128,29 @@ class EdgeIO:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
         return ifc_io
 
-    def update_from_diff_tool(self, diff_tool: IfcDiffTool):
+    def update_from_diff_tool(self, diff_tool: IfcDiffTool) -> None | str:
+        if diff_tool.contains_changes is False:
+            print("No Changes to model detected")
+            return None
         bulk_entity_handler = diff_tool.to_bulk_entity_handler()
 
         for tx in self.client.transaction():
             with tx:
                 query_str = bulk_entity_handler.to_edql_str()
+                if query_str is None:
+                    return
                 print(query_str)
-                rs = tx.query_single_json(query_str)
-                print(rs)
+                return tx.query_single_json(query_str)
 
-    def update_db_from_ifc_delta(self, original_ifc, modified_ifc):
+    def update_db_from_ifc_delta(self, original_ifc, modified_ifc, save_diff_as=None):
         old_file = original_ifc if isinstance(original_ifc, ifcopenshell.file) else ifcopenshell.open(original_ifc)
         new_file = modified_ifc if isinstance(modified_ifc, ifcopenshell.file) else ifcopenshell.open(modified_ifc)
         diff_tool = IfcDiffTool(old_file, new_file)
-        self.update_from_diff_tool(diff_tool)
+        if save_diff_as is not None:
+            diff_tool.to_json_file(save_diff_as)
+        res = self.update_from_diff_tool(diff_tool)
+        print(res)
+        return res
 
     def to_ifcopenshell_object(
         self, specific_classes: list[str] = None, only_ifc_entities=True, client=None

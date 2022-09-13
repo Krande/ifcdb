@@ -17,7 +17,7 @@ async def test_post_cube_ifc_str(normal_user_client: AsyncClient, cube_ifc_str, 
 
 @pytest.mark.anyio
 async def test_post_cube_ifc_file(normal_user_client: AsyncClient, cube_ifc_str, mock_db_name):
-    files = {"file": bytes(cube_ifc_str, encoding='utf8')}
+    files = {"file": bytes(cube_ifc_str, encoding="utf8")}
     response = await normal_user_client.post("/fileb", params={"dbname": mock_db_name}, files=files)
     assert response.status_code == 201
 

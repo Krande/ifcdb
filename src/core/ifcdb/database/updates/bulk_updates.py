@@ -40,6 +40,7 @@ class EntityUpdateValue:
 class PropUpdateType(Enum):
     UPDATE = "update"
     ADD_TO_ITERABLE = "add_to_iterable"
+    REMOVE_FROM_ITERABLE = "remove_from_iterable"
 
 
 @dataclass
@@ -64,6 +65,12 @@ class EntityPropUpdate:
 
         if classes is None:
             classes = []
+        out_of_level_bounds = lvl > len(self._levels) - 1
+        if out_of_level_bounds:
+            if self.update_type in (PropUpdateType.REMOVE_FROM_ITERABLE, PropUpdateType.ADD_TO_ITERABLE):
+                return classes
+            else:
+                raise ValueError()
 
         curr_level = self._levels[lvl]
         next_level_idx = lvl + 1
@@ -74,7 +81,8 @@ class EntityPropUpdate:
         if sub_entity is not None:
             if next_level is not None:
                 intermediate_level = sub_entity
-                if self.update_type == PropUpdateType.ADD_TO_ITERABLE and next_level > len(intermediate_level) - 1:
+                exceeding_len_of_intermediary = next_level > len(intermediate_level) - 1
+                if self.update_type == PropUpdateType.ADD_TO_ITERABLE and exceeding_len_of_intermediary:
                     self.update_value.key = curr_level
                     self.update_value.index = next_level
                     return classes
@@ -176,13 +184,13 @@ class BulkEntityUpdate:
 
     global_with_selects: dict[str, EdgeSelect] = field(default_factory=dict)
     local_with_selects: dict[str, EdgeSelect] = field(default_factory=dict)
-    insert_items: list[EdgeSelect] = field(default_factory=list)
+    select_items: list[EdgeSelect] = field(default_factory=list)
 
     indent: str = "    "
     uuid_map: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
-        self.insert_items = [u.last_select for u in self.updates]
+        self.select_items = [u.last_select for u in self.updates]
 
     def _get_unique_entities(self) -> dict[str, list[EdgeSelect]]:
         unique_entity_paths = dict()
@@ -252,12 +260,24 @@ class BulkEntityUpdate:
 
         return edql_str
 
-    def to_edql_str(self, use_select_wrapper=True, variable_assignment=None) -> str:
+    def _remove_property_str(self, insert_item: EdgeSelect, prop_update: EntityPropUpdate, path_ref_map):
+        edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
+        entity = prop_update.update_value.old_value
+        guid = entity.props.get("GlobalId")
+        key = prop_update.last_select.entity_path
+        select_str = f"select {entity.name} FILTER .GlobalId=<str>'{guid}'"
+        edql_str += 3 * self.indent + f"{key} -= ({select_str})\n"
+        edql_str += 2 * self.indent + "}\n"
+
+        return edql_str
+
+    def to_edql_str(self, use_select_wrapper=True, variable_assignment=None, embed_with_statements=False) -> str:
         edql_str = ""
         if variable_assignment is not None:
             edql_str = f"{variable_assignment} := (\n"
 
-        # edql_str += self.global_with_str() + "\n"
+        if embed_with_statements:
+            edql_str += self.global_with_str() + "\n"
 
         path_ref_map = {value.get_absolute_path(): value for key, value in self.global_with_selects.items()}
 
@@ -265,31 +285,39 @@ class BulkEntityUpdate:
             edql_str += "SELECT {\n"
 
         upc = count(1)
-        for i, insert_item in enumerate(self.insert_items):
+        for i, select_item in enumerate(self.select_items):
             prop_update = self.updates[i]
-            update_name = f"update{next(upc)}"
+            update_name = f"update_{next(upc)}"
             edql_str += self.indent + f"{update_name} := (\n"
 
             # Check if the insert_item path is already selected
-            curr_abs_path = insert_item.get_absolute_path()
+            curr_abs_path = select_item.get_absolute_path()
             existing_with_select = path_ref_map.get(curr_abs_path, None)
 
             # Check if the insert_item entity top path is already selected
-            if isinstance(insert_item.entity_top, EdgeSelect):
-                entity_top_abs_path = insert_item.entity_top.get_absolute_path()
+            if isinstance(select_item.entity_top, EdgeSelect):
+                entity_top_abs_path = select_item.entity_top.get_absolute_path()
                 res = path_ref_map.get(entity_top_abs_path, None)
                 if res is not None:
-                    insert_item.entity_top = res
+                    select_item.entity_top = res
 
             if existing_with_select is None:
-                edql_str += 2 * self.indent + f"with\n{3 * self.indent}{insert_item.to_edql_str()}\n"
+                if (
+                    prop_update.update_type == PropUpdateType.REMOVE_FROM_ITERABLE
+                    and select_item.entity_index is not None
+                ):
+                    select_item.name = select_item.entity_top.name
+                else:
+                    edql_str += 2 * self.indent + f"with\n{3 * self.indent}{select_item.to_edql_str()}\n"
             else:
-                insert_item.name = existing_with_select.name
+                select_item.name = existing_with_select.name
 
             if prop_update.update_type == PropUpdateType.ADD_TO_ITERABLE:
-                edql_str += self._append_property_str(insert_item, prop_update, path_ref_map)
+                edql_str += self._append_property_str(select_item, prop_update, path_ref_map)
             elif prop_update.update_type == PropUpdateType.UPDATE:
-                edql_str += self._change_property_str(insert_item, prop_update, path_ref_map)
+                edql_str += self._change_property_str(select_item, prop_update, path_ref_map)
+            elif prop_update.update_type == PropUpdateType.REMOVE_FROM_ITERABLE:
+                edql_str += self._remove_property_str(select_item, prop_update, path_ref_map)
             else:
                 raise NotImplementedError(f'Unrecognized "{prop_update.update_type}"')
 
@@ -297,5 +325,5 @@ class BulkEntityUpdate:
         if use_select_wrapper:
             edql_str += "}\n"
         if variable_assignment is not None:
-            edql_str += ")\n"
+            edql_str += "), \n"
         return edql_str

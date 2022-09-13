@@ -25,6 +25,15 @@ class INSERTS:
 
 
 @dataclass
+class InsertEntity:
+    item: _IFC_ENTITY
+    with_map: dict[_IFC_ENTITY | str, WithRef] = field(default_factory=dict)
+
+    def to_insert_str(self):
+        return f"SELECT (INSERT {self.item.is_a()} {{\n    "
+
+
+@dataclass
 class InsertBase:
     ifc_schema: str = None
     specific_ifc_ids: list[int] = None
@@ -35,6 +44,17 @@ class InsertBase:
     def __post_init__(self):
         if self.schema_model is None:
             self.schema_model = IfcSchemaModel(schema_version=self.ifc_schema)
+
+    def create_entity_insert_entity(self, item: _IFC_ENTITY) -> InsertEntity:
+        entity = self.schema_model.get_entity_by_name(item.is_a())
+        all_atts = entity.get_entity_atts(item)
+
+        # INSERT block
+        with_map: dict[_IFC_ENTITY | str, WithRef] = dict()
+
+        for j, att in enumerate(all_atts):
+            _ = self.get_att_insert_str(att, item, with_map)
+        return InsertEntity(item, with_map)
 
     def create_entity_insert_str(self, item: _IFC_ENTITY) -> str:
         entity = self.schema_model.get_entity_by_name(item.is_a())

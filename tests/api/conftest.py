@@ -1,11 +1,11 @@
 import ifcopenshell
 import pytest
+from app.dependencies import azure_scheme
+from app.main import app as fastapi_app
 from fastapi import Request
 from fastapi_azure_auth.user import User
 from httpx import AsyncClient
 
-from app.dependencies import azure_scheme
-from app.main import app as fastapi_app
 from ifcdb import EdgeIO
 from ifcdb.io.ifc import IfcIO
 
