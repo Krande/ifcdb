@@ -226,17 +226,17 @@
           <section id="updating-edgedb-with-local-ifc-changes">
 <h1>Updating EdgeDB with local IFC changes<a class="headerlink" href="#updating-edgedb-with-local-ifc-changes" title="Permalink to this heading">#</a></h1>
 <p><a class="reference internal" href="../index.html"><span class="doc std std-doc">Back to Main Page</span></a></p>
-<p>In order to effectively update the EdgeDB database good <code class="docutils literal notranslate"><span class="pre">diffing</span></code> mechanism on local IFC content is required.
-That way you only send the modifications made to specific elements in your local IFC content
-(as opposed to replacing the entire database).</p>
-<p>To combat this I’ve created an <code class="docutils literal notranslate"><span class="pre">IfcDiffTool</span></code> class (inspired by
+<p>In order to effectively update the EdgeDB database a good <code class="docutils literal notranslate"><span class="pre">diffing</span></code> mechanism on local IFC content is required.
+That way you only apply modifications made to specific elements from your local IFC content
+as opposed to replacing the entire database.</p>
+<p>To solve this I’ve created an <code class="docutils literal notranslate"><span class="pre">IfcDiffTool</span></code> class (inspired by
 <a class="reference external" href="https://github.com/IfcOpenShell/IfcOpenShell/tree/v0.7.0/src/ifcdiff">IfcDiff</a>) in order to do a comparison of 2
 <code class="docutils literal notranslate"><span class="pre">ifcopenshell.file</span></code> objects and do an element-by-element comparison using <code class="docutils literal notranslate"><span class="pre">deepdiff</span></code> for all rooted elements
 (recursively) resulting in 3 types of diff result lists; <code class="docutils literal notranslate"><span class="pre">changed</span></code>, <code class="docutils literal notranslate"><span class="pre">removed</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">added</span></code>.</p>
 <p>The general idea of the <code class="docutils literal notranslate"><span class="pre">IfcDiffTool</span></code> is to be able to apply the instantiated IfcDiffTool after it is finished with
 diffing onto the original IFC file object or onto an EdgeDB database in order to apply the changes.</p>
-<p>Also enable so that the results from the <code class="docutils literal notranslate"><span class="pre">IfcDiffTool</span></code> can be exported/imported into a json file/format.
-That way it is easy to send diffs to/from REST api’s that in turn updates the database.</p>
+<p>The results from the <code class="docutils literal notranslate"><span class="pre">IfcDiffTool</span></code> should be easily exported/imported into a json file/format so
+that it is easy to send diffs from clients to REST api that in turn can update the database.</p>
 <section id="diffing-example-1-basic-edit-of-a-blender-cube">
 <h2>Diffing example 1 -&gt; Basic Edit of a Blender Cube<a class="headerlink" href="#diffing-example-1-basic-edit-of-a-blender-cube" title="Permalink to this heading">#</a></h2>
 <p>The original Cube (shown below) is exported to the first IFC file</p>
@@ -302,7 +302,7 @@ That way it is easy to send diffs to/from REST api’s that in turn updates the 
 <p>It’s interesting to note that the size of the json <em>diff file</em> is 832 bytes, while the new IFC file is 3 442 bytes.
 That’s a difference in size of a factor of &gt; 4 on a very small IFC file to begin with. When considering sending
 messages between client and database, the size of data packages would optimally be as small as possible. Consequently,
-a “differences only” approach for message content would probably the most practical approach.</p>
+a “differences only” approach for message content would probably be the most practical option.</p>
 <p>However, by inspecting the contents of this json file, the first real issue with this strategy starts to appear.
 This will be further explained in the following section.</p>
 </section>
@@ -312,8 +312,7 @@ This will be further explained in the following section.</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>root[&#39;Representation&#39;][&#39;Representations&#39;][0][&#39;Items&#39;][0][&#39;Position&#39;][&#39;Location&#39;][&#39;Coordinates&#39;][2]
 </pre></div>
 </div>
-<p>The path itself is perfectly resolvable, however it is the numerical <code class="docutils literal notranslate"><span class="pre">index=0</span></code> of the <code class="docutils literal notranslate"><span class="pre">Items</span></code>
-SET that pose a problem.</p>
+<p>The path itself is perfectly resolvable, however it is the numerical index=0 in <code class="docutils literal notranslate"><span class="pre">Items[0]</span></code> that pose a problem.</p>
 <p>Here’s the EXPRESS definition of <code class="docutils literal notranslate"><span class="pre">IfcProductRepresentation</span></code> which defines the <code class="docutils literal notranslate"><span class="pre">Representations</span></code> list</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ENTITY IfcProductRepresentation
  ABSTRACT SUPERTYPE OF (ONEOF

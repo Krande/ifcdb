@@ -2,11 +2,11 @@
 
 [Back to Main Page](../index.md)
 
-In order to effectively update the EdgeDB database good `diffing` mechanism on local IFC content is required. 
-That way you only send the modifications made to specific elements in your local IFC content
-(as opposed to replacing the entire database).
+In order to effectively update the EdgeDB database a good `diffing` mechanism on local IFC content is required. 
+That way you only apply modifications made to specific elements from your local IFC content
+as opposed to replacing the entire database.
 
-To combat this I've created an `IfcDiffTool` class (inspired by
+To solve this I've created an `IfcDiffTool` class (inspired by
 [IfcDiff](https://github.com/IfcOpenShell/IfcOpenShell/tree/v0.7.0/src/ifcdiff)) in order to do a comparison of 2
 `ifcopenshell.file` objects and do an element-by-element comparison using `deepdiff` for all rooted elements 
 (recursively) resulting in 3 types of diff result lists; `changed`, `removed` & `added`. 
@@ -14,8 +14,8 @@ To combat this I've created an `IfcDiffTool` class (inspired by
 The general idea of the `IfcDiffTool` is to be able to apply the instantiated IfcDiffTool after it is finished with 
 diffing onto the original IFC file object or onto an EdgeDB database in order to apply the changes. 
 
-Also enable so that the results from the `IfcDiffTool` can be exported/imported into a json file/format. 
-That way it is easy to send diffs to/from REST api's that in turn updates the database. 
+The results from the `IfcDiffTool` should be easily exported/imported into a json file/format so 
+that it is easy to send diffs from clients to REST api that in turn can update the database. 
 
 ## Diffing example 1 -> Basic Edit of a Blender Cube
 
@@ -91,7 +91,7 @@ Now this json content describes the entire difference between the new and origin
 It's interesting to note that the size of the json _diff file_ is 832 bytes, while the new IFC file is 3 442 bytes. 
 That's a difference in size of a factor of > 4 on a very small IFC file to begin with. When considering sending 
 messages between client and database, the size of data packages would optimally be as small as possible. Consequently,
-a "differences only" approach for message content would probably the most practical approach.
+a "differences only" approach for message content would probably be the most practical option.
 
 However, by inspecting the contents of this json file, the first real issue with this strategy starts to appear. 
 This will be further explained in the following section.
@@ -102,9 +102,7 @@ In the changed element `diff` dictionary the path to the first changed property 
 
     root['Representation']['Representations'][0]['Items'][0]['Position']['Location']['Coordinates'][2]
 
-The path itself is perfectly resolvable, however it is the numerical `index=0` of the `Items` 
-SET that pose a problem.
-
+The path itself is perfectly resolvable, however it is the numerical index=0 in `Items[0]` that pose a problem.
 
 Here's the EXPRESS definition of `IfcProductRepresentation` which defines the `Representations` list
 
