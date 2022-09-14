@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import pathlib
+import time
 from dataclasses import dataclass
 from io import StringIO
 
 import edgedb
-import logging
 import ifcopenshell
 from dotenv import load_dotenv
 
@@ -141,7 +142,7 @@ class EdgeIO:
         """Upload all IFC elements to EdgeDB instance"""
         ifc_io = IfcIO(ifc_file=ifc_file_path, ifc_str=ifc_file_str)
         ifc_items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-
+        start = time.time()
         for tx in self.client.transaction():
             with tx:
                 if method == INSERTS.SEQ:
@@ -152,6 +153,8 @@ class EdgeIO:
                         sq.uuid_map[item] = query_res["id"]
                 else:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
+        end = time.time()
+        print(f'Upload finished in "{end - start:.2f}" seconds')
         return ifc_io
 
     def update_from_diff_tool(self, diff_tool: IfcDiffTool) -> None | str:
@@ -159,7 +162,7 @@ class EdgeIO:
             print("No Changes to model detected")
             return None
         bulk_entity_handler = diff_tool.to_bulk_entity_handler()
-
+        start = time.time()
         for tx in self.client.transaction():
             with tx:
                 query_str = bulk_entity_handler.to_edql_str()
@@ -167,6 +170,8 @@ class EdgeIO:
                     return
                 print(query_str)
                 return tx.query_single_json(query_str)
+        end = time.time()
+        print(f'Upload finished in "{end-start:.2f}" seconds')
 
     def update_db_from_ifc_delta(self, original_ifc, modified_ifc, save_diff_as=None):
         old_file = original_ifc if isinstance(original_ifc, ifcopenshell.file) else ifcopenshell.open(original_ifc)

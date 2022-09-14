@@ -93,7 +93,7 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
 
     def load_new_project(self, context, ifc_str, props):
         temp_dir = tempfile.gettempdir()
-        tmp_file = pathlib.Path(temp_dir) / "temp.ifc"
+        tmp_file = pathlib.Path(temp_dir) / "temp_.ifc"
 
         print(f'Writing to temporary IFC file "{tmp_file}"')
         with open(tmp_file, "w") as f:

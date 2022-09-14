@@ -27,5 +27,4 @@ def main(db_op: DbOperation):
 
 
 if __name__ == "__main__":
-    main(DbOperation.REVERT)
-
+    main(DbOperation.UPLOAD)

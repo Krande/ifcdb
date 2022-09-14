@@ -1,9 +1,6 @@
-import logging
-
-import copy
-import edgedb
-import ifcopenshell
 import os
+
+import ifcopenshell
 
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
@@ -30,6 +27,7 @@ def run_model_update(filename: str, extra_identifier: str = None):
         with open(f"temp/before_{identifier}_model.ifc", "w") as f:
             f.write(ifc_obj.wrapped_data.to_string())
         diff_log = f"temp/edit_{identifier}_diff.json"
+
         io.update_db_from_ifc_delta(ifc_obj, ifcopenshell.open(filepath), save_diff_as=diff_log)
 
         ifc_obj = io.to_ifcopenshell_object()
