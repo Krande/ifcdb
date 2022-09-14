@@ -1,115 +1,46 @@
 from __future__ import annotations
 
-import logging
-
+import re
 import ifcopenshell
 
-from ifcdb.diffing.ifcdiff import IfcDiff
+_RE_COMP = re.compile(r"\[(.*?)\]")
 
 
-def validate_ifc_content(ofile: ifcopenshell.file, results: dict):
-    obj_set = {key: value for key, value in results[0].items() if len(value) != 0}
+def get_elem_paths(elem: ifcopenshell.entity_instance, path: str, is_append_obj=False):
+    curr_elem = elem
+    all_sub_levels = _RE_COMP.findall(path)
+    levels = [curr_elem]
+    indices = []
+    for i, next_path in enumerate(all_sub_levels, start=1):
+        path_ = next_path.replace("'", "")
+        is_index = False
+        if path_.isnumeric():
+            path_ = int(path_)
+            is_index = True
 
-    # Try to manually edit a single property to ensure that it fails if discrepancies are found
-    # obj_set["IfcCartesianPointList3D"][0]["CoordList"][0][1] = 200
+        indices.append(path_)
 
-    for ifc_class, instances in obj_set.items():
-        for instance in instances:
-            original_instance_found = False
-            ifc_class_entities = list(ofile.by_type(ifc_class, True))
-            for original_instance in ifc_class_entities:
-                match_found = True
-                for prop_name, prop_value in instance.items():
-                    if prop_name == "id":
-                        continue
-                    if isinstance(prop_value, (list, tuple)) and len(prop_value) == 0:
-                        prop_value = None
-                    inst_value = getattr(original_instance, prop_name)
-                    if isinstance(inst_value, ifcopenshell.entity_instance):
-                        continue
-                    elif isinstance(inst_value, (list, tuple)) and isinstance(
-                        inst_value[0], ifcopenshell.entity_instance
-                    ):
-                        if len(inst_value) != len(prop_value):
-                            match_found = False
-                            break
-                    elif isinstance(inst_value, (list, tuple)) and isinstance(inst_value[0], float):
-                        for x, y in zip(inst_value, prop_value):
-                            if x != y:
-                                match_found = False
-                                break
-                    elif isinstance(inst_value, (list, tuple)) and isinstance(inst_value[0], (list, tuple)):
-                        for a1, a2 in zip(inst_value, prop_value):
-                            for x, y in zip(a1, a2):
-                                if x != y:
-                                    match_found = False
-                                    break
-                    else:
-                        if inst_value != prop_value:
-                            match_found = False
-                            break
-                if match_found is True:
-                    original_instance_found = True
-                    break
+        if is_append_obj and i == len(all_sub_levels):
+            continue
 
-            if len(ifc_class_entities) > 0 and original_instance_found is False:
-                entity_description = "[" + ",\n".join([str(x) for x in ifc_class_entities]) + "]"
-                raise ValueError(f'Instance "{instance}" not found among\n{entity_description}')
+        if is_index:
+            next_elem = curr_elem[path_]
+        else:
+            next_elem = getattr(curr_elem, path_)
 
-    print("Successfully Validated IFC Content")
+        curr_elem = next_elem
+        levels.append(curr_elem)
+    return levels, indices
 
 
-def fingerprint(file: ifcopenshell.file):
-    get_info_props = dict(include_identifier=False, recursive=True, return_type=frozenset)
-    return frozenset(inst.get_info(**get_info_props) for inst in file)
-
-
-def validate_ifc_objects(f1: ifcopenshell.file, f2: ifcopenshell.file):
-    compare_ifcopenshell_objects_element_by_element(f1, f2)
-
-    # This assertion does not work as intended
-    assert fingerprint(f1) == fingerprint(f2)
-
-
-def compare_ifcopenshell_objects_element_by_element(f1: ifcopenshell.file, f2: ifcopenshell.file):
-    results = sorted(fingerprint(f1).symmetric_difference(fingerprint(f2)), key=lambda x: len(str(x)))
-
-    res = [set([name for name, value in result]) for result in results]
-
-    matches = []
-    i = 0
-    while i < len(res):
-        x = res[i]
-        for k, match_eval in enumerate(res):
-            if k == i or x != match_eval:
-                continue
-            found = tuple(sorted([i, k]))
-            if found not in matches:
-                matches.append(found)
-            break
-        i += 1
-
-    # Compare element by element
-    for a, b in matches:
-        m_a = {key: value for key, value in results[a]}
-        m_b = {key: value for key, value in results[b]}
-        ifc_class = m_a["type"]
-        for key, value in m_a.items():
-            other_val = m_b[key]
-            if isinstance(value, frozenset):
-                continue
-            if isinstance(value, tuple) and isinstance(value[0], frozenset):
-                continue
-            if other_val != value:
-                logging.error(f'Diff in Ifc Class "{ifc_class}" property: {key} := "{value}" != "{other_val}"')
-
-
-def validate_using_ifc_diff(
-    f1: ifcopenshell.file,
-    f2: ifcopenshell.file,
-    output_file: str = None,
-    inverse_classes: list[str] = None,
-):
-    ifc_diff = IfcDiff(f1, f2, output_file, inverse_classes)
-    ifc_diff.diff()
-    return ifc_diff.to_json()
+def slice_property_path_at_key(path: str, key_to_stop_at: str) -> str:
+    all_sub_levels = [x.replace("'", '') for x in _RE_COMP.findall(path)]
+    index_ref_key = all_sub_levels.index(key_to_stop_at)
+    actual_key = all_sub_levels[index_ref_key+1]
+    temp_split = path.split(actual_key)
+    if len(temp_split) == 1:
+        raise ValueError(f'Unable to find key "{key_to_stop_at}" in path "{path}"')
+    elif len(temp_split) > 2:
+        raise ValueError(f'Multiple "{key_to_stop_at}" keys found in path "{path}"')
+    base_path = temp_split[0][:-2]
+    return base_path

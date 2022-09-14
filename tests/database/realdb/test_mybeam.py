@@ -1,22 +1,30 @@
 import json
-
 import pytest
 
 from ifcdb import EdgeIO
-from ifcdb.database.getters.get_bulk import GetBulk
+from ifcdb.database.getters.get_bulk import BulkGetter
+from ifcdb.utils import top_dir
 
 
 @pytest.fixture
-def bulk_io(my_beam_4x1_db: EdgeIO) -> GetBulk:
-    return GetBulk(my_beam_4x1_db.client, my_beam_4x1_db.schema_model)
+def bg(root_dir) -> BulkGetter:
+    ifc_file = "MyBeam.ifc"
+    db_name = ifc_file.replace(".ifc", "").replace("-", "_")
+    ifc_path = top_dir() / "files" / ifc_file
+
+    with EdgeIO(db_schema_dir=f"temp/{db_name}/dbschema", ifc_schema="IFC4x1", database_name=db_name) as io:
+        io.create_schema_from_ifc_file(ifc_path=ifc_path)
+        io.setup_database(delete_existing_migrations=True)
+        io.insert_ifc(ifc_path)
+        return io.to_bulk_getter()
 
 
-def test_get_ifc_class_select_zero_depth(bulk_io: GetBulk):
+def test_get_ifc_class_select_zero_depth(bg):
     name = "MyBeam"
 
-    uuid, class_name = bulk_io.get_id_class_name_from_simple_filter("Name", name)
-    query_str = bulk_io.eq_builder.get_select_str(class_name, uuid, max_depth=0)
-    result = json.loads(bulk_io.client.query_json(query_str))[0]
+    uuid, class_name = bg.get_id_class_name_from_simple_filter("Name", name)
+    query_str = bg.eq_builder.get_select_str(class_name, uuid, max_depth=0)
+    result = json.loads(bg.client.query_json(query_str))[0]
 
     res = {
         "Description": "IPE400",
@@ -39,10 +47,10 @@ def test_get_ifc_class_select_zero_depth(bulk_io: GetBulk):
             assert value == result[key]
 
 
-def test_get_ifc_class_select_full_depth(bulk_io: GetBulk):
+def test_get_ifc_class_select_full_depth(bg):
     name = "MyBeam"
-    _ = bulk_io.get_by_name_v2(name)
+    _ = bg.get_by_name_v2(name)
 
 
-def test_get_by_globalid(bulk_io: GetBulk):
-    _ = bulk_io.get_by_global_id("3PXsnq_3qHxBd2w2f4ZOUQ", top_level_only=True)
+def test_get_by_globalid(bg):
+    _ = bg.get_by_global_id("3PXsnq_3qHxBd2w2f4ZOUQ", top_level_only=True)

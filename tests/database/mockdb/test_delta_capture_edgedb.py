@@ -10,13 +10,14 @@ def test_cube_edited(my_cube, my_cube_edited):
 
     # Use the apply_diffs_ifcopenshell to apply the diffs recorded by the diff_tool
     bulk_entity_handler = diff_tool.to_bulk_entity_handler()
+
     assert len(bulk_entity_handler.bulk_updates) == 1
 
     update1 = bulk_entity_handler.bulk_updates[0]
     assert len(update1.select_items) == 5
 
-    # edql_str = update1.to_edql_str()
-    # print(edql_str)
+    edql_str = bulk_entity_handler.to_edql_str()
+    print(edql_str)
 
 
 def test_cube_added(my_cube, my_cube_added):
@@ -51,22 +52,6 @@ def test_cube_removed(my_cube_added, my_cube):
     assert len(diff_tool.added) == 0
     assert len(diff_tool.changed) == 1
     assert len(diff_tool.removed) == 1
-
-    bulk_entity_handler = diff_tool.to_bulk_entity_handler()
-
-    edql_str = bulk_entity_handler.to_edql_str()
-    print(edql_str)
-    # For debugging only
-    # with open("temp/removed.ifc", "w") as f:
-    #     f.write(my_cube.wrapped_data.to_string())
-
-
-def test_cube_wipe(my_cube, empty_ifc_model):
-    diff_tool = IfcDiffTool(my_cube, empty_ifc_model)
-
-    assert len(diff_tool.removed) == 9
-    assert len(diff_tool.added) == 0
-    assert len(diff_tool.changed) == 0
 
     bulk_entity_handler = diff_tool.to_bulk_entity_handler()
 

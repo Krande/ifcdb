@@ -96,8 +96,6 @@ class IfcIO:
             ifc_class = instance_data.get("class")
             instance_props = instance_data.get("props")
             vid = instance_data.get("id")
-            # if ifc_class == 'IfcBuildingElementProxy':
-            #     print('sd')
             props = get_props(ifc_class, instance_props, id_map, ism)
             if ifc_class in ism.intermediate_classes.keys():
                 id_map[vid] = IfcNode(ifc_class, vid, props, intermediate_class=ism.intermediate_classes[ifc_class])

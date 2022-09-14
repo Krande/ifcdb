@@ -17,12 +17,13 @@ from ifcdb.database.utils import (
     insert_uuid_objects_from_source,
     clean_name,
     walk_edge_results_and_make_uuid_map,
+    resolve_order_of_result_entities,
 )
 from ifcdb.schema.model import EntityModel, EnumModel, IntermediateClass, SelectModel, TypeModel, IfcSchemaModel
 
 
 @dataclass
-class GetBulk:
+class BulkGetter:
     client: edgedb.Client
     _sm: IfcSchemaModel
     # Class level variables
@@ -297,6 +298,11 @@ class GetBulk:
         select_str += "}"
         client = self.client if client is None else client
         return json.loads(client.query_json(select_str))
+
+    def get_all_in_ordered_sequence(self):
+        res = self.get_all(limit_to_ifc_entities=True)
+        obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
+        return resolve_order_of_result_entities(obj_set, self._sm)
 
     def update_entity_dict_w_intermediate_classes(self, ent_dict: dict):
         to_be_added = dict()

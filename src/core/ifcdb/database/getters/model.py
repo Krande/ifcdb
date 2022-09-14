@@ -56,7 +56,7 @@ class EntityQueryModel:
             elif isinstance(type_ref, (str, EnumModel)):
                 pass
             elif isinstance(type_ref, SelectModel):
-                print("sd")
+                pass
             else:
                 raise ValueError(f'Unknown type ref "{type_ref}"')
 

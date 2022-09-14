@@ -6,8 +6,9 @@ from itertools import count
 from typing import Any
 
 from ifcdb.database.select import EdgeFilter, EdgeSelect, FilterType
-from ifcdb.diffing.diff_ifcopen import _RE_COMP
+from ifcdb.diffing.utils import _RE_COMP
 from ifcdb.entities import Entity
+from ifcdb.database.inserts import EdgeInsert
 
 
 @dataclass
@@ -19,6 +20,14 @@ class EntityUpdateValue:
     len: int | None = None
 
     def to_update_str(self) -> str:
+        if self.key is None:
+            raise ValueError("Key cannot be zero")
+        if isinstance(self.value, Entity):
+            ei = EdgeInsert(self.value)
+            insert_str = ei.to_edql_str()
+            value = f"({insert_str})"
+        else:
+            value = self.value
         edql_str = ""
         if self.index is not None:
             array_str = "["
@@ -26,13 +35,13 @@ class EntityUpdateValue:
                 if i != 0:
                     array_str += ", "
                 if i == self.index:
-                    array_str += f"{self.value}"
+                    array_str += f"{value}"
                 else:
                     array_str += f".{self.key}[{i}]"
             array_str += "]"
             edql_str += f"{self.key} := {array_str}\n"
         else:
-            edql_str += f"{self.key} := {self.value}\n"
+            edql_str += f"{self.key} := {value}\n"
 
         return edql_str
 
@@ -67,10 +76,10 @@ class EntityPropUpdate:
             classes = []
         out_of_level_bounds = lvl > len(self._levels) - 1
         if out_of_level_bounds:
-            if self.update_type in (PropUpdateType.REMOVE_FROM_ITERABLE, PropUpdateType.ADD_TO_ITERABLE):
-                return classes
-            else:
-                raise ValueError()
+            if self.update_type == PropUpdateType.UPDATE and isinstance(self.update_value.value, Entity):
+                classes.pop()
+
+            return classes
 
         curr_level = self._levels[lvl]
         next_level_idx = lvl + 1
@@ -254,7 +263,10 @@ class BulkEntityUpdate:
     def _append_property_str(self, insert_item: EdgeSelect, prop_update: EntityPropUpdate, path_ref_map) -> str:
         edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
         entity = prop_update.update_value.value
-        select_str = f"select {entity.class_name} FILTER .GlobalId=<str>'{entity.guid}'"
+        if isinstance(entity, EdgeInsert):
+            select_str = entity.name
+        else:
+            select_str = f"select {entity.class_name} FILTER .GlobalId=<str>'{entity.guid}'"
         edql_str += 3 * self.indent + f"{prop_update.update_value.key} += ({select_str})\n"
         edql_str += 2 * self.indent + "}\n"
 

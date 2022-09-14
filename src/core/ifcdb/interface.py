@@ -7,12 +7,13 @@ from dataclasses import dataclass
 from io import StringIO
 
 import edgedb
+import logging
 import ifcopenshell
 from dotenv import load_dotenv
 
 from ifcdb.database.admin import DbConfig, DbMigration
-from ifcdb.database.getters.get_bulk import GetBulk
-from ifcdb.database.inserts.model import INSERTS
+from ifcdb.database.getters.get_bulk import BulkGetter
+from ifcdb.database.inserts.seq_model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
@@ -70,6 +71,31 @@ class EdgeIO:
 
         db_migrate = self._create_migration_client()
         db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
+
+    def wipe_database(self, max_attempts=3):
+        bg = self.to_bulk_getter()
+        empty = False
+        attempt_no = 0
+        while empty is False:
+            edge_objects = bg.get_all_in_ordered_sequence()
+            if len(edge_objects) == 0:
+                empty = True
+                break
+            edge_objects.reverse()
+
+            for i, x in enumerate(edge_objects):
+                class_name = x["class"]
+                uuid = x["id"]
+                delstr = f"DELETE {class_name} FILTER .id = <uuid>'{uuid}'"
+                try:
+                    self.client.execute(delstr)
+                except edgedb.errors.InternalServerError as e:
+                    logging.warning(e)
+                    continue
+            attempt_no += 1
+            if attempt_no > max_attempts:
+                logging.error(f"Unable to wipe database in maximum number of attempts={max_attempts}")
+                break
 
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
         db_migrate = self._create_migration_client()
@@ -152,11 +178,14 @@ class EdgeIO:
         print(res)
         return res
 
+    def to_bulk_getter(self) -> BulkGetter:
+        return BulkGetter(self.client, self.schema_model)
+
     def to_ifcopenshell_object(
         self, specific_classes: list[str] = None, only_ifc_entities=True, client=None
     ) -> ifcopenshell.file:
 
-        gb = GetBulk(self.client, self.schema_model)
+        gb = self.to_bulk_getter()
         res = gb.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities, client=client)
         return IfcIO.to_ifcopenshell_object(res, self.schema_model)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import ifcopenshell
 from dataclasses import dataclass
 
-from ifcdb.database.inserts.model import InsertBase
+from ifcdb.database.inserts.seq_model import InsertBase
 
 _IFC_ENTITY = ifcopenshell.entity_instance
 

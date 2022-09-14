@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import edgedb
 from dataclasses import dataclass, field
 from itertools import count
 from typing import TYPE_CHECKING
 
-import edgedb
-
 from ifcdb.entities import Entity, EntityResolver
-
+from ifcdb.diffing.utils import slice_property_path_at_key
 from .inserts.bulk_insert import BulkEntityInsert
 from .remove.bulk_removal import BulkEntityRemoval
 from .updates.bulk_updates import (
@@ -18,7 +17,7 @@ from .updates.bulk_updates import (
 )
 
 if TYPE_CHECKING:
-    from ifcdb.diffing.tool import EntityDiffChange, IfcDiffTool
+    from ifcdb.diffing.tool import EntityDiffChange, IfcDiffTool, EntityDiffAdd
 
 
 @dataclass
@@ -32,6 +31,8 @@ class BulkEntityHandler:
     insert_map: dict[str, Entity] = field(default_factory=dict)
     uuid_map: dict[Entity, str] = field(default_factory=dict)
 
+    do_selects_on_all_with_variables: bool = False
+
     def __post_init__(self):
         self.bulk_inserts = BulkEntityInsert(self.ifc_diff_tool.added)
         self.insert_map = {el.guid: el for el in self.bulk_inserts.entities}
@@ -44,11 +45,22 @@ class BulkEntityHandler:
             if change_object is not None:
                 self.bulk_updates.append(change_object)
 
-    def add_item_to_change_objects(self, elem: EntityDiffChange, source: dict) -> list[EntityPropUpdate]:
+    def change_object_values(self, elem: EntityDiffChange, source: dict) -> list[EntityPropUpdate]:
         change_objects = []
+        er = EntityResolver("IFC4x1")
         for path, values in source.items():
-            value_update = EntityUpdateValue(values["new_value"], values["old_value"])
-            change_objects.append(EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.UPDATE))
+            overlinked_new_value = elem.overlinked_entities.get(path)
+            if overlinked_new_value is not None:
+                new_value = er.create_insert_entity_from_ifc_entity(overlinked_new_value.value)
+                path = slice_property_path_at_key(path, overlinked_new_value.index)
+                old_value = None
+                value_update = EntityUpdateValue(new_value, old_value, key=overlinked_new_value.index)
+            else:
+                old_value = values["old_value"]
+                new_value = values["new_value"]
+                value_update = EntityUpdateValue(new_value, old_value)
+            entity_prop = EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.UPDATE)
+            change_objects.append(entity_prop)
         return change_objects
 
     def add_item_to_iterable(self, elem: EntityDiffChange, source: dict) -> list[EntityPropUpdate]:
@@ -78,7 +90,7 @@ class BulkEntityHandler:
 
         for diff_type, diff in elem.diff.items():
             if diff_type == "values_changed":
-                updates += self.add_item_to_change_objects(elem, diff)
+                updates += self.change_object_values(elem, diff)
             elif diff_type == "iterable_item_added":
                 updates += self.add_item_to_iterable(elem, diff)
             elif diff_type == "iterable_item_removed":
@@ -100,12 +112,15 @@ class BulkEntityHandler:
         for key, value in self.bulk_inserts.inserts.items():
             all_with_statements[key] = value
 
+        self.bulk_inserts.get_insert_entities()
+
         for update in self.bulk_updates:
             update._resolve_global_with_statements()
             if len(update.global_with_selects.keys()) == 0:
                 continue
             for key, value in update.global_with_selects.items():
                 all_with_statements[key] = value
+
         return all_with_statements
 
     def get_global_with_str(self):
@@ -115,7 +130,7 @@ class BulkEntityHandler:
 
         global_wstr = "with\n"
         for key, value in all_with_statements.items():
-            global_wstr += "    " + value.to_edql_str() + "\n"
+            global_wstr += "    " + value.to_edql_str(assign_to_variable=True) + "\n"
 
         return global_wstr
 
@@ -124,15 +139,48 @@ class BulkEntityHandler:
         if client is not None:
             self.get_db_data(client)
         c = count(1)
+        indent = 4 * " "
+
         query_str = ""
-        for key, value in self.get_all_global_with_statements().items():
-            query_str += f"{key}_ := {key},\n"
-        query_str += self.bulk_inserts.to_edql_str(c, embed_with_statement=False)
+        # Global WITH statements
+        all_with_statements = self.get_all_global_with_statements()
+        global_wstr = ""
+        if len(all_with_statements.keys()) != 0:
+            global_wstr = "with\n"
+            for key, value in all_with_statements.items():
+                global_wstr += "    " + value.to_edql_str(assign_to_variable=True) + "\n"
+
+        if self.do_selects_on_all_with_variables:
+            # for logging purposes do a select on all intermediate WITH statements
+            for key, value in self.get_all_global_with_statements().items():
+                query_str += f"{indent}{key}_ := {key},\n"
+
+        # INSERT statements
+        insert_statement = ""
+        all_inserts = self.bulk_inserts.get_insert_entities(c)
+        for insert in all_inserts:
+            move_insert_to_global_with = False
+            for bulk_ent_up in self.bulk_updates:
+                for prop_up in bulk_ent_up.updates:
+                    if hasattr(prop_up.update_value.value, "guid"):
+                        if insert.entity.props.get("GlobalId") == prop_up.update_value.value.guid:
+                            move_insert_to_global_with = True
+                            global_wstr += indent + insert.to_edql_str(assign_to_variable=True)
+                            prop_up.update_value.value = insert
+                            break
+            if move_insert_to_global_with:
+                continue
+            insert_statement += indent + insert.to_edql_str(assign_to_variable=True)
+        query_str += insert_statement
+
+        # UPDATE statements
         for update in self.bulk_updates:
             query_str += update.to_edql_str(use_select_wrapper=False, variable_assignment=f"global_{next(c)}")
+
+        # DELETE statements
         query_str += self.bulk_removals.to_edql_str(c)
 
         if query_str == "":
             return None
         else:
-            return self.get_global_with_str() + f"\nSELECT {{\n{query_str}\n}}"
+            return global_wstr + f"\nSELECT {{\n{query_str}\n}}"

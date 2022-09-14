@@ -1,6 +1,6 @@
 from enum import Enum
 
-from cube_tools import run_model_update, upload
+from cube_tools import run_model_update, upload, wipe_db
 
 
 class DbOperation(Enum):
@@ -8,6 +8,7 @@ class DbOperation(Enum):
     EDIT = "edit"
     ADD = "add"
     REVERT = "revert"
+    WIPE = "wipe"
 
 
 def main(db_op: DbOperation):
@@ -19,9 +20,12 @@ def main(db_op: DbOperation):
         run_model_update("MyCubeAdded.ifc")
     elif db_op == DbOperation.REVERT:
         run_model_update("MyCube.ifc", "_revert")
+    elif db_op == DbOperation.WIPE:
+        wipe_db()
     else:
         raise ValueError(f"Unknown DB operation '{db_op}'")
 
 
 if __name__ == "__main__":
-    main(DbOperation.EDIT)
+    main(DbOperation.REVERT)
+

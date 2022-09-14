@@ -3,7 +3,7 @@ from __future__ import annotations
 import toposort
 from typing import Iterable
 
-from .diff_ifcopen import _RE_COMP
+from .utils import _RE_COMP
 
 
 def clean_path_elem(elem: str) -> str | int:
@@ -56,6 +56,3 @@ def find_unique_selects(source: dict):
         if len(result_set) > 1:
             branches.append(result_set)
 
-    # find common paths
-
-    print("sd")

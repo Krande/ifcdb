@@ -1,6 +1,9 @@
-import os
+import logging
 
+import copy
+import edgedb
 import ifcopenshell
+import os
 
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
@@ -32,6 +35,11 @@ def run_model_update(filename: str, extra_identifier: str = None):
         ifc_obj = io.to_ifcopenshell_object()
         with open(f"temp/after_{identifier}_model.ifc", "w") as f:
             f.write(ifc_obj.wrapped_data.to_string())
+
+
+def wipe_db():
+    with EdgeIO("MyCube", load_env=True) as io:
+        io.wipe_database()
 
 
 # if __name__ == "__main__":
