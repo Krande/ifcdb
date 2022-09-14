@@ -3,7 +3,7 @@ from itertools import count
 import ifcopenshell
 
 from ifcdb.database.inserts.sequentially import InsertSeq
-from ifcdb.database.inserts.utils import to_entity_insert_str
+from ifcdb.database.inserts import EdgeInsert
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.entities import Entity, EntityResolver
 from ifcdb.io.ifc.concept import IfcIO
@@ -57,5 +57,5 @@ def test_insert_beam(my_beam_w_holes_ifc):
 
     er.uuid_map[bm] = Entity("IfcBeam", uuid="a_random_uuid_replacement_for_IfcBeam")
 
-    insert_str = to_entity_insert_str(insert_entity)
-    print(insert_str)
+    insert_str = EdgeInsert(insert_entity)
+    print(insert_str.to_edql_str())
