@@ -54,8 +54,11 @@ def cube_ifc_obj(my_cube_ifc_filepath, mock_db_name) -> ifcopenshell.file:
     ifc_io = IfcIO(my_cube_ifc_filepath)
 
     with EdgeIO(db_schema_dir=f"temp/{mock_db_name}/dbschema", ifc_schema="IFC4x1", database_name=mock_db_name) as io:
-        io.create_schema_from_ifc_file(ifc_path=ifc_io.ifc_file)
-        io.setup_database(delete_existing_migrations=True)
+        if io.database_exists() is False:
+            io.create_schema_from_ifc_file(ifc_path=ifc_io.ifc_file)
+            io.setup_database(delete_existing_migrations=True)
+        else:
+            io.wipe_database()
 
     return ifc_io.ifc_obj
 

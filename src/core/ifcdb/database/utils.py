@@ -67,6 +67,8 @@ def resolve_order_of_result_entities(results: dict, em: IfcSchemaModel) -> list[
         for instance in value:
             ids = []
             get_ids(instance, ids)
+            if "id" not in instance.keys():
+                continue
             instance_id = instance.pop("id")
             ids.pop(ids.index(instance_id))
             if instance_id is None:

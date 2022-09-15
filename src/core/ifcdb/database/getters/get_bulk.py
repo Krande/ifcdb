@@ -256,9 +256,7 @@ class BulkGetter:
         print(final_result_str)
         return result
 
-    def get_all(
-        self, entities: list[str] = None, limit_to_ifc_entities=False, client=None, module_name="default"
-    ) -> dict:
+    def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
 
         db_entities = list(self.eq_builder.edgedb_objects.keys())
@@ -267,7 +265,6 @@ class BulkGetter:
                 entities = []
             entities += db_entities
 
-        select_str = "select {\n"
         if entities is None:
             ent_dict = self._sm.entities
         else:
@@ -276,6 +273,7 @@ class BulkGetter:
 
         self.update_entity_dict_w_intermediate_classes(ent_dict)
 
+        select_str = "select {\n"
         for entity_name, entity in ent_dict.items():
             if isinstance(entity, EnumModel):
                 continue
@@ -296,6 +294,7 @@ class BulkGetter:
                     select_str += "" if i == len(all_atts) - 1 else ","
             select_str += "}),\n"
         select_str += "}"
+
         client = self.client if client is None else client
         return json.loads(client.query_json(select_str))
 

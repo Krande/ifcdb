@@ -190,8 +190,8 @@ class EdgeIO:
         self, specific_classes: list[str] = None, only_ifc_entities=True, client=None
     ) -> ifcopenshell.file:
 
-        gb = self.to_bulk_getter()
-        res = gb.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities, client=client)
+        bulk_g = self.to_bulk_getter()
+        res = bulk_g.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities, client=client)
         return IfcIO.to_ifcopenshell_object(res, self.schema_model)
 
     def to_ifc_str(self, specific_classes: list[str] = None, only_ifc_entities=True) -> str:

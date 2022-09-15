@@ -99,6 +99,7 @@ class IfcIO:
             instance_props = instance_data.get("props")
             vid = instance_data.get("id")
             props = get_props(ifc_class, instance_props, id_map, ism)
+            ifc_id = None
             if ifc_class in ism.intermediate_classes.keys():
                 id_map[vid] = IfcNode(ifc_class, vid, props, intermediate_class=ism.intermediate_classes[ifc_class])
                 continue
@@ -140,8 +141,6 @@ class IfcIO:
 
             elif isinstance(props, (float, str, ifcopenshell.entity_instance)):
                 ifc_id = f.create_entity(ifc_class, props)
-            else:
-                ifc_id = None
 
             if ifc_id is not None and silent is False:
                 print(ifc_id)

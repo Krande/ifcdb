@@ -15,23 +15,8 @@ def empty_ifc_model():
 
 
 @pytest.fixture
-def my_cube(my_cube_ifc_filepath) -> ifcopenshell.file:
-    return ifcopenshell.open(my_cube_ifc_filepath)
-
-
-@pytest.fixture
-def my_cube_edited(my_cube_edited_ifc_filepath) -> ifcopenshell.file:
-    return ifcopenshell.open(my_cube_edited_ifc_filepath)
-
-
-@pytest.fixture
 def my_cube_added(my_cube_added_ifc_filepath) -> ifcopenshell.file:
     return ifcopenshell.open(my_cube_added_ifc_filepath)
-
-
-@pytest.fixture
-def my_cube_edited_z(my_cube_edited_z_ifc_filepath) -> ifcopenshell.file:
-    return ifcopenshell.open(my_cube_edited_z_ifc_filepath)
 
 
 @dataclass
@@ -46,3 +31,8 @@ class MockDb:
 @pytest.fixture
 def mock_db_my_beam_with_holes(files_dir) -> MockDb:
     return MockDb(files_dir / "MyBeam_w_holes/MyBeamWithHoles_get_all_res.json")
+
+
+@pytest.fixture
+def mock_db_my_cube_original(files_dir) -> MockDb:
+    return MockDb(files_dir / "MyCube/res_original_raw.json")

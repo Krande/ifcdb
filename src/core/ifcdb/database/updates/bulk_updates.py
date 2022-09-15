@@ -114,6 +114,19 @@ class SelectResolver:
 
 
 @dataclass
+class EdgeUpdate:
+    select_obj: EdgeSelect
+    update_value: EntityUpdateValue
+
+    def to_str(self, indent=2 * " "):
+        edql_str = indent + f"UPDATE {self.select_obj.name}\n{2 * indent}" + "SET {\n"
+        edql_str += 2 * indent + self.update_value.to_update_str()
+        edql_str += indent + "}\n"
+
+        return edql_str
+
+
+@dataclass
 class EntityPropUpdate:
     root_object: Entity
     property_path: str = field(repr=False)
@@ -205,7 +218,7 @@ class BulkEntityUpdate:
     global_with_selects: dict[str, EdgeSelect] = field(default_factory=dict)
     select_items: list[EdgeSelect] = field(default_factory=list)
     all_select_items: list[EdgeSelect] = field(default_factory=list)
-    indent: str = "    "
+    indent: str = 2 * " "
 
     def __post_init__(self):
         self.select_items = [u.last_select for u in self.updates]
@@ -258,36 +271,41 @@ class BulkEntityUpdate:
             global_wstr += "    " + value.to_edql_str() + "\n"
         return global_wstr
 
-    def _change_property_str(self, insert_item: EdgeSelect, prop_update: EntityPropUpdate, path_ref_map):
-        parent_abs_path = insert_item.entity_top.get_absolute_path()
+    def _change_property_str(self, select_item: EdgeSelect, prop_update: EntityPropUpdate, path_ref_map):
+        parent_abs_path = select_item.entity_top.get_absolute_path()
         parent_object = path_ref_map.get(parent_abs_path)
 
-        if insert_item.entity_top != parent_object:
-            insert_item.entity_top = parent_object
-        edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
-        edql_str += 3 * self.indent + prop_update.update_value.to_update_str()
-        edql_str += 2 * self.indent + "}\n"
+        if select_item.entity_top != parent_object:
+            select_item.entity_top = parent_object
+
+        eu = EdgeUpdate(select_item, prop_update.update_value)
+        edql_str = eu.to_str()
 
         return edql_str
 
     def _append_property_str(self, insert_item: EdgeSelect, prop_update: EntityPropUpdate, path_ref_map) -> str:
-        edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
+
         entity = prop_update.update_value.value
         if isinstance(entity, EdgeInsert):
             select_str = entity.name
         else:
             select_str = f"select {entity.class_name} FILTER .GlobalId=<str>'{entity.guid}'"
+
+        edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
         edql_str += 3 * self.indent + f"{prop_update.update_value.key} += ({select_str})\n"
         edql_str += 2 * self.indent + "}\n"
 
         return edql_str
 
     def _remove_property_str(self, insert_item: EdgeSelect, prop_update: EntityPropUpdate, path_ref_map):
-        edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
+
         entity = prop_update.update_value.old_value
         guid = entity.props.get("GlobalId")
         key = prop_update.last_select.entity_path
+
         select_str = f"select {entity.name} FILTER .GlobalId=<str>'{guid}'"
+
+        edql_str = 2 * self.indent + f"UPDATE {insert_item.name}\n{2 * self.indent}" + "SET {\n"
         edql_str += 3 * self.indent + f"{key} -= ({select_str})\n"
         edql_str += 2 * self.indent + "}\n"
 

@@ -1,0 +1,992 @@
+[
+  {
+    "IfcDate": [],
+    "IfcReal": [
+      {
+        "IfcReal": 0.0174532925199433
+      }
+    ],
+    "IfcSite": [
+      {
+        "Name": "My Site",
+        "GlobalId": "0HquQdG3r6nwZ_pzUh9Qfx",
+        "LongName": null,
+        "ObjectType": null,
+        "Description": null,
+        "RefLatitude": null,
+        "SiteAddress": null,
+        "OwnerHistory": null,
+        "RefElevation": null,
+        "RefLongitude": null,
+        "Representation": null,
+        "CompositionType": null,
+        "LandTitleNumber": null,
+        "ObjectPlacement": {
+          "id": "0cf209eb-352c-11ed-b002-73603f5ed762"
+        }
+      }
+    ],
+    "IfcText": [],
+    "IfcTime": [],
+    "IfcUnit": [
+      {
+        "IfcUnit": {
+          "id": "0cf209d8-352c-11ed-b002-6f733bcdc128"
+        }
+      },
+      {
+        "IfcUnit": {
+          "id": "0cf209d5-352c-11ed-b002-d770e042ffc0"
+        }
+      },
+      {
+        "IfcUnit": {
+          "id": "0cf209d6-352c-11ed-b002-bf1a13dc30dd"
+        }
+      },
+      {
+        "IfcUnit": {
+          "id": "0cf209d4-352c-11ed-b002-2b4c56448034"
+        }
+      },
+      {
+        "IfcUnit": {
+          "id": "0cf209e8-352c-11ed-b002-6307a6cfcfab"
+        }
+      }
+    ],
+    "IfcLabel": [],
+    "IfcValue": [
+      {
+        "IfcValue": {
+          "id": "0cf209e0-352c-11ed-b002-8373e3f45e43"
+        }
+      }
+    ],
+    "IfcBinary": [],
+    "IfcPerson": [],
+    "IfcSIUnit": [
+      {
+        "Name": "METRE",
+        "Prefix": null,
+        "UnitType": "LENGTHUNIT",
+        "Dimensions": null
+      },
+      {
+        "Name": "SQUARE_METRE",
+        "Prefix": null,
+        "UnitType": "AREAUNIT",
+        "Dimensions": null
+      },
+      {
+        "Name": "CUBIC_METRE",
+        "Prefix": null,
+        "UnitType": "VOLUMEUNIT",
+        "Dimensions": null
+      },
+      {
+        "Name": "RADIAN",
+        "Prefix": null,
+        "UnitType": "PLANEANGLEUNIT",
+        "Dimensions": null
+      }
+    ],
+    "IfcBoolean": [],
+    "IfcInteger": [],
+    "IfcLogical": [],
+    "IfcProject": [
+      {
+        "Name": "My Project",
+        "Phase": null,
+        "GlobalId": "2bEQ2uc0T60u4zSeRuV$02",
+        "LongName": null,
+        "ObjectType": null,
+        "Description": null,
+        "OwnerHistory": null,
+        "UnitsInContext": {
+          "id": "0cf209ed-352c-11ed-b002-5f6d3d04cfd0"
+        },
+        "RepresentationContexts": [
+          {
+            "id": "0cf209e9-352c-11ed-b002-c35801050ad4"
+          },
+          {
+            "id": "0cf209ea-352c-11ed-b002-f757c55357bd"
+          }
+        ]
+      }
+    ],
+    "IfcBuilding": [
+      {
+        "Name": "My Building",
+        "GlobalId": "2bAYIBWanC69b6BsFAiyno",
+        "LongName": null,
+        "ObjectType": null,
+        "Description": null,
+        "OwnerHistory": null,
+        "Representation": null,
+        "BuildingAddress": null,
+        "CompositionType": null,
+        "ObjectPlacement": {
+          "id": "0cf209f8-352c-11ed-b002-5f7b02604e82"
+        },
+        "ElevationOfTerrain": null,
+        "ElevationOfRefHeight": null
+      }
+    ],
+    "IfcDateTime": [],
+    "IfcDuration": [],
+    "IfcActorRole": [],
+    "IfcDirection": [
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "DirectionRatios": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "DirectionRatios": [
+          0,
+          0,
+          -1
+        ]
+      }
+    ],
+    "IfcPHMeasure": [],
+    "IfcTimeStamp": [],
+    "IfcIdentifier": [],
+    "IfcProfileDef": [
+      {
+        "ProfileName": null,
+        "ProfileType": "AREA"
+      }
+    ],
+    "IfcApplication": [],
+    "IfcAreaMeasure": [],
+    "IfcBoundingBox": [
+      {
+        "XDim": 2,
+        "YDim": 2,
+        "ZDim": 2,
+        "Corner": {
+          "id": "0cf209df-352c-11ed-b002-e74144e2894a"
+        }
+      }
+    ],
+    "IfcDerivedUnit": [],
+    "IfcMassMeasure": [],
+    "IfcSimpleValue": [],
+    "IfcTimeMeasure": [],
+    "IfcCountMeasure": [],
+    "IfcForceMeasure": [],
+    "IfcMeasureValue": [],
+    "IfcMonetaryUnit": [],
+    "IfcOrganization": [],
+    "IfcOwnerHistory": [],
+    "IfcPowerMeasure": [],
+    "IfcRatioMeasure": [],
+    "IfcComplexNumber": [],
+    "IfcEnergyMeasure": [],
+    "IfcLengthMeasure": [],
+    "IfcPostalAddress": [],
+    "IfcRelAggregates": [
+      {
+        "Name": null,
+        "GlobalId": "2JgRF7fbv0fx9x3oBtF91u",
+        "Description": null,
+        "OwnerHistory": null,
+        "RelatedObjects": [
+          {
+            "id": "0cf209f7-352c-11ed-b002-e30cdb21b574"
+          }
+        ],
+        "RelatingObject": {
+          "id": "0cf209f9-352c-11ed-b002-7fedbe5b6de6"
+        }
+      },
+      {
+        "Name": null,
+        "GlobalId": "0ieMQS$QrD5f2BHmFPGRXJ",
+        "Description": null,
+        "OwnerHistory": null,
+        "RelatedObjects": [
+          {
+            "id": "0cf209fa-352c-11ed-b002-fb82532a4fde"
+          }
+        ],
+        "RelatingObject": {
+          "id": "0cf209f7-352c-11ed-b002-e30cdb21b574"
+        }
+      },
+      {
+        "Name": null,
+        "GlobalId": "1_08zbhkfFC8WYIaWPLhtu",
+        "Description": null,
+        "OwnerHistory": null,
+        "RelatedObjects": [
+          {
+            "id": "0cf209fe-352c-11ed-b002-7389b8837a1c"
+          }
+        ],
+        "RelatingObject": {
+          "id": "0cf209fa-352c-11ed-b002-fb82532a4fde"
+        }
+      }
+    ],
+    "IfcTorqueMeasure": [],
+    "IfcVolumeMeasure": [],
+    "IfcAxis2Placement": [],
+    "IfcBuildingStorey": [
+      {
+        "Name": "My Storey",
+        "GlobalId": "0SJPxXyVvECO2MEFwPIj_Y",
+        "LongName": null,
+        "Elevation": null,
+        "ObjectType": null,
+        "Description": null,
+        "OwnerHistory": null,
+        "Representation": null,
+        "CompositionType": null,
+        "ObjectPlacement": {
+          "id": "0cf209fb-352c-11ed-b002-e7affb134fd7"
+        }
+      }
+    ],
+    "IfcCartesianPoint": [
+      {
+        "Coordinates": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          4.71695518493652
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          4.71695518493652
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          4.71695518493652
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "Coordinates": [
+          0,
+          0,
+          -1
+        ]
+      },
+      {
+        "Coordinates": [
+          -1,
+          -1,
+          -1
+        ]
+      }
+    ],
+    "IfcLocalPlacement": [
+      {
+        "PlacementRelTo": null,
+        "RelativePlacement": {
+          "id": "0cf209e4-352c-11ed-b002-5ff69ff241e2"
+        }
+      },
+      {
+        "PlacementRelTo": {
+          "id": "0cf209eb-352c-11ed-b002-73603f5ed762"
+        },
+        "RelativePlacement": {
+          "id": "0cf209e4-352c-11ed-b002-5ff69ff241e2"
+        }
+      },
+      {
+        "PlacementRelTo": {
+          "id": "0cf209f8-352c-11ed-b002-5f7b02604e82"
+        },
+        "RelativePlacement": {
+          "id": "0cf209e4-352c-11ed-b002-5ff69ff241e2"
+        }
+      },
+      {
+        "PlacementRelTo": {
+          "id": "0cf209fb-352c-11ed-b002-e7affb134fd7"
+        },
+        "RelativePlacement": {
+          "id": "0cf209e4-352c-11ed-b002-5ff69ff241e2"
+        }
+      }
+    ],
+    "IfcNumericMeasure": [],
+    "IfcParameterValue": [],
+    "IfcUnitAssignment": [
+      {
+        "Units": [
+          {
+            "id": "0cf209ee-352c-11ed-b002-eb132688f984"
+          },
+          {
+            "id": "0cf209ef-352c-11ed-b002-6b3c71622536"
+          },
+          {
+            "id": "0cf209f0-352c-11ed-b002-13ea3513a3d0"
+          },
+          {
+            "id": "0cf209f1-352c-11ed-b002-ff91effe0d6e"
+          }
+        ]
+      }
+    ],
+    "IfcMeasureWithUnit": [
+      {
+        "UnitComponent": {
+          "id": "0cf209e2-352c-11ed-b002-579fcdb82414"
+        },
+        "ValueComponent": {
+          "id": "0cf209e1-352c-11ed-b002-2b13825e5de1"
+        }
+      }
+    ],
+    "IfcMonetaryMeasure": [],
+    "IfcPositiveInteger": [],
+    "IfcPressureMeasure": [],
+    "IfcAxis2Placement2D": [
+      {
+        "Location": {
+          "id": "0cf209d9-352c-11ed-b002-eb88f747d576"
+        },
+        "RefDirection": {
+          "id": "0cf209db-352c-11ed-b002-87b655f2987c"
+        }
+      }
+    ],
+    "IfcAxis2Placement3D": [
+      {
+        "Axis": {
+          "id": "0cf209da-352c-11ed-b002-d368bd79d7d8"
+        },
+        "Location": {
+          "id": "0cf209d9-352c-11ed-b002-eb88f747d576"
+        },
+        "RefDirection": {
+          "id": "0cf209db-352c-11ed-b002-87b655f2987c"
+        }
+      },
+      {
+        "Axis": {
+          "id": "0cf209de-352c-11ed-b002-37e51327454f"
+        },
+        "Location": {
+          "id": "0cf209dd-352c-11ed-b002-17dbf6077166"
+        },
+        "RefDirection": {
+          "id": "0cf209db-352c-11ed-b002-87b655f2987c"
+        }
+      }
+    ],
+    "IfcCurvatureMeasure": [],
+    "IfcFrequencyMeasure": [],
+    "IfcExtrudedAreaSolid": [
+      {
+        "Depth": 2,
+        "Position": {
+          "id": "0cf209e6-352c-11ed-b002-6bb1ba5b8862"
+        },
+        "SweptArea": {
+          "id": "0cf209dc-352c-11ed-b002-2fc3b0532fc5"
+        },
+        "ExtrudedDirection": {
+          "id": "0cf209de-352c-11ed-b002-37e51327454f"
+        }
+      }
+    ],
+    "IfcInductanceMeasure": [],
+    "IfcPlaneAngleMeasure": [],
+    "IfcSolidAngleMeasure": [],
+    "IfcSoundPowerMeasure": [],
+    "IfcAreaDensityMeasure": [],
+    "IfcDerivedUnitElement": [],
+    "IfcDescriptiveMeasure": [],
+    "IfcIlluminanceMeasure": [],
+    "IfcLinearForceMeasure": [],
+    "IfcMassDensityMeasure": [],
+    "IfcPlanarForceMeasure": [],
+    "IfcAbsorbedDoseMeasure": [],
+    "IfcAccelerationMeasure": [],
+    "IfcConversionBasedUnit": [
+      {
+        "Name": "degree",
+        "UnitType": "PLANEANGLEUNIT",
+        "Dimensions": {
+          "id": "0cf209d7-352c-11ed-b002-17923756c6ec"
+        },
+        "ConversionFactor": {
+          "id": "0cf209e3-352c-11ed-b002-2763a30ae835"
+        }
+      }
+    ],
+    "IfcDerivedMeasureValue": [],
+    "IfcHeatingValueMeasure": [],
+    "IfcLinearMomentMeasure": [],
+    "IfcLuminousFluxMeasure": [],
+    "IfcMagneticFluxMeasure": [],
+    "IfcMassFlowRateMeasure": [],
+    "IfcRectangleProfileDef": [
+      {
+        "XDim": 2,
+        "YDim": 2,
+        "Position": null,
+        "ProfileName": null,
+        "ProfileType": "AREA"
+      }
+    ],
+    "IfcShapeRepresentation": [
+      {
+        "Items": [
+          {
+            "id": "0cf209ec-352c-11ed-b002-5fdcd9731360"
+          }
+        ],
+        "ContextOfItems": {
+          "id": "0cf209f2-352c-11ed-b002-4fe601fc2530"
+        },
+        "RepresentationType": "SweptSolid",
+        "RepresentationIdentifier": "Body"
+      },
+      {
+        "Items": [
+          {
+            "id": "0cf209e7-352c-11ed-b002-1f37642c0749"
+          }
+        ],
+        "ContextOfItems": {
+          "id": "0cf209f3-352c-11ed-b002-b34f77b8c1a4"
+        },
+        "RepresentationType": "BoundingBox",
+        "RepresentationIdentifier": "Box"
+      }
+    ],
+    "IfcShearModulusMeasure": [],
+    "IfcBuildingElementProxy": [
+      {
+        "Tag": null,
+        "Name": "Cube",
+        "GlobalId": "3vJeEVZYzA3vP81uCmY9l4",
+        "ObjectType": null,
+        "Description": null,
+        "OwnerHistory": null,
+        "PredefinedType": "COMPLEX",
+        "Representation": {
+          "id": "0cf20a01-352c-11ed-b002-efce163ca5d3"
+        },
+        "ObjectPlacement": {
+          "id": "0cf20a02-352c-11ed-b002-1f08369d007b"
+        }
+      }
+    ],
+    "IfcDimensionalExponents": [
+      {
+        "MassExponent": 0,
+        "TimeExponent": 0,
+        "LengthExponent": 0,
+        "ElectricCurrentExponent": 0,
+        "AmountOfSubstanceExponent": 0,
+        "LuminousIntensityExponent": 0,
+        "ThermodynamicTemperatureExponent": 0
+      }
+    ],
+    "IfcMassPerLengthMeasure": [],
+    "IfcPositiveRatioMeasure": [],
+    "IfcRadioActivityMeasure": [],
+    "IfcSoundPressureMeasure": [],
+    "IfcWarpingMomentMeasure": [],
+    "IfcDoseEquivalentMeasure": [],
+    "IfcElectricChargeMeasure": [],
+    "IfcLinearVelocityMeasure": [],
+    "IfcPersonAndOrganization": [],
+    "IfcPositiveLengthMeasure": [],
+    "IfcRotationalMassMeasure": [],
+    "IfcSectionModulusMeasure": [],
+    "IfcAngularVelocityMeasure": [],
+    "IfcElectricCurrentMeasure": [],
+    "IfcElectricVoltageMeasure": [],
+    "IfcHeatFluxDensityMeasure": [],
+    "IfcLinearStiffnessMeasure": [],
+    "IfcMolecularWeightMeasure": [],
+    "IfcMomentOfInertiaMeasure": [],
+    "IfcNormalisedRatioMeasure": [],
+    "IfcProductDefinitionShape": [
+      {
+        "Name": null,
+        "Description": null,
+        "Representations": [
+          {
+            "id": "0cf209fc-352c-11ed-b002-8bfce2eddfb2"
+          },
+          {
+            "id": "0cf209fd-352c-11ed-b002-97c1d4561d4c"
+          }
+        ]
+      }
+    ],
+    "IfcSoundPowerLevelMeasure": [],
+    "IfcWarpingConstantMeasure": [],
+    "IfcContextDependentMeasure": [],
+    "IfcDynamicViscosityMeasure": [],
+    "IfcIntegerCountRateMeasure": [],
+    "IfcIonConcentrationMeasure": [],
+    "IfcAmountOfSubstanceMeasure": [],
+    "IfcLuminousIntensityMeasure": [],
+    "IfcNonNegativeLengthMeasure": [],
+    "IfcThermalAdmittanceMeasure": [],
+    "IfcThermalResistanceMeasure": [],
+    "IfcVaporPermeabilityMeasure": [],
+    "IfcCompoundPlaneAngleMeasure": [],
+    "IfcElectricResistanceMeasure": [],
+    "IfcKinematicViscosityMeasure": [],
+    "IfcPositivePlaneAngleMeasure": [],
+    "IfcSoundPressureLevelMeasure": [],
+    "IfcVolumetricFlowRateMeasure": [],
+    "IfcElectricCapacitanceMeasure": [],
+    "IfcElectricConductanceMeasure": [],
+    "IfcMagneticFluxDensityMeasure": [],
+    "IfcModulusOfElasticityMeasure": [],
+    "IfcMoistureDiffusivityMeasure": [],
+    "IfcRotationalFrequencyMeasure": [],
+    "IfcRotationalStiffnessMeasure": [],
+    "IfcTemperatureGradientMeasure": [],
+    "IfcThermalConductivityMeasure": [],
+    "IfcSpecificHeatCapacityMeasure": [],
+    "IfcThermalTransmittanceMeasure": [],
+    "IfcSectionalAreaIntegralMeasure": [],
+    "IfcGeometricRepresentationContext": [
+      {
+        "Precision": 1e-05,
+        "TrueNorth": null,
+        "ContextType": "Model",
+        "ContextIdentifier": null,
+        "WorldCoordinateSystem": {
+          "id": "0cf209e4-352c-11ed-b002-5ff69ff241e2"
+        },
+        "CoordinateSpaceDimension": 3
+      },
+      {
+        "Precision": 1e-05,
+        "TrueNorth": null,
+        "ContextType": "Plan",
+        "ContextIdentifier": null,
+        "WorldCoordinateSystem": {
+          "id": "0cf209e5-352c-11ed-b002-bb2b2de44543"
+        },
+        "CoordinateSpaceDimension": 2
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "ContextType": "Model",
+        "ContextIdentifier": "Body",
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "ContextType": "Model",
+        "ContextIdentifier": "Box",
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "ContextType": "Plan",
+        "ContextIdentifier": "Annotation",
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "ContextType": "Plan",
+        "ContextIdentifier": "Annotation",
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "ContextType": "Plan",
+        "ContextIdentifier": "Annotation",
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      }
+    ],
+    "IfcRelContainedInSpatialStructure": [
+      {
+        "Name": null,
+        "GlobalId": "3$0f0IUv11NgPnXr5xIpK1",
+        "Description": null,
+        "OwnerHistory": null,
+        "RelatedElements": [
+          {
+            "id": "0cf20a04-352c-11ed-b002-7b4422d738ff"
+          }
+        ],
+        "RelatingStructure": {
+          "id": "0cf209fe-352c-11ed-b002-7389b8837a1c"
+        }
+      }
+    ],
+    "IfcTemperatureRateOfChangeMeasure": [],
+    "IfcThermodynamicTemperatureMeasure": [],
+    "IfcModulusOfSubgradeReactionMeasure": [],
+    "IfcGeometricRepresentationSubContext": [
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "TargetView": "MODEL_VIEW",
+        "ContextType": "Model",
+        "TargetScale": null,
+        "ParentContext": {
+          "id": "0cf209e9-352c-11ed-b002-c35801050ad4"
+        },
+        "ContextIdentifier": "Body",
+        "UserDefinedTargetView": null,
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "TargetView": "MODEL_VIEW",
+        "ContextType": "Model",
+        "TargetScale": null,
+        "ParentContext": {
+          "id": "0cf209e9-352c-11ed-b002-c35801050ad4"
+        },
+        "ContextIdentifier": "Box",
+        "UserDefinedTargetView": null,
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "TargetView": "PLAN_VIEW",
+        "ContextType": "Plan",
+        "TargetScale": null,
+        "ParentContext": {
+          "id": "0cf209ea-352c-11ed-b002-f757c55357bd"
+        },
+        "ContextIdentifier": "Annotation",
+        "UserDefinedTargetView": null,
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "TargetView": "SECTION_VIEW",
+        "ContextType": "Plan",
+        "TargetScale": null,
+        "ParentContext": {
+          "id": "0cf209ea-352c-11ed-b002-f757c55357bd"
+        },
+        "ContextIdentifier": "Annotation",
+        "UserDefinedTargetView": null,
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      },
+      {
+        "Precision": null,
+        "TrueNorth": null,
+        "TargetView": "ELEVATION_VIEW",
+        "ContextType": "Plan",
+        "TargetScale": null,
+        "ParentContext": {
+          "id": "0cf209ea-352c-11ed-b002-f757c55357bd"
+        },
+        "ContextIdentifier": "Annotation",
+        "UserDefinedTargetView": null,
+        "WorldCoordinateSystem": null,
+        "CoordinateSpaceDimension": null
+      }
+    ],
+    "IfcIsothermalMoistureCapacityMeasure": [],
+    "IfcThermalExpansionCoefficientMeasure": [],
+    "IfcLuminousIntensityDistributionMeasure": [],
+    "IfcModulusOfLinearSubgradeReactionMeasure": [],
+    "IfcModulusOfRotationalSubgradeReactionMeasure": []
+  }
+]
