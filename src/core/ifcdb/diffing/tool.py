@@ -14,18 +14,27 @@ from ifcdb.entities import Entity, EntityResolver, EntityTool, get_entity_from_s
 from ifcdb.io.ifc.optimizing import general_optimization
 from .utils import get_elem_paths
 
+_ifc_ent = ifcopenshell.entity_instance
+
 
 @dataclass
 class IfcValueToChange:
-    entity: ifcopenshell.entity_instance
+    entity: _ifc_ent
     index: str | int
     value: Any
 
 
 @dataclass
+class OverlinkedEntity:
+    index: int
+    item: _ifc_ent
+    inverse_entities: list[_ifc_ent]
+
+
+@dataclass
 class IfcEntityValueEditor:
     f: ifcopenshell.file
-    elem: ifcopenshell.entity_instance
+    elem: _ifc_ent
     path: str
     new_value: Any
 
@@ -42,11 +51,36 @@ class IfcEntityValueEditor:
         list_ver[self.last_index] = self.new_value
         return tuple(list_ver)
 
+    def _identify_top_most_overlinked_entity(self) -> OverlinkedEntity | None:
+        overlinked_ancestors = []
+        for i, ancestor in enumerate(self.levels):
+            if isinstance(ancestor, _ifc_ent) is False:
+                continue
+            inverse_owners = self.f.get_inverse(ancestor)
+            if len(inverse_owners) > 1:
+                overlinked_ancestors.append(OverlinkedEntity(i, ancestor, inverse_owners))
+        if len(overlinked_ancestors) == 0:
+            return None
+        return overlinked_ancestors[0]
+
     def get_new_value(self) -> IfcValueToChange:
+        result = self._identify_top_most_overlinked_entity()
+        if result is None:
+            return self.get_new_value_old_algo()
+
+        key = self.indices[result.index - 1]
+        class_name = result.item.is_a()
+        res = result.item.get_info(include_identifier=False)
+        res.pop("type")
+        # If this object is linked to other objects, a new object should be created instead
+        new_entity = self.f.create_entity(class_name, **res)
+
+        return IfcValueToChange(result.item, key, new_entity)
+
+    def get_new_value_old_algo(self):
         parent_entity = self.parent_entity
         f = self.f
 
-        # If this object is linked to other objects, a new object should be created instead
         if isinstance(parent_entity, ifcopenshell.entity_instance) and len(f.get_inverse(parent_entity)) > 1:
             inverse_entity = self.levels[-4]
             inverse_index = self.indices[-3]
@@ -68,12 +102,14 @@ class IfcEntityValueEditor:
                 raise NotImplementedError("This is not yet supported")
         else:
             new_value = IfcValueToChange(self.last_entity, self.last_index, self.new_value)
-
         return new_value
 
     def replace_value(self) -> None:
         new_value = self.get_new_value()
-        setattr(new_value.entity, new_value.index, new_value.value)
+        try:
+            setattr(new_value.entity, new_value.index, new_value.value)
+        except IndexError as e:
+            raise IndexError(e)
 
 
 @dataclass
@@ -168,24 +204,24 @@ class IfcDiffTool:
             guid = el.GlobalId
             if guid in removed or guid in added:
                 continue
+
             result = self.compare_rooted_elements(el, f2.by_guid(guid))
             if result is None:
                 continue
+
             updated_result = self._check_for_overlinking(result)
             if updated_result is not None:
                 result = updated_result
 
             self.changed.append(result)
 
-    def _check_prop_for_overlinking(
-        self, ifc_elem: ifcopenshell.entity_instance, path: str, new_value: Any
-    ) -> None | IfcValueToChange:
+    def _check_prop_for_overlinking(self, ifc_elem: _ifc_ent, path: str, new_value: Any) -> None | IfcValueToChange:
         if isinstance(new_value, str):
             # for PoC only numerical values are of interest here
             return None
         ieve = IfcEntityValueEditor(self.f2, ifc_elem, path, new_value)
         new_value = ieve.get_new_value()
-        if new_value.entity != ieve.parent_entity and isinstance(new_value.value, ifcopenshell.entity_instance):
+        if new_value.entity != ieve.parent_entity and isinstance(new_value.value, _ifc_ent):
             return new_value
         return None
 
@@ -199,7 +235,7 @@ class IfcDiffTool:
             if result is not None:
                 entity_diff_change.overlinked_entities[path] = result
 
-    def are_elements_equal(self, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance) -> bool:
+    def compare_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> dict:
         info1 = el1.get_info(recursive=True, include_identifier=False)
         info2 = el2.get_info(recursive=True, include_identifier=False)
 
@@ -207,17 +243,17 @@ class IfcDiffTool:
         new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
         new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
 
-        res = DeepDiff(new_info1, new_info2)
+        return DeepDiff(new_info1, new_info2)
+
+    def are_elements_equal(self, el1: _ifc_ent, el2: _ifc_ent) -> bool:
+        res = self.compare_elements(el1, el2)
         keys = list(res)
         if len(keys) > 0:
             return False
 
         return True
 
-    def compare_rooted_elements(
-        self, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance
-    ) -> EntityDiffChange | None:
-
+    def compare_rooted_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> EntityDiffChange | None:
         info1 = el1.get_info(recursive=True, include_identifier=False)
         info2 = el2.get_info(recursive=True, include_identifier=False)
 
@@ -251,6 +287,12 @@ class IfcDiffTool:
     @property
     def contains_changes(self) -> bool:
         return len(self.added) + len(self.changed) + len(self.removed) > 0
+
+
+@dataclass
+class ElementComparison:
+    el1: _ifc_ent
+    el2: _ifc_ent
 
 
 def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:

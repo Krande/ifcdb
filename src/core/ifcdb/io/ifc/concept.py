@@ -42,6 +42,8 @@ class IfcIO:
             except RuntimeError as e:
                 logging.error(e)
                 self.ifc_obj = ifc_obj
+        else:
+            self.ifc_obj = ifc_obj
 
         self.schema = self.ifc_obj.wrapped_data.schema
 

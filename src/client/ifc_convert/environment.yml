@@ -1,0 +1,12 @@
+name: ifc-convert
+channels:
+  - conda-forge
+  - krande
+dependencies:
+  - python==3.10.5
+  - ifcopenshell
+  - ada-py
+  - toposort
+  - pip
+  - pip:
+      - azure-storage-queue

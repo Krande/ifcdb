@@ -20,6 +20,25 @@ def test_cube_edited(my_cube, my_cube_edited):
     print(edql_str)
 
 
+def test_cube_edited_z(my_cube, my_cube_edited_z):
+    diff_tool = IfcDiffTool(my_cube, my_cube_edited_z)
+
+    assert len(diff_tool.changed) == 1
+    assert len(diff_tool.added) == 0
+    assert len(diff_tool.removed) == 0
+
+    # Use the apply_diffs_ifcopenshell to apply the diffs recorded by the diff_tool
+    bulk_entity_handler = diff_tool.to_bulk_entity_handler()
+
+    assert len(bulk_entity_handler.bulk_updates) == 1
+
+    update1 = bulk_entity_handler.bulk_updates[0]
+    assert len(update1.select_items) == 1
+
+    edql_str = bulk_entity_handler.to_edql_str()
+    print(edql_str)
+
+
 def test_cube_added(my_cube, my_cube_added):
     diff_tool = IfcDiffTool(my_cube, my_cube_added)
 

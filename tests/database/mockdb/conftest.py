@@ -29,6 +29,11 @@ def my_cube_added(my_cube_added_ifc_filepath) -> ifcopenshell.file:
     return ifcopenshell.open(my_cube_added_ifc_filepath)
 
 
+@pytest.fixture
+def my_cube_edited_z(my_cube_edited_z_ifc_filepath) -> ifcopenshell.file:
+    return ifcopenshell.open(my_cube_edited_z_ifc_filepath)
+
+
 @dataclass
 class MockDb:
     json_result_all: pathlib.Path

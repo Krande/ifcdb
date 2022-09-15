@@ -53,17 +53,78 @@ class PropUpdateType(Enum):
 
 
 @dataclass
+class SelectResolver:
+    root_object: Entity
+    classes: list[str]
+
+    def resolve_selects(self):
+        root_guid = self.root_object.props.get("GlobalId")
+        root_select = EdgeSelect(
+            "root", self.root_object, None, filter=EdgeFilter("GlobalId", root_guid, FilterType.STR)
+        )
+        select_objects = []
+
+        prev_ref = root_select
+        for i, chunk in enumerate(self._chunk_classes(), start=1):
+            curr_ref = f"lvl{i}"
+            is_agg = False
+            path_neutral_str = ""
+            index = None
+            assert_class = None
+            for j, (keys, class_name) in enumerate(chunk):
+                if j != 0:
+                    path_neutral_str += "."
+                assert_class = class_name
+                if isinstance(keys, str):
+                    path_neutral_str += keys
+                else:
+                    path_neutral_str += keys[0]
+                    is_agg = True
+                    index = keys[1]
+                if assert_class is not None:
+                    path_neutral_str += f"[is {assert_class}]"
+
+            es = EdgeSelect(
+                curr_ref,
+                prev_ref,
+                path_neutral_str,
+                index,
+                assert_class=assert_class,
+                is_multi_link=is_agg,
+            )
+            select_objects.append(es)
+            prev_ref = es
+
+        return [root_select] + select_objects
+
+    def _chunk_classes(self):
+        chunks = []
+        chunk = []
+        for i, (keys, class_name) in enumerate(self.classes):
+            if isinstance(keys, str):
+                chunk.append((keys, class_name))
+            else:
+                chunk.append((keys, class_name))
+                chunks.append(chunk)
+                chunk = []
+
+        if len(chunk) > 0:
+            chunks.append(chunk)
+        return chunks
+
+
+@dataclass
 class EntityPropUpdate:
     root_object: Entity
     property_path: str = field(repr=False)
     update_value: EntityUpdateValue
     update_type: PropUpdateType
 
+    all_selects: list[EdgeSelect] = field(default=None)
     selects: list[EdgeSelect] = field(default=None)
     last_select: EdgeSelect = field(default=None)
 
     _levels: list[str] = field(default=None)
-    _classes: list[str] = field(default=None)
 
     def __post_init__(self):
         self._resolve_levels_and_classes()
@@ -120,66 +181,16 @@ class EntityPropUpdate:
 
         return classes
 
-    def _chunk_classes(self):
-        chunks = []
-        chunk = []
-        for i, (keys, class_name) in enumerate(self._classes):
-            if isinstance(keys, str):
-                chunk.append((keys, class_name))
-            else:
-                chunk.append((keys, class_name))
-                chunks.append(chunk)
-                chunk = []
-
-        if len(chunk) > 0:
-            chunks.append(chunk)
-        return chunks
-
     def _resolve_levels_and_classes(self):
         res = [r.replace("'", "") for r in _RE_COMP.findall(self.property_path)]
         self._levels = [int(r) if r.isnumeric() else r for r in res]
-        self._classes = self._get_classes_from_entity_subpath()
-        all_selects = self.resolve_selects()
-        self.selects = all_selects[:-1]
-        self.last_select = all_selects[-1]
 
-    def resolve_selects(self):
-        root_guid = self.root_object.props.get("GlobalId")
-        root_select = EdgeSelect(
-            "root", self.root_object, None, filter=EdgeFilter("GlobalId", root_guid, FilterType.STR)
-        )
-        select_objects = []
+        classes = self._get_classes_from_entity_subpath()
+        select_resolver = SelectResolver(self.root_object, classes)
+        self.all_selects = select_resolver.resolve_selects()
 
-        prev_ref = root_select
-        for i, chunk in enumerate(self._chunk_classes(), start=1):
-            curr_ref = f"lvl{i}"
-            is_agg = False
-            path_neutral_str = ""
-            index = None
-            assert_class = None
-            for j, (keys, class_name) in enumerate(chunk):
-                if j != 0:
-                    path_neutral_str += "."
-                if isinstance(keys, str):
-                    path_neutral_str += keys
-                else:
-                    path_neutral_str += keys[0]
-                    is_agg = True
-                    index = keys[1]
-                    assert_class = class_name
-
-            es = EdgeSelect(
-                curr_ref,
-                prev_ref,
-                path_neutral_str,
-                index,
-                assert_class=assert_class,
-                is_multi_link=is_agg,
-            )
-            select_objects.append(es)
-            prev_ref = es
-
-        return [root_select] + select_objects
+        self.selects = self.all_selects[:-1]
+        self.last_select = self.all_selects[-1]
 
 
 @dataclass
@@ -192,24 +203,23 @@ class BulkEntityUpdate:
     updates: list[EntityPropUpdate]
 
     global_with_selects: dict[str, EdgeSelect] = field(default_factory=dict)
-    local_with_selects: dict[str, EdgeSelect] = field(default_factory=dict)
     select_items: list[EdgeSelect] = field(default_factory=list)
-
+    all_select_items: list[EdgeSelect] = field(default_factory=list)
     indent: str = "    "
-    uuid_map: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
         self.select_items = [u.last_select for u in self.updates]
+        self.all_select_items = [s for u in self.updates for s in u.all_selects]
 
     def _get_unique_entities(self) -> dict[str, list[EdgeSelect]]:
         unique_entity_paths = dict()
         select_chunks = [update.selects for update in self.updates]
         for update_list in select_chunks:
-            for prop_path in update_list:
-                epath = prop_path.get_absolute_path()
+            for select_object in update_list:
+                epath = select_object.get_absolute_path()
                 if epath not in unique_entity_paths.keys():
                     unique_entity_paths[epath] = []
-                unique_entity_paths[epath].append(prop_path)
+                unique_entity_paths[epath].append(select_object)
 
         return unique_entity_paths
 

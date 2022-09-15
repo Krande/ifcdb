@@ -2,7 +2,7 @@ FROM continuumio/miniconda3
 
 WORKDIR /code
 
-ARG api_dir=./src/server/api/fastapi_azure
+ARG api_dir=./src/client/api
 
 #
 COPY ${api_dir}/environment.yml /code/environment.yml

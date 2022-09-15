@@ -64,5 +64,10 @@ def my_cube_added_ifc_filepath(files_dir):
 
 
 @pytest.fixture
+def my_cube_edited_z_ifc_filepath(files_dir):
+    return files_dir / "MyCube/MyCubeEdited_Z.ifc"
+
+
+@pytest.fixture
 def my_beam_w_holes_ifc(my_beam_w_holes_ifc_filepath):
     return ifcopenshell.open(my_beam_w_holes_ifc_filepath)

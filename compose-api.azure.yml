@@ -8,7 +8,7 @@ services:
       dockerfile: api.Dockerfile
     pull_policy: build
     volumes:
-      - "./src/server/api/fastapi_azure/config/azure:/code/certs"
+      - "./src/client/api/config/azure:/code/certs"
     environment:
       EDGEDB_TLS_CA_FILE: /code/certs/cert.pem
       EDGEDB_CLIENT_TLS_SECURITY: insecure

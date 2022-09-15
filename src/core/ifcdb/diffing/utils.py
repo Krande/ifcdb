@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Iterable
 import ifcopenshell
 
 _RE_COMP = re.compile(r"\[(.*?)\]")
@@ -34,7 +35,7 @@ def get_elem_paths(elem: ifcopenshell.entity_instance, path: str, is_append_obj=
 
 
 def slice_property_path_at_key(path: str, key_to_stop_at: str) -> str:
-    all_sub_levels = [x.replace("'", '') for x in _RE_COMP.findall(path)]
+    all_sub_levels = list(dict_path_to_iterable(path))
     index_ref_key = all_sub_levels.index(key_to_stop_at)
     actual_key = all_sub_levels[index_ref_key+1]
     temp_split = path.split(actual_key)
@@ -44,3 +45,15 @@ def slice_property_path_at_key(path: str, key_to_stop_at: str) -> str:
         raise ValueError(f'Multiple "{key_to_stop_at}" keys found in path "{path}"')
     base_path = temp_split[0][:-2]
     return base_path
+
+
+def clean_path_elem(elem: str) -> str | int:
+    elem = elem.replace("'", "")
+    if elem.isnumeric():
+        return int(elem)
+    else:
+        return elem
+
+
+def dict_path_to_iterable(path) -> Iterable:
+    return map(clean_path_elem, _RE_COMP.findall(path))

@@ -86,6 +86,6 @@ class EdgeSelect:
             select_str += " " + self.filter.to_edql_str()
 
         if assign_to_variable:
-            return f"{self.name} := ({select_str}){assert_str},"
+            return f"{self.name} := ({select_str}),"
         else:
             return select_str

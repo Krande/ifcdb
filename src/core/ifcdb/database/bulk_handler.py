@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from ifcdb.entities import Entity, EntityResolver
 from ifcdb.diffing.utils import slice_property_path_at_key
+from .select import EdgeSelect
 from .inserts.bulk_insert import BulkEntityInsert
 from .remove.bulk_removal import BulkEntityRemoval
 from .updates.bulk_updates import (
@@ -30,6 +31,7 @@ class BulkEntityHandler:
 
     insert_map: dict[str, Entity] = field(default_factory=dict)
     uuid_map: dict[Entity, str] = field(default_factory=dict)
+    all_selects: dict[str, EdgeSelect] = field(default_factory=dict)
 
     do_selects_on_all_with_variables: bool = False
 
@@ -39,9 +41,18 @@ class BulkEntityHandler:
         self.bulk_removals = BulkEntityRemoval(self.ifc_diff_tool.removed)
         self.add_changes()
 
+        for bulk_update in self.bulk_updates:
+            for select_item in bulk_update.all_select_items:
+                self.all_selects[select_item.name] = select_item
+                print('sd')
+
+        for select_item in self.bulk_inserts.selects.values():
+            self.all_selects[select_item.name] = select_item
+
     def add_changes(self) -> None:
         for diff_el in self.ifc_diff_tool.changed:
             change_object = self.change_entity(diff_el)
+
             if change_object is not None:
                 self.bulk_updates.append(change_object)
 
@@ -111,8 +122,6 @@ class BulkEntityHandler:
 
         for key, value in self.bulk_inserts.inserts.items():
             all_with_statements[key] = value
-
-        self.bulk_inserts.get_insert_entities()
 
         for update in self.bulk_updates:
             update._resolve_global_with_statements()
