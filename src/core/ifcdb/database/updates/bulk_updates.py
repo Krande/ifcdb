@@ -5,10 +5,10 @@ from enum import Enum
 from itertools import count
 from typing import Any
 
+from ifcdb.database.inserts import EdgeInsert
 from ifcdb.database.select import EdgeFilter, EdgeSelect, FilterType
 from ifcdb.diffing.utils import _RE_COMP
 from ifcdb.entities import Entity
-from ifcdb.database.inserts import EdgeInsert
 
 
 @dataclass
@@ -344,8 +344,11 @@ class BulkEntityUpdate:
                 raise NotImplementedError(f'Unrecognized "{prop_update.update_type}"')
 
             edql_str += self.indent + "),\n"
+
         if use_select_wrapper:
             edql_str += "}\n"
+
         if variable_assignment is not None:
             edql_str += "), \n"
+
         return edql_str

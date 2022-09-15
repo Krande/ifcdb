@@ -8,7 +8,7 @@ from ifcdb.utils import top_dir
 CUBE_DIR = top_dir() / "files/MyCube"
 
 
-def upload():
+def reset_db():
     cubepath = CUBE_DIR / "MyCube.ifc"
     with EdgeIO("MyCube", load_env=True) as io:
         io.create_schema_from_ifc_file(cubepath)

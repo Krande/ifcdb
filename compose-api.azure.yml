@@ -5,7 +5,7 @@ services:
     image: ifc-api/latest
     build:
       context: .
-      dockerfile: api.Dockerfile
+      dockerfile: service.api.Dockerfile
     pull_policy: build
     volumes:
       - "./src/client/api/config/azure:/code/certs"

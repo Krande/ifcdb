@@ -11,9 +11,8 @@ COPY ${api_dir}/environment.yml /code/environment.yml
 RUN conda env create -f /code/environment.yml
 SHELL ["conda", "run", "--no-capture-output", "-n", "ifc-api", "/bin/bash", "-c"]
 
-
 COPY ${api_dir}/app /code/app
-COPY ./src/core /code/core
+COPY src/core /code/core
 
 ENV PYTHONPATH "${PYTHONPATH}:/code/core"
 

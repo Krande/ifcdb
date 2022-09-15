@@ -107,6 +107,10 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
         context.scene.BIMProjectProperties.total_elements = len(tool.Ifc.get().by_type("IfcElement"))
 
         ifc: ifcopenshell.file = IfcStore.get_file()
+        if len(list(ifc.by_type('IfcRoot'))) == 0:
+            print('Downloaded IFC model has no rooted elements.')
+            return None
+
         people = {ifcp.Identification: ifcp for ifcp in ifc.by_type("IfcPerson")}
 
         current_user = people.get(props.identification, None)

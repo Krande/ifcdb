@@ -17,7 +17,7 @@ format:
 	black . && isort . && flake8 .
 
 build:
-	docker build -t ifc-api/latest -f api.Dockerfile .
+	docker build -t ifc-api/latest -f service.api.Dockerfile .
 
 migc:
 	edgedb migration create --database mixed --credentials-file .azurevm.credentials.json --schema-dir ./src/server/schema/mixed/dbschema --tls-security insecure --non-interactive

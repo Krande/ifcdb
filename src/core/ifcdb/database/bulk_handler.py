@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-import edgedb
 from dataclasses import dataclass, field
 from itertools import count
 from typing import TYPE_CHECKING
 
-from ifcdb.entities import Entity, EntityResolver
+import edgedb
+
 from ifcdb.diffing.utils import slice_property_path_at_key
-from .select import EdgeSelect
+from ifcdb.entities import Entity, EntityResolver
+
+from .inserts import EdgeInsert
 from .inserts.bulk_insert import BulkEntityInsert
 from .remove.bulk_removal import BulkEntityRemoval
+from .select import EdgeSelect
 from .updates.bulk_updates import (
     BulkEntityUpdate,
     EntityPropUpdate,
@@ -18,7 +21,7 @@ from .updates.bulk_updates import (
 )
 
 if TYPE_CHECKING:
-    from ifcdb.diffing.tool import EntityDiffChange, IfcDiffTool, EntityDiffAdd
+    from ifcdb.diffing.tool import EntityDiffChange, IfcDiffTool
 
 
 @dataclass
@@ -31,7 +34,9 @@ class BulkEntityHandler:
 
     insert_map: dict[str, Entity] = field(default_factory=dict)
     uuid_map: dict[Entity, str] = field(default_factory=dict)
+
     all_selects: dict[str, EdgeSelect] = field(default_factory=dict)
+    extra_inserts: dict[str, EdgeInsert] = field(default_factory=dict)
 
     do_selects_on_all_with_variables: bool = False
 
@@ -44,7 +49,12 @@ class BulkEntityHandler:
         for bulk_update in self.bulk_updates:
             for select_item in bulk_update.all_select_items:
                 self.all_selects[select_item.name] = select_item
-                print('sd')
+
+            for update in bulk_update.updates:
+                new_value = update.update_value.value
+                if isinstance(new_value, Entity):
+                    for key, link in new_value.links.items():
+                        self.extra_inserts[link.temp_unique_identifier] = EdgeInsert(link, link.temp_unique_identifier)
 
         for select_item in self.bulk_inserts.selects.values():
             self.all_selects[select_item.name] = select_item
@@ -132,23 +142,11 @@ class BulkEntityHandler:
 
         return all_with_statements
 
-    def get_global_with_str(self):
-        all_with_statements = self.get_all_global_with_statements()
-        if len(all_with_statements.keys()) == 0:
-            return ""
-
-        global_wstr = "with\n"
-        for key, value in all_with_statements.items():
-            global_wstr += "    " + value.to_edql_str(assign_to_variable=True) + "\n"
-
-        return global_wstr
-
-    def to_edql_str(self, client: edgedb.Client = None) -> str | None:
-        # add new entities
+    def to_edql_str(self, client: edgedb.Client = None, indent=2 * " ") -> str | None:
         if client is not None:
             self.get_db_data(client)
+
         c = count(1)
-        indent = 4 * " "
 
         query_str = ""
         # Global WITH statements
@@ -157,7 +155,10 @@ class BulkEntityHandler:
         if len(all_with_statements.keys()) != 0:
             global_wstr = "with\n"
             for key, value in all_with_statements.items():
-                global_wstr += "    " + value.to_edql_str(assign_to_variable=True) + "\n"
+                global_wstr += indent + value.to_edql_str(assign_to_variable=True) + "\n"
+
+            for key, value in self.extra_inserts.items():
+                global_wstr += indent + value.to_edql_str(assign_to_variable=True) + "\n"
 
         if self.do_selects_on_all_with_variables:
             # for logging purposes do a select on all intermediate WITH statements
