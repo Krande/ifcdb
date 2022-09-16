@@ -6,15 +6,15 @@ import json
 import logging
 from dataclasses import dataclass, field
 from deepdiff import DeepDiff
-from frozendict import frozendict
 from typing import Any
 
-from ifcdb.database.bulk_handler import BulkEntityHandler
+from ifcdb.database.bulk_handler import to_bulk_entity_handler, BulkEntityHandler
 from ifcdb.entities import Entity, EntityResolver, EntityTool, get_entity_from_source_dict
 from ifcdb.io.ifc.optimizing import general_optimization
 from .utils import get_elem_paths
 
 _ifc_ent = ifcopenshell.entity_instance
+_guid = "GlobalId"
 
 
 @dataclass
@@ -53,14 +53,24 @@ class IfcEntityValueEditor:
 
     def _identify_top_most_overlinked_entity(self) -> OverlinkedEntity | None:
         overlinked_ancestors = []
-        for i, ancestor in enumerate(self.levels):
+
+        ancestry = [x for x in self.levels]
+        ancestry.reverse()
+
+        for i, ancestor in enumerate(ancestry):
             if isinstance(ancestor, _ifc_ent) is False:
                 continue
+
             inverse_owners = self.f.get_inverse(ancestor)
-            if len(inverse_owners) > 1:
-                overlinked_ancestors.append(OverlinkedEntity(i, ancestor, inverse_owners))
+            is_owned_by_multiple = len(inverse_owners) > 1
+
+            if is_owned_by_multiple:
+                index = self.levels.index(ancestor)
+                overlinked_ancestors.append(OverlinkedEntity(index, ancestor, inverse_owners))
+
         if len(overlinked_ancestors) == 0:
             return None
+
         return overlinked_ancestors[0]
 
     def get_new_value(self) -> IfcValueToChange:
@@ -68,14 +78,16 @@ class IfcEntityValueEditor:
         if result is None:
             return self.get_new_value_old_algo()
 
-        key = self.indices[result.index - 1]
+        index = self.indices[result.index - 1]
+        if isinstance(index, int):
+            return self.get_new_value_old_algo()
         class_name = result.item.is_a()
         res = result.item.get_info(include_identifier=False)
         res.pop("type")
         # If this object is linked to other objects, a new object should be created instead
         new_entity = self.f.create_entity(class_name, **res)
 
-        return IfcValueToChange(result.item, key, new_entity)
+        return IfcValueToChange(result.item, index, new_entity)
 
     def get_new_value_old_algo(self):
         parent_entity = self.parent_entity
@@ -125,8 +137,21 @@ class EntityDiffBase:
 
 
 @dataclass
+class ValueChange:
+    path: str
+    old_value: Any
+    new_value: Any
+    key: int | str
+    ifc_elem: _ifc_ent
+    levels: list[_ifc_ent | float | tuple]
+    indices: list[str | int]
+    new_value_alt: Any
+
+
+@dataclass
 class EntityDiffChange(EntityDiffBase):
     diff: dict
+    value_changes: dict[str, ValueChange]
     entity: Entity = None
     overlinked_entities: dict[str, IfcValueToChange] = field(default_factory=dict)
 
@@ -185,8 +210,8 @@ class IfcDiffTool:
             f1 = general_optimization(f1)
             f2 = general_optimization(f2)
 
-        guids1 = set(x.GlobalId for x in f1.by_type("IfcRoot"))
-        guids2 = set(x.GlobalId for x in f2.by_type("IfcRoot"))
+        guids1 = set(getattr(x, _guid) for x in f1.by_type("IfcRoot"))
+        guids2 = set(getattr(x, _guid) for x in f2.by_type("IfcRoot"))
 
         removed = guids1 - guids2
         added = guids2 - guids1
@@ -201,7 +226,7 @@ class IfcDiffTool:
             self.added.append(EntityDiffAdd(guid, el.is_a(), entity_tool))
 
         for el in f1.by_type("IfcRoot"):
-            guid = el.GlobalId
+            guid = getattr(el, _guid)
             if guid in removed or guid in added:
                 continue
 
@@ -220,6 +245,17 @@ class IfcDiffTool:
             # for PoC only numerical values are of interest here
             return None
         ieve = IfcEntityValueEditor(self.f2, ifc_elem, path, new_value)
+        parent_entity = ieve.parent_entity
+        if isinstance(parent_entity, ifcopenshell.entity_instance) and len(self.f2.get_inverse(parent_entity)) == 1:
+            return None
+        elif isinstance(parent_entity, tuple):
+            all_have_no_overlinking = True
+            for entity in parent_entity:
+                if len(self.f2.get_inverse(entity)) > 1:
+                    all_have_no_overlinking = False
+            if all_have_no_overlinking is True:
+                return None
+
         new_value = ieve.get_new_value()
         if new_value.entity != ieve.parent_entity and isinstance(new_value.value, _ifc_ent):
             return new_value
@@ -261,17 +297,18 @@ class IfcDiffTool:
         new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
         new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
 
-        res = DeepDiff(frozendict(new_info1), frozendict(new_info2))
+        res = DeepDiff(new_info1, new_info2)
         keys = list(res)
         if len(keys) > 0:
             entity = get_entity_from_source_dict(info1, schema_ver=self.schema_ver)
-            return EntityDiffChange(el1.GlobalId, el1.is_a(), {key: res[key] for key in keys}, entity)
+            diff = {key: res[key] for key in keys}
+            vcs = diff_to_value_changes(self.f2, el1.GlobalId, diff)
+            return EntityDiffChange(el1.GlobalId, el1.is_a(), diff, vcs, entity)
 
         return None
 
     def to_bulk_entity_handler(self) -> BulkEntityHandler:
-        # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
-        return BulkEntityHandler(self)
+        return to_bulk_entity_handler(self)
 
     def to_dict(self) -> dict:
         return dict(
@@ -289,12 +326,6 @@ class IfcDiffTool:
         return len(self.added) + len(self.changed) + len(self.removed) > 0
 
 
-@dataclass
-class ElementComparison:
-    el1: _ifc_ent
-    el2: _ifc_ent
-
-
 def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:
     copied_source = copy.deepcopy(source)
 
@@ -302,7 +333,7 @@ def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:
         parent = parents[-1] if len(parents) > 0 else None
         parent_key = keys[-1] if len(keys) > 0 else None
         if isinstance(d, dict):
-            guid = d.get("GlobalId")
+            guid = d.get(_guid)
             if guid is not None and guid in ids_to_skip:
                 if len(parents) == 0:
                     logging.warning("Root object should not be included to begin with")
@@ -328,3 +359,36 @@ def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:
 
     walk(copied_source, [], [])
     return copied_source
+
+
+def path_to_value_change(path: str, elem: _ifc_ent, old_value, new_value) -> ValueChange:
+    levels, indices = get_elem_paths(elem, path)
+    levels_rev = [x for x in levels]
+    levels_rev.reverse()
+
+    ifc_elem_to_change = None
+    level_index = None
+    for i, lvl in enumerate(levels_rev):
+        if isinstance(lvl, _ifc_ent):
+            ifc_elem_to_change = lvl
+            level_index = i
+            break
+
+    index = len(levels) - level_index
+    key = indices[index - 1]
+    new_value_alt = levels[index]
+
+    return ValueChange(path, old_value, new_value, key, ifc_elem_to_change, levels, indices, new_value_alt)
+
+
+def diff_to_value_changes(f, guid: str, diff: dict) -> dict[str, ValueChange]:
+    vc = dict()
+    elem = f.by_guid(guid)
+    for key, value in diff.items():
+        if key == "values_changed":
+            for path, value_changes in value.items():
+                vc[path] = path_to_value_change(path, elem, **value_changes)
+        else:
+            raise NotImplementedError(f"{key=} is not yet supported")
+
+    return vc

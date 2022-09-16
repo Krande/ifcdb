@@ -1,18 +1,16 @@
 from __future__ import annotations
 
+import edgedb
 from dataclasses import dataclass, field
 from itertools import count
 from typing import TYPE_CHECKING
 
-import edgedb
-
 from ifcdb.diffing.utils import slice_property_path_at_key
 from ifcdb.entities import Entity, EntityResolver
-
 from .inserts import EdgeInsert
 from .inserts.bulk_insert import BulkEntityInsert
-from .remove.bulk_removal import BulkEntityRemoval
-from .select import EdgeSelect
+from .remove.bulk_removal import BulkEntityRemoval, EntityRemove
+from .select import EdgeSelect, EdgeFilter, FilterType
 from .updates.bulk_updates import (
     BulkEntityUpdate,
     EntityPropUpdate,
@@ -47,14 +45,20 @@ class BulkEntityHandler:
         self.add_changes()
 
         for bulk_update in self.bulk_updates:
-            for select_item in bulk_update.all_select_items:
-                self.all_selects[select_item.name] = select_item
+            # for select_item in bulk_update.all_select_items:
+            #     self.all_selects[select_item.name] = select_item
 
             for update in bulk_update.updates:
                 new_value = update.update_value.value
                 if isinstance(new_value, Entity):
                     for key, link in new_value.links.items():
-                        self.extra_inserts[link.temp_unique_identifier] = EdgeInsert(link, link.temp_unique_identifier)
+                        if isinstance(link, tuple):
+                            for item in link:
+                                tuid = item.temp_unique_identifier
+                                self.extra_inserts[tuid] = EdgeInsert(item, tuid)
+                        else:
+                            tuid = link.temp_unique_identifier
+                            self.extra_inserts[tuid] = EdgeInsert(link, tuid)
 
         for select_item in self.bulk_inserts.selects.values():
             self.all_selects[select_item.name] = select_item
@@ -134,7 +138,7 @@ class BulkEntityHandler:
             all_with_statements[key] = value
 
         for update in self.bulk_updates:
-            update._resolve_global_with_statements()
+            update.resolve_global_with_statements()
             if len(update.global_with_selects.keys()) == 0:
                 continue
             for key, value in update.global_with_selects.items():
@@ -142,13 +146,10 @@ class BulkEntityHandler:
 
         return all_with_statements
 
-    def to_edql_str(self, client: edgedb.Client = None, indent=2 * " ") -> str | None:
-        if client is not None:
-            self.get_db_data(client)
-
+    def to_edql_str(self, indent=2 * " ") -> str | None:
         c = count(1)
-
         query_str = ""
+
         # Global WITH statements
         all_with_statements = self.get_all_global_with_statements()
         global_wstr = ""
@@ -194,3 +195,28 @@ class BulkEntityHandler:
             return None
         else:
             return global_wstr + f"\nSELECT {{\n{query_str}\n}}"
+
+
+def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
+    # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
+    inserts = dict()
+    removals = []
+    changes = dict()
+
+    # Additions
+    for entity_add in ifc_diff_tool.added:
+        for key, value in entity_add.added.linked_objects.items():
+            if value == entity_add.added.entity:
+                continue
+            inserts[key] = EdgeInsert(value, key)
+
+    # Removals
+    for entity in ifc_diff_tool.removed:
+        er = EntityRemove(entity.class_name, EdgeFilter("GlobalId", entity.guid, FilterType.STR))
+        removals.append(er)
+
+    # Changes
+    for diff_el in ifc_diff_tool.changed:
+        changes[diff_el.guid] = diff_el
+
+    return BulkEntityHandler(ifc_diff_tool)

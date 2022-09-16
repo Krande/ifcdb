@@ -73,10 +73,19 @@ class EdgeIO:
         db_migrate = self._create_migration_client()
         db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
 
-    def wipe_database(self, max_attempts=3):
+    def wipe_database(self, max_attempts=3, delete_in_sequence=False):
         bg = self.to_bulk_getter()
         empty = False
         attempt_no = 0
+
+        def perform_logger_query(query_str) -> bool:
+            try:
+                self.client.execute(query_str)
+            except edgedb.errors.InternalServerError as e:
+                logging.warning(e)
+                return False
+            return True
+
         while empty is False:
             edge_objects = bg.get_all_in_ordered_sequence()
             if len(edge_objects) == 0:
@@ -84,14 +93,23 @@ class EdgeIO:
                 break
             edge_objects.reverse()
 
+            delete_str = ""
+            if delete_in_sequence is False:
+                delete_str = "select {"
+
             for i, x in enumerate(edge_objects):
                 class_name = x["class"]
                 uuid = x["id"]
                 delstr = f"DELETE {class_name} FILTER .id = <uuid>'{uuid}'"
-                try:
-                    self.client.execute(delstr)
-                except edgedb.errors.InternalServerError as e:
-                    logging.warning(e)
+                if delete_in_sequence:
+                    if perform_logger_query(delstr) is False:
+                        continue
+                else:
+                    delete_str += f"del{i} := ({delstr}),\n"
+
+            if delete_in_sequence is False:
+                delete_str += "}"
+                if perform_logger_query(delete_str) is False:
                     continue
             attempt_no += 1
             if attempt_no > max_attempts:
@@ -161,7 +179,9 @@ class EdgeIO:
         if diff_tool.contains_changes is False:
             print("No Changes to model detected")
             return None
+
         bulk_entity_handler = diff_tool.to_bulk_entity_handler()
+
         start = time.time()
         for tx in self.client.transaction():
             with tx:
@@ -171,14 +191,25 @@ class EdgeIO:
                 print(query_str)
                 return tx.query_single_json(query_str)
         end = time.time()
+
         print(f'Upload finished in "{end-start:.2f}" seconds')
 
-    def update_db_from_ifc_delta(self, original_ifc, modified_ifc, save_diff_as=None):
-        old_file = original_ifc if isinstance(original_ifc, ifcopenshell.file) else ifcopenshell.open(original_ifc)
-        new_file = modified_ifc if isinstance(modified_ifc, ifcopenshell.file) else ifcopenshell.open(modified_ifc)
+    def update_db_from_ifc_delta(self, updated_ifc, original_ifc=None, save_diff_as=None):
+        def load_ifc_content(f: str | pathlib.Path | ifcopenshell.file) -> ifcopenshell.file:
+            new_ifc = f if isinstance(f, ifcopenshell.file) else ifcopenshell.open(f)
+            return new_ifc
+
+        if original_ifc is not None:
+            old_file = load_ifc_content(original_ifc)
+        else:
+            old_file = self.to_ifcopenshell_object()
+
+        new_file = load_ifc_content(updated_ifc)
         diff_tool = IfcDiffTool(old_file, new_file)
+
         if save_diff_as is not None:
             diff_tool.to_json_file(save_diff_as)
+
         res = self.update_from_diff_tool(diff_tool)
         print(res)
         return res
@@ -186,23 +217,18 @@ class EdgeIO:
     def to_bulk_getter(self) -> BulkGetter:
         return BulkGetter(self.client, self.schema_model)
 
-    def to_ifcopenshell_object(
-        self, specific_classes: list[str] = None, only_ifc_entities=True, client=None
-    ) -> ifcopenshell.file:
-
+    def to_ifcopenshell_object(self, specific_classes: list[str] = None, client=None) -> ifcopenshell.file:
         bulk_g = self.to_bulk_getter()
-        res = bulk_g.get_all(entities=specific_classes, limit_to_ifc_entities=only_ifc_entities, client=client)
+        res = bulk_g.get_all(entities=specific_classes, client=client)
         return IfcIO.to_ifcopenshell_object(res, self.schema_model)
 
-    def to_ifc_str(self, specific_classes: list[str] = None, only_ifc_entities=True) -> str:
-        f = self.to_ifcopenshell_object(specific_classes, only_ifc_entities)
+    def to_ifc_str(self, specific_classes: list[str] = None) -> str:
+        f = self.to_ifcopenshell_object(specific_classes)
         return StringIO(f.wrapped_data.to_string()).read()
 
-    def to_ifc_file(
-        self, ifc_file_path: str | pathlib.Path, specific_classes: list[str] = None, only_ifc_entities=True
-    ):
+    def to_ifc_file(self, ifc_file_path: str | pathlib.Path, specific_classes: list[str] = None):
         ifc_file_path = pathlib.Path(ifc_file_path)
-        res = self.to_ifc_str(specific_classes, only_ifc_entities)
+        res = self.to_ifc_str(specific_classes)
 
         os.makedirs(ifc_file_path.parent, exist_ok=True)
         with open(str(ifc_file_path), "w") as f:

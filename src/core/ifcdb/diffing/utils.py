@@ -4,12 +4,12 @@ import re
 from typing import Iterable
 import ifcopenshell
 
-_RE_COMP = re.compile(r"\[(.*?)\]")
+RE_COMP = re.compile(r"\[(.*?)\]")
 
 
 def get_elem_paths(elem: ifcopenshell.entity_instance, path: str, is_append_obj=False):
     curr_elem = elem
-    all_sub_levels = _RE_COMP.findall(path)
+    all_sub_levels = RE_COMP.findall(path)
     levels = [curr_elem]
     indices = []
     for i, next_path in enumerate(all_sub_levels, start=1):
@@ -56,4 +56,4 @@ def clean_path_elem(elem: str) -> str | int:
 
 
 def dict_path_to_iterable(path) -> Iterable:
-    return map(clean_path_elem, _RE_COMP.findall(path))
+    return map(clean_path_elem, RE_COMP.findall(path))

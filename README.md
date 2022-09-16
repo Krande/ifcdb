@@ -14,7 +14,7 @@ from ifcdb import EdgeIO
 
 ifc_path = pathlib.Path("files/tessellated-item.ifc")
 
-with EdgeIO(db_schema_dir="db/dbschema", database="testdb") as io:
+with EdgeIO(db_schema_dir="db/dbschema", database_name="testdb") as io:
     io.create_schema_from_ifc_file(ifc_path=ifc_path)
     io.setup_database(delete_existing_migrations=True)
     io.insert_ifc(ifc_path)

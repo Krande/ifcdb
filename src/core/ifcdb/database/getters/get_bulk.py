@@ -256,14 +256,14 @@ class BulkGetter:
         print(final_result_str)
         return result
 
-    def get_all(self, entities: list[str] = None, limit_to_ifc_entities=False, client=None) -> dict:
+    def get_all(self, entities: list[str] = None, client=None) -> dict:
         """This will query the EdgeDB for all known IFC entities."""
 
         db_entities = list(self.eq_builder.edgedb_objects.keys())
-        if limit_to_ifc_entities is True:
-            if entities is None:
-                entities = []
-            entities += db_entities
+
+        if entities is None:
+            entities = []
+        entities += db_entities
 
         if entities is None:
             ent_dict = self._sm.entities
@@ -299,7 +299,7 @@ class BulkGetter:
         return json.loads(client.query_json(select_str))
 
     def get_all_in_ordered_sequence(self):
-        res = self.get_all(limit_to_ifc_entities=True)
+        res = self.get_all()
         obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
         return resolve_order_of_result_entities(obj_set, self._sm)
 

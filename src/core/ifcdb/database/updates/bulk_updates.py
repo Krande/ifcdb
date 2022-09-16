@@ -7,8 +7,21 @@ from typing import Any
 
 from ifcdb.database.inserts import EdgeInsert
 from ifcdb.database.select import EdgeFilter, EdgeSelect, FilterType
-from ifcdb.diffing.utils import _RE_COMP
+from ifcdb.diffing.utils import RE_COMP
 from ifcdb.entities import Entity
+
+
+@dataclass
+class EdgeUpdate:
+    select_obj: EdgeSelect
+    update_value: EntityUpdateValue
+
+    def to_str(self, indent=2 * " "):
+        edql_str = indent + f"UPDATE {self.select_obj.name}\n{2 * indent}" + "SET {\n"
+        edql_str += 3 * indent + self.update_value.to_update_str()
+        edql_str += 2* indent + "}\n"
+
+        return edql_str
 
 
 @dataclass
@@ -22,12 +35,14 @@ class EntityUpdateValue:
     def to_update_str(self) -> str:
         if self.key is None:
             raise ValueError("Key cannot be zero")
+
         if isinstance(self.value, Entity):
             ei = EdgeInsert(self.value)
             insert_str = ei.to_edql_str()
             value = f"({insert_str})"
         else:
             value = self.value
+
         edql_str = ""
         if self.index is not None:
             array_str = "["
@@ -114,19 +129,6 @@ class SelectResolver:
 
 
 @dataclass
-class EdgeUpdate:
-    select_obj: EdgeSelect
-    update_value: EntityUpdateValue
-
-    def to_str(self, indent=2 * " "):
-        edql_str = indent + f"UPDATE {self.select_obj.name}\n{2 * indent}" + "SET {\n"
-        edql_str += 2 * indent + self.update_value.to_update_str()
-        edql_str += indent + "}\n"
-
-        return edql_str
-
-
-@dataclass
 class EntityPropUpdate:
     root_object: Entity
     property_path: str = field(repr=False)
@@ -195,7 +197,7 @@ class EntityPropUpdate:
         return classes
 
     def _resolve_levels_and_classes(self):
-        res = [r.replace("'", "") for r in _RE_COMP.findall(self.property_path)]
+        res = [r.replace("'", "") for r in RE_COMP.findall(self.property_path)]
         self._levels = [int(r) if r.isnumeric() else r for r in res]
 
         classes = self._get_classes_from_entity_subpath()
@@ -221,8 +223,12 @@ class BulkEntityUpdate:
     indent: str = 2 * " "
 
     def __post_init__(self):
-        self.select_items = [u.last_select for u in self.updates]
-        self.all_select_items = [s for u in self.updates for s in u.all_selects]
+        for u in self.updates:
+            self.select_items.append(u.last_select)
+            for s in u.all_selects:
+                if s in self.all_select_items:
+                    continue
+                self.all_select_items.append(s)
 
     def _get_unique_entities(self) -> dict[str, list[EdgeSelect]]:
         unique_entity_paths = dict()
@@ -236,7 +242,7 @@ class BulkEntityUpdate:
 
         return unique_entity_paths
 
-    def _resolve_global_with_statements(self):
+    def resolve_global_with_statements(self):
         unique_entity_paths = self._get_unique_entities()
         c = count(1)
 
@@ -263,7 +269,7 @@ class BulkEntityUpdate:
             value.entity_top = replacement
 
     def global_with_str(self) -> str:
-        self._resolve_global_with_statements()
+        self.resolve_global_with_statements()
         if len(self.global_with_selects.keys()) == 0:
             return ""
         global_wstr = "with\n"

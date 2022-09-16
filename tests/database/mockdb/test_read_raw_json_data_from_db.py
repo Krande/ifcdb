@@ -1,3 +1,5 @@
+import os
+
 from ifcdb.diffing.tool import IfcDiffTool
 
 
@@ -15,6 +17,9 @@ def test_beam_w_holes_to_ifc_obj(my_beam_w_holes_ifc, mock_db_my_beam_with_holes
 def test_my_cube_edited_z(my_cube_edited_z, mock_db_my_cube_original):
     ifc_obj = mock_db_my_cube_original.to_ifcopenshell_object()
     # assert len(list(ifc_obj)) == 110
+    os.makedirs('temp', exist_ok=True)
+    with open('temp/original.ifc', 'w', encoding='utf8') as f:
+        f.write(ifc_obj.wrapped_data.to_string())
 
     tool = IfcDiffTool(my_cube_edited_z, ifc_obj)
 

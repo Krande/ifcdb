@@ -23,7 +23,11 @@ class EdgeInsert:
         props = ""
         props_writable = {p: v for p, v in self.entity.props.items() if v is not None}
         if len(props_writable) > 0:
-            props = to_props_str(self.entity, sep=sep)
+            if "wrappedValue" in self.entity.props.keys():
+                print("sd")
+                props = ""
+            else:
+                props = to_props_str(self.entity, sep=sep)
         links = ""
         if len(self.entity.links) > 0:
             if len(props_writable) > 0:
@@ -38,6 +42,7 @@ class EdgeInsert:
 
 
 def to_props_str(entity: Entity, sep=", "):
+
     return sep.join([f"{key}:= {value_writer(value)}" for key, value in entity.props.items() if value is not None])
 
 
@@ -47,6 +52,9 @@ def to_links_str(entity: Entity, sep=", "):
     for key, value in entity.links.items():
         if value is None:
             continue
+
+        if key == "wrappedValue":
+            print("sd")
 
         if isinstance(value, Entity):
             lstr += f"{key}:= {link_select(value)}{sep}"

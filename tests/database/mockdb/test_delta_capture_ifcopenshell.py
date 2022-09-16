@@ -13,7 +13,7 @@ def test_cube_edited(my_cube, my_cube_edited, my_cube_ifc_filepath):
 
     el_1 = diff_tool.changed[0]
 
-    assert el_1.diff == json.load(open(my_cube_ifc_filepath.parent / "diff_edited.json"))["diff"]
+    assert el_1.diff == json.load(open(my_cube_ifc_filepath.parent / "diff_edited.json"))["changed"][0]["diff"]
 
     # Apply the diffs recorded by the diff_tool onto the existing IFC file and compare with the modified IFC file
     apply_diffs_ifcopenshell(my_cube, diff_tool)
