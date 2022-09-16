@@ -68,7 +68,7 @@ class EdgeSelect:
             select_str += " limit 1"
             return select_str
 
-    def to_edql_str(self, assign_to_variable=True):
+    def to_edql_str(self, assign_to_variable=True, sep=","):
         select_str = "select "
         entity_path = (
             f"{self.entity_top.name}.{self.entity_path}" if self.entity_path is not None else self.entity_top.name
@@ -78,14 +78,75 @@ class EdgeSelect:
         else:
             select_str += entity_path
 
-        assert_str = ""
-        if self.assert_class is not None:
-            assert_str = f"[is {self.assert_class}]"
+        # assert_str = ""
+        # if self.assert_class is not None:
+        #     assert_str = f"[is {self.assert_class}]"
 
         if self.filter is not None:
             select_str += " " + self.filter.to_edql_str()
 
         if assign_to_variable:
-            return f"{self.name} := ({select_str}),"
+            return f"{self.name} := ({select_str}){sep}"
         else:
             return select_str
+
+
+@dataclass
+class SelectResolver:
+    root_object: Entity
+    classes: list[str]
+
+    def resolve_selects(self) -> list[EdgeSelect]:
+        root_guid = self.root_object.props.get("GlobalId")
+        root_select = EdgeSelect(
+            "root", self.root_object, None, filter=EdgeFilter("GlobalId", root_guid, FilterType.STR)
+        )
+        select_objects = []
+
+        prev_ref = root_select
+        for i, chunk in enumerate(self._chunk_classes(), start=1):
+            curr_ref = f"lvl{i}"
+            is_agg = False
+            path_neutral_str = ""
+            index = None
+            assert_class = None
+            for j, (keys, class_name) in enumerate(chunk):
+                if j != 0:
+                    path_neutral_str += "."
+                assert_class = class_name
+                if isinstance(keys, str):
+                    path_neutral_str += keys
+                else:
+                    path_neutral_str += keys[0]
+                    is_agg = True
+                    index = keys[1]
+                if assert_class is not None:
+                    path_neutral_str += f"[is {assert_class}]"
+
+            es = EdgeSelect(
+                curr_ref,
+                prev_ref,
+                path_neutral_str,
+                index,
+                assert_class=assert_class,
+                is_multi_link=is_agg,
+            )
+            select_objects.append(es)
+            prev_ref = es
+
+        return [root_select] + select_objects
+
+    def _chunk_classes(self):
+        chunks = []
+        chunk = []
+        for i, (keys, class_name) in enumerate(self.classes):
+            if isinstance(keys, str):
+                chunk.append((keys, class_name))
+            else:
+                chunk.append((keys, class_name))
+                chunks.append(chunk)
+                chunk = []
+
+        if len(chunk) > 0:
+            chunks.append(chunk)
+        return chunks

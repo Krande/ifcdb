@@ -6,20 +6,28 @@ from itertools import count
 from typing import Any
 
 from ifcdb.database.inserts import EdgeInsert
-from ifcdb.database.select import EdgeFilter, EdgeSelect, FilterType
+from ifcdb.database.select import EdgeSelect, SelectResolver
 from ifcdb.diffing.utils import RE_COMP
 from ifcdb.entities import Entity
+from ifcdb.utils import change_case
+
+_UPDATE_VAR = count(1)
 
 
 @dataclass
 class EdgeUpdate:
-    select_obj: EdgeSelect
+    select_obj: EdgeSelect | EdgeInsert
     update_value: EntityUpdateValue
+    name: str = None
 
-    def to_str(self, indent=2 * " "):
+    def __post_init__(self):
+        if self.name is None:
+            self.name = f"{change_case(self.select_obj.name)}_{next(_UPDATE_VAR)}"
+
+    def to_edql_str(self, indent=2 * " "):
         edql_str = indent + f"UPDATE {self.select_obj.name}\n{2 * indent}" + "SET {\n"
         edql_str += 3 * indent + self.update_value.to_update_str()
-        edql_str += 2* indent + "}\n"
+        edql_str += 2 * indent + "}\n"
 
         return edql_str
 
@@ -65,67 +73,6 @@ class PropUpdateType(Enum):
     UPDATE = "update"
     ADD_TO_ITERABLE = "add_to_iterable"
     REMOVE_FROM_ITERABLE = "remove_from_iterable"
-
-
-@dataclass
-class SelectResolver:
-    root_object: Entity
-    classes: list[str]
-
-    def resolve_selects(self):
-        root_guid = self.root_object.props.get("GlobalId")
-        root_select = EdgeSelect(
-            "root", self.root_object, None, filter=EdgeFilter("GlobalId", root_guid, FilterType.STR)
-        )
-        select_objects = []
-
-        prev_ref = root_select
-        for i, chunk in enumerate(self._chunk_classes(), start=1):
-            curr_ref = f"lvl{i}"
-            is_agg = False
-            path_neutral_str = ""
-            index = None
-            assert_class = None
-            for j, (keys, class_name) in enumerate(chunk):
-                if j != 0:
-                    path_neutral_str += "."
-                assert_class = class_name
-                if isinstance(keys, str):
-                    path_neutral_str += keys
-                else:
-                    path_neutral_str += keys[0]
-                    is_agg = True
-                    index = keys[1]
-                if assert_class is not None:
-                    path_neutral_str += f"[is {assert_class}]"
-
-            es = EdgeSelect(
-                curr_ref,
-                prev_ref,
-                path_neutral_str,
-                index,
-                assert_class=assert_class,
-                is_multi_link=is_agg,
-            )
-            select_objects.append(es)
-            prev_ref = es
-
-        return [root_select] + select_objects
-
-    def _chunk_classes(self):
-        chunks = []
-        chunk = []
-        for i, (keys, class_name) in enumerate(self.classes):
-            if isinstance(keys, str):
-                chunk.append((keys, class_name))
-            else:
-                chunk.append((keys, class_name))
-                chunks.append(chunk)
-                chunk = []
-
-        if len(chunk) > 0:
-            chunks.append(chunk)
-        return chunks
 
 
 @dataclass
@@ -285,7 +232,7 @@ class BulkEntityUpdate:
             select_item.entity_top = parent_object
 
         eu = EdgeUpdate(select_item, prop_update.update_value)
-        edql_str = eu.to_str()
+        edql_str = eu.to_edql_str()
 
         return edql_str
 

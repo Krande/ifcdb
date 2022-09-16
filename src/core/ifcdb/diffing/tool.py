@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import copy
-import ifcopenshell
 import json
 import logging
 from dataclasses import dataclass, field
-from deepdiff import DeepDiff
 from typing import Any
 
-from ifcdb.database.bulk_handler import to_bulk_entity_handler, BulkEntityHandler
-from ifcdb.entities import Entity, EntityResolver, EntityTool, get_entity_from_source_dict
+import ifcopenshell
+from deepdiff import DeepDiff
+
+from ifcdb.database.bulk_handler import BulkEntityHandler, to_bulk_entity_handler
+from ifcdb.entities import (
+    Entity,
+    EntityResolver,
+    EntityTool,
+    get_entity_from_source_dict,
+)
 from ifcdb.io.ifc.optimizing import general_optimization
+
 from .utils import get_elem_paths
 
 _ifc_ent = ifcopenshell.entity_instance
@@ -234,42 +241,7 @@ class IfcDiffTool:
             if result is None:
                 continue
 
-            updated_result = self._check_for_overlinking(result)
-            if updated_result is not None:
-                result = updated_result
-
             self.changed.append(result)
-
-    def _check_prop_for_overlinking(self, ifc_elem: _ifc_ent, path: str, new_value: Any) -> None | IfcValueToChange:
-        if isinstance(new_value, str):
-            # for PoC only numerical values are of interest here
-            return None
-        ieve = IfcEntityValueEditor(self.f2, ifc_elem, path, new_value)
-        parent_entity = ieve.parent_entity
-        if isinstance(parent_entity, ifcopenshell.entity_instance) and len(self.f2.get_inverse(parent_entity)) == 1:
-            return None
-        elif isinstance(parent_entity, tuple):
-            all_have_no_overlinking = True
-            for entity in parent_entity:
-                if len(self.f2.get_inverse(entity)) > 1:
-                    all_have_no_overlinking = False
-            if all_have_no_overlinking is True:
-                return None
-
-        new_value = ieve.get_new_value()
-        if new_value.entity != ieve.parent_entity and isinstance(new_value.value, _ifc_ent):
-            return new_value
-        return None
-
-    def _check_for_overlinking(self, entity_diff_change: EntityDiffChange) -> None | EntityDiffChange:
-        ifc_elem = self.f1.by_guid(entity_diff_change.guid)
-        changed_values = entity_diff_change.diff.get("values_changed")
-        if changed_values is None:
-            return None
-        for path, value in changed_values.items():
-            result = self._check_prop_for_overlinking(ifc_elem, path, value["new_value"])
-            if result is not None:
-                entity_diff_change.overlinked_entities[path] = result
 
     def compare_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> dict:
         info1 = el1.get_info(recursive=True, include_identifier=False)
@@ -374,6 +346,7 @@ def path_to_value_change(path: str, elem: _ifc_ent, old_value, new_value) -> Val
             level_index = i
             break
 
+    # Insert a new IfcLocalPlacement if path root i
     index = len(levels) - level_index
     key = indices[index - 1]
     new_value_alt = levels[index]

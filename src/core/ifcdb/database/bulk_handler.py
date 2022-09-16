@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-import edgedb
 from dataclasses import dataclass, field
 from itertools import count
 from typing import TYPE_CHECKING
 
+import edgedb
+
 from ifcdb.diffing.utils import slice_property_path_at_key
 from ifcdb.entities import Entity, EntityResolver
+
 from .inserts import EdgeInsert
 from .inserts.bulk_insert import BulkEntityInsert
 from .remove.bulk_removal import BulkEntityRemoval, EntityRemove
-from .select import EdgeSelect, EdgeFilter, FilterType
+from .select import EdgeFilter, EdgeSelect, FilterType, SelectResolver
 from .updates.bulk_updates import (
     BulkEntityUpdate,
+    EdgeUpdate,
     EntityPropUpdate,
     EntityUpdateValue,
     PropUpdateType,
@@ -202,6 +205,7 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
     inserts = dict()
     removals = []
     changes = dict()
+    selects = dict()
 
     # Additions
     for entity_add in ifc_diff_tool.added:
@@ -216,7 +220,74 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
         removals.append(er)
 
     # Changes
+    c = count(1)
     for diff_el in ifc_diff_tool.changed:
-        changes[diff_el.guid] = diff_el
+        existing_select = selects.get(diff_el.guid)
+        if existing_select is None:
+            select_name = f"root{next(c)}"
+            current_select = EdgeSelect(
+                select_name, diff_el.entity, None, filter=EdgeFilter("GlobalId", diff_el.guid, FilterType.STR)
+            )
+            selects[select_name] = current_select
+        else:
+            current_select = existing_select
 
+        for path, value in diff_el.value_changes.items():
+            root_key = value.indices[0]
+            if root_key == "ObjectPlacement":
+                existing_object_placement = changes.get(diff_el.guid)
+                if existing_object_placement is not None:
+                    continue
+                object_place_ifc_elem = value.levels[1]
+                new_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(object_place_ifc_elem)
+                sr = SelectResolver(
+                    new_entity_tool.entity,
+                )
+                sr.resolve_selects()
+                new_insert = EdgeInsert(new_entity_tool.entity)
+                new_update = EdgeUpdate(current_select, EntityUpdateValue(new_insert, None, "ObjectPlacement"))
+
+                changes[diff_el.guid] = new_update
+                inserts[new_insert.name] = new_insert
+            else:
+                raise NotImplementedError(f"Have not yet added support for changes related to {root_key=}")
+
+    res = BulkHandler2(selects, inserts, changes, removals)
+    _ = res.to_edql_str()
     return BulkEntityHandler(ifc_diff_tool)
+
+
+@dataclass
+class BulkHandler2:
+    selects: dict[str, EdgeSelect]
+    inserts: dict[str, EdgeInsert]
+    changes: dict[str, EdgeUpdate]
+    removes: list[EntityRemove]
+
+    def to_edql_str(self, indent=2 * " ") -> str | None:
+        # INSERT statements
+        insert_statement = ""
+        for key, insert in self.inserts.items():
+            insert_statement += indent + insert.to_edql_str(assign_to_variable=True)
+
+        # SELECT statements
+        select_statement = ""
+        for key, select in self.selects.items():
+            select_statement += indent + select.to_edql_str(assign_to_variable=True, sep=",\n")
+
+        # UPDATE statements
+        update_str = ""
+        for key, update in self.changes.items():
+            update_str += update.to_edql_str()
+
+        # DELETE statements
+        remove_str = ""
+        for rem in self.removes:
+            remove_str += rem.to_edql_str()
+
+        global_w_str = "with\n" + select_statement + insert_statement
+        query_str = update_str + remove_str
+
+        total_str = global_w_str + f"\nSELECT {{\n{query_str}\n}}"
+
+        return total_str
