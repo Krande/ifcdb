@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="IFC Insert Strategies" href="../inserts/insert_strategies.html" /><link rel="prev" title="Migrating the entire IFC schema into EdgeDB" href="migration_in_steps.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Validation Strategy" href="../validation/validation_intro.html" /><link rel="prev" title="EdgeDB update statement issue" href="diffing_issue.html" />
 
     <meta name="generator" content="sphinx-5.1.1, furo 2022.09.15"/>
-        <title>Necessary modifications to the IFC schema - IFC as a Database</title>
+        <title>The issue of property updates and “overlinking” - IFC as a Database</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=9ec31e2665bf879c1d47d93a8ec4893870ee1e45" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -160,10 +160,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../usecases/usecases_intro.html">Use Cases</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schema Conversion</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="schema_to_esdl.html">Converting IFC schema to EdgeDB schema (ESDL)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="migration_in_steps.html">Migrating the entire IFC schema into EdgeDB</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Necessary modifications to the IFC schema</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../schema/schema_to_esdl.html">Converting IFC schema to EdgeDB schema (ESDL)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../schema/migration_in_steps.html">Migrating the entire IFC schema into EdgeDB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../schema/modifications.html">Necessary modifications to the IFC schema</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Inserting Elements</span></p>
 <ul>
@@ -178,10 +178,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../queries/large_queries.html">Large queries</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Updating Elements</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../updating/diffing.html">Updating EdgeDB with local IFC changes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../updating/diffing_issue.html">EdgeDB update statement issue</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../updating/overlinking.html">The issue of property updates and “overlinking”</a></li>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="diffing.html">Updating EdgeDB with local IFC changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diffing_issue.html">EdgeDB update statement issue</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">The issue of property updates and “overlinking”</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Validation</span></p>
 <ul>
@@ -224,78 +224,99 @@
           </label>
         </div>
         <article role="main">
-          <section id="necessary-modifications-to-the-ifc-schema">
-<h1>Necessary modifications to the IFC schema<a class="headerlink" href="#necessary-modifications-to-the-ifc-schema" title="Permalink to this heading">#</a></h1>
-<p>In order for the IFC schema to work with EdgeDB, a few modifications were made to certain element types and
-specific elements/relationships of elements.</p>
-<section id="base-types">
-<h2>Base Types<a class="headerlink" href="#base-types" title="Permalink to this heading">#</a></h2>
-<p>All IFC schema objects that are wrapping base types only (i.e. string, float, integers, etc..) are replaced by their
-respective base types. I.e. IfcLabel is never instantiated, rather it is stored as a string.</p>
-<p>Take an arbitrarily chosen class <code class="docutils literal notranslate"><span class="pre">IfcQuantityArea</span></code> which points to the IFC built-in types <code class="docutils literal notranslate"><span class="pre">IfcAreaMeasure</span></code> &amp;
-<code class="docutils literal notranslate"><span class="pre">IfcLabel</span></code>.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ENTITY IfcQuantityArea
- SUBTYPE OF (IfcPhysicalSimpleQuantity);
-	AreaValue : IfcAreaMeasure;
-	Formula : OPTIONAL IfcLabel;
- WHERE
-	WR21 : NOT(EXISTS(SELF\IfcPhysicalSimpleQuantity.Unit)) OR
-   (SELF\IfcPhysicalSimpleQuantity.Unit.UnitType = IfcUnitEnum.AREAUNIT);
-	WR22 : AreaValue &gt;= 0.;
-END_ENTITY;
+          <section id="the-issue-of-property-updates-and-overlinking">
+<h1>The issue of property updates and “overlinking”<a class="headerlink" href="#the-issue-of-property-updates-and-overlinking" title="Permalink to this heading">#</a></h1>
+<p>In the first iterations of diffing IFC files and applying diffs onto the database things looked okay.
+However, after testing an optimized IFC file (i.e. removed duplicated objects such as <code class="docutils literal notranslate"><span class="pre">IfcCartesianPoint</span></code> objects
+referring to same coordinates etc.) a new issue appeared.</p>
+<section id="the-problem">
+<h2>The problem<a class="headerlink" href="#the-problem" title="Permalink to this heading">#</a></h2>
+<p>Take the simple example of the blender cube moved slightly up on the Z-axis:</p>
+<p><img alt="Cube Original" src="../_images/blender_cube_original.png" /></p>
+<p>Moved ~4.7 meters up like this</p>
+<p><img alt="Cube Edited Z" src="../_images/cube_edited_z.png" /></p>
+<p>Applying the diff on two ifc file objects with this change being the sole difference leads to a “diff result”
+using the IfcDiffTool that looks like this:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;changed&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;diff&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="nt">&quot;values_changed&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;root[&#39;ObjectPlacement&#39;][&#39;RelativePlacement&#39;][&#39;Location&#39;][&#39;Coordinates&#39;][2]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;new_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.71695518493652</span><span class="p">,</span><span class="w"></span>
+<span class="w">                        </span><span class="nt">&quot;old_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="w"></span>
+<span class="w">                    </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="p">},</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;guid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3vJeEVZYzA3vP81uCmY9l4&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;class_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IfcBuildingElementProxy&quot;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">],</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;added&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;removed&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
-<p>These built-in types are in practice a <code class="docutils literal notranslate"><span class="pre">float</span></code> and <code class="docutils literal notranslate"><span class="pre">string</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TYPE</span> <span class="n">IfcAreaMeasure</span> <span class="o">=</span> <span class="n">REAL</span><span class="p">;</span>
-<span class="n">END_TYPE</span><span class="p">;</span>
+<p>This change is easy enough to understand and is converted to an EdgeDB insert statement like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span>
+  <span class="n">root</span> <span class="o">:=</span> <span class="p">(</span><span class="n">select</span> <span class="n">IfcBuildingElementProxy</span> <span class="n">FILTER</span> <span class="o">.</span><span class="n">GlobalId</span><span class="o">=&lt;</span><span class="nb">str</span><span class="o">&gt;</span><span class="s1">&#39;3vJeEVZYzA3vP81uCmY9l4&#39;</span><span class="p">),</span>
+  <span class="n">lvl1</span> <span class="o">:=</span> <span class="p">(</span><span class="n">select</span> <span class="n">root</span><span class="o">.</span><span class="n">ObjectPlacement</span><span class="p">[</span><span class="ow">is</span> <span class="n">IfcLocalPlacement</span><span class="p">]</span><span class="o">.</span><span class="n">RelativePlacement</span><span class="p">[</span><span class="ow">is</span> <span class="n">IfcAxis2Placement3D</span><span class="p">]</span><span class="o">.</span><span class="n">Location</span><span class="p">[</span><span class="ow">is</span> <span class="n">IfcCartesianPoint</span><span class="p">]),</span>
 
-<span class="n">TYPE</span> <span class="n">IfcLabel</span> <span class="o">=</span> <span class="n">STRING</span><span class="p">(</span><span class="mi">255</span><span class="p">);</span>
-<span class="n">END_TYPE</span><span class="p">;</span>
+<span class="n">SELECT</span> <span class="p">{</span>
+  <span class="n">lvl1_1</span> <span class="o">:=</span> <span class="p">(</span>  <span class="n">UPDATE</span> <span class="n">lvl1</span>
+    <span class="n">SET</span> <span class="p">{</span>
+      <span class="n">Coordinates</span> <span class="o">:=</span> <span class="p">[</span><span class="o">.</span><span class="n">Coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">.</span><span class="n">Coordinates</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">4.71695518493652</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">),</span>
 
-</pre></div>
-</div>
-<p>Consequently, in the EdgeDB ESDL schema declaration, these IFC built-in types are replaced by the native types <code class="docutils literal notranslate"><span class="pre">float</span></code>
-and <code class="docutils literal notranslate"><span class="pre">str</span></code> as shown here</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">IfcQuantityArea</span> <span class="n">extending</span> <span class="n">IfcPhysicalSimpleQuantity</span> <span class="p">{</span>
-    <span class="n">required</span> <span class="nb">property</span> <span class="n">AreaValue</span> <span class="o">-&gt;</span> <span class="n">float64</span><span class="p">;</span>
-    <span class="nb">property</span> <span class="n">Formula</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>For any constraints associated with these base IFC classes, it is possible to assert them directly to the
-ESDL property statements.</p>
-</div>
-<p>This means, that if the <code class="docutils literal notranslate"><span class="pre">IfcLabel</span></code> string limit must be enforced, it is possible to do so
-using the EdgeDB built-in <code class="docutils literal notranslate"><span class="pre">constraint</span></code> expression and the <code class="docutils literal notranslate"><span class="pre">max_len_value</span></code> function</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">IfcQuantityArea</span> <span class="n">extending</span> <span class="n">IfcPhysicalSimpleQuantity</span> <span class="p">{</span>
-    <span class="n">required</span> <span class="nb">property</span> <span class="n">AreaValue</span> <span class="o">-&gt;</span> <span class="n">float64</span><span class="p">;</span>
-    <span class="nb">property</span> <span class="n">Formula</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="p">{</span>
-        <span class="n">constraint</span> <span class="n">max_len_value</span><span class="p">(</span><span class="mi">255</span><span class="p">);</span>
-    <span class="p">};</span>
-<span class="p">}</span>
-</pre></div>
-</div>
+<p>However, when exporting a new IFC from the DB after the change is applied, it is evident that something has gone wrong:</p>
+<p><img alt="img.png" src="../_images/overlinked_local_placement.png" /></p>
+<p>What this applied change tells us is that the diff result does not take into account any change in duplication of
+objects made in the local file.</p>
+<p>When looking at the IFC file downloaded from the DB (to the left below) compared with the<br />
+IFC that was edited locally and applied a diff to (to the right below) it is evident that
+the local file has a 1 extra <code class="docutils literal notranslate"><span class="pre">IfcCartesianPoint</span></code> object in addition to duplication of other objects
+related to the <code class="docutils literal notranslate"><span class="pre">ObjectPlacement</span></code> of the Cube.</p>
+<p><img alt="IFC Compare IFC edited Z" src="../_images/cube_ifc_compare_edited_z.png" /></p>
 </section>
-<section id="potential-improvements">
-<h2>Potential improvements<a class="headerlink" href="#potential-improvements" title="Permalink to this heading">#</a></h2>
-<section id="ifcperson-make-identification-unique">
-<h3>IfcPerson - Make Identification unique<a class="headerlink" href="#ifcperson-make-identification-unique" title="Permalink to this heading">#</a></h3>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>    type IfcPerson  {
-        property Identification -&gt; str {
-            constraint exclusive;
-        }
-        property FamilyName -&gt; str;
-        property GivenName -&gt; str;
-        property MiddleNames -&gt; tuple&lt;str&gt;;
-        property PrefixTitles -&gt; tuple&lt;str&gt;;
-        property SuffixTitles -&gt; tuple&lt;str&gt;;
-        multi link Roles -&gt; IfcActorRole;
-        multi link Addresses -&gt; IfcAddress;
-    }
-</pre></div>
-</div>
+<section id="solutions">
+<h2>Solutions<a class="headerlink" href="#solutions" title="Permalink to this heading">#</a></h2>
+<section id="uuid-map">
+<h3>UUID map<a class="headerlink" href="#uuid-map" title="Permalink to this heading">#</a></h3>
+<p>One solution that is considered is to create a map between the uuid’s of all the database objects and the
+specific id’s of the individual rooted AND non-rooted IFC objects.</p>
+<section id="pro-s">
+<h4>Pro’s<a class="headerlink" href="#pro-s" title="Permalink to this heading">#</a></h4>
+<p><strong>Query Complexity</strong></p>
+<p>This would simplify the update statement queries significantly as it would no longer be required to
+always create select paths from root</p>
+<p><strong>Efficiency</strong></p>
+<p>It would reduce number of selects in a single query to a minium, thus improving query efficiency</p>
+</section>
+<section id="con-s">
+<h4>Con’s<a class="headerlink" href="#con-s" title="Permalink to this heading">#</a></h4>
+<p><strong>Uncertainty of persistent ID’s of non-rooted IFC elements</strong></p>
+<p>This would mean that the DB uuid map against IFC objects needs to persist. That would require the non-rooted IFC items
+to have id’s that persists over many sessions (e.g. a user edits the model locally in a Blender environment<br />
+and the user closes/reopens blender a few times).</p>
+<p>Would the numerical IFC-SPF id’s persist over all those sessions?
+If so the numerical ID’s could be used</p>
+<p>Sending the IFC file would also require passing along the UUID-IFC-ID map along with the IFC file.
+It is assumed attaching UUID’s to each non-rooted object within the IFC file would make the file too large
+and the size would easily blow up.</p>
+</section>
+</section>
+<section id="check-for-overlinked-objects">
+<h3>Check for “overlinked” objects<a class="headerlink" href="#check-for-overlinked-objects" title="Permalink to this heading">#</a></h3>
+<p>A check of the inverse relationships of the property path to ensure that the changed property only affect
+the desired object</p>
+</section>
+<section id="perform-the-diffs-with-identifiers">
+<h3>Perform the diffs with identifiers?<a class="headerlink" href="#perform-the-diffs-with-identifiers" title="Permalink to this heading">#</a></h3>
+<p>This has not been tested yet. But if the diffs could catch  Could perhaps solve this?</p>
 </section>
 </section>
 </section>
@@ -305,23 +326,23 @@ using the EdgeDB built-in <code class="docutils literal notranslate"><span class
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../inserts/insert_strategies.html">
+          <a class="next-page" href="../validation/validation_intro.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">IFC Insert Strategies</div>
+                <div class="title">Validation Strategy</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="migration_in_steps.html">
+          <a class="prev-page" href="diffing_issue.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Migrating the entire IFC schema into EdgeDB</div>
+                <div class="title">EdgeDB update statement issue</div>
                 
               </div>
             </a>
@@ -357,10 +378,16 @@ using the EdgeDB built-in <code class="docutils literal notranslate"><span class
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Necessary modifications to the IFC schema</a><ul>
-<li><a class="reference internal" href="#base-types">Base Types</a></li>
-<li><a class="reference internal" href="#potential-improvements">Potential improvements</a><ul>
-<li><a class="reference internal" href="#ifcperson-make-identification-unique">IfcPerson - Make Identification unique</a></li>
+<li><a class="reference internal" href="#">The issue of property updates and “overlinking”</a><ul>
+<li><a class="reference internal" href="#the-problem">The problem</a></li>
+<li><a class="reference internal" href="#solutions">Solutions</a><ul>
+<li><a class="reference internal" href="#uuid-map">UUID map</a><ul>
+<li><a class="reference internal" href="#pro-s">Pro’s</a></li>
+<li><a class="reference internal" href="#con-s">Con’s</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#check-for-overlinked-objects">Check for “overlinked” objects</a></li>
+<li><a class="reference internal" href="#perform-the-diffs-with-identifiers">Perform the diffs with identifiers?</a></li>
 </ul>
 </li>
 </ul>

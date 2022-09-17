@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Converting IFC schema to EdgeDB schema (ESDL)" href="../schema/schema_to_esdl.html" /><link rel="prev" title="IFC as a database" href="../index.html" />
 
-    <meta name="generator" content="sphinx-5.1.1, furo 2022.06.21"/>
+    <meta name="generator" content="sphinx-5.1.1, furo 2022.09.15"/>
         <title>Use Cases - IFC as a Database</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=9ec31e2665bf879c1d47d93a8ec4893870ee1e45" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     
@@ -181,6 +181,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../updating/diffing.html">Updating EdgeDB with local IFC changes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../updating/diffing_issue.html">EdgeDB update statement issue</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../updating/overlinking.html">The issue of property updates and “overlinking”</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Validation</span></p>
 <ul>
@@ -231,6 +232,7 @@
 <li><p>[x] Download entire IFC model from IFC Database</p></li>
 <li><p>[ ] Download Partial IFC model from IFC Database</p></li>
 <li><p>[ ] Upload IFC model to existing IFC database</p></li>
+<li><p>[ ] Use EdgeDB as a backend IFC Database for Blender (<a class="reference external" href="https://github.com/users/Krande/projects/1/views/1?layout=board">PoC</a>)</p></li>
 </ul>
 <section id="upload-ifc-file-to-empty-database">
 <h2>Upload IFC file to empty Database<a class="headerlink" href="#upload-ifc-file-to-empty-database" title="Permalink to this heading">#</a></h2>
@@ -250,6 +252,16 @@ method in use for downloading the entire model.</p>
 <p>The current strategy is to extract IfcOwnerHistory and IfcRepresentation data in separate queries to reduce query
 complexity and result output redundancy.</p>
 </section>
+<section id="use-edgedb-as-a-backend-ifc-db-for-blender">
+<h2>Use EdgeDB as a backend IFC DB for Blender<a class="headerlink" href="#use-edgedb-as-a-backend-ifc-db-for-blender" title="Permalink to this heading">#</a></h2>
+<blockquote>
+<div><p>Why would you need an IFC database?</p>
+</div></blockquote>
+<p>One motivation is that it (hopefully) enables more effective workflows for models
+so large it’s unpractical to work with using a single or multiple IFC files. It’s also the promise of more
+collaborative workflows and enabling access for automated processes pointed to the database that do a lot
+of automated checks and auto-generated work based on changes in the db.</p>
+</section>
 </section>
 
         </article>
@@ -264,10 +276,10 @@ complexity and result output redundancy.</p>
                 </div>
                 <div class="title">Converting IFC schema to EdgeDB schema (ESDL)</div>
               </div>
-              <svg><use href="#svg-arrow-right"></use></svg>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
           <a class="prev-page" href="../index.html">
-              <svg><use href="#svg-arrow-right"></use></svg>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
@@ -303,7 +315,7 @@ complexity and result output redundancy.</p>
       <div class="toc-sticky toc-scroll">
         <div class="toc-title-container">
           <span class="toc-title">
-            Contents
+            On this page
           </span>
         </div>
         <div class="toc-tree-container">
@@ -313,6 +325,7 @@ complexity and result output redundancy.</p>
 <li><a class="reference internal" href="#upload-ifc-file-to-empty-database">Upload IFC file to empty Database</a></li>
 <li><a class="reference internal" href="#download-entire-ifc-model-from-ifc-database">Download entire IFC model from IFC Database</a></li>
 <li><a class="reference internal" href="#download-partial-ifc-model-from-ifc-database">Download Partial IFC model from IFC Database</a></li>
+<li><a class="reference internal" href="#use-edgedb-as-a-backend-ifc-db-for-blender">Use EdgeDB as a backend IFC DB for Blender</a></li>
 </ul>
 </li>
 </ul>
