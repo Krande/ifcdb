@@ -11,11 +11,10 @@ from ifcdb.entities import Entity, EntityResolver
 
 from .inserts import EdgeInsert
 from .inserts.bulk_insert import BulkEntityInsert
-from .remove.bulk_removal import BulkEntityRemoval, EntityRemove
-from .select import EdgeFilter, EdgeSelect, FilterType, SelectResolver
+from .remove.bulk_removal import BulkEntityRemoval
+from .select import EdgeSelect, PropSelectResolver
 from .updates.bulk_updates import (
     BulkEntityUpdate,
-    EdgeUpdate,
     EntityPropUpdate,
     EntityUpdateValue,
     PropUpdateType,
@@ -87,7 +86,9 @@ class BulkEntityHandler:
                 old_value = values["old_value"]
                 new_value = values["new_value"]
                 value_update = EntityUpdateValue(new_value, old_value)
-            entity_prop = EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.UPDATE)
+            psr = PropSelectResolver(elem.entity, path, value_update, PropUpdateType.UPDATE)
+            selects = psr.get_resolved_selects()
+            entity_prop = EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.UPDATE, selects)
             change_objects.append(entity_prop)
         return change_objects
 
@@ -98,7 +99,11 @@ class BulkEntityHandler:
             guid = elem_dict.get("GlobalId")
             entity_ref = self.insert_map.get(guid)
             value_update = EntityUpdateValue(entity_ref, None)
-            add_objects.append(EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.ADD_TO_ITERABLE))
+            psr = PropSelectResolver(elem.entity, path, value_update, PropUpdateType.ADD_TO_ITERABLE)
+            selects = psr.get_resolved_selects()
+            add_objects.append(
+                EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.ADD_TO_ITERABLE, selects)
+            )
 
         return add_objects
 
@@ -108,7 +113,9 @@ class BulkEntityHandler:
         for path, elem_dict in source.items():
             entity = EntityResolver.create_insert_entity_from_ifc_dict(elem_dict)
             value_update = EntityUpdateValue(None, entity)
-            p_update = EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.REMOVE_FROM_ITERABLE)
+            psr = PropSelectResolver(elem.entity, path, value_update, PropUpdateType.REMOVE_FROM_ITERABLE)
+            selects = psr.get_resolved_selects()
+            p_update = EntityPropUpdate(elem.entity, path, value_update, PropUpdateType.REMOVE_FROM_ITERABLE, selects)
             remove_objects.append(p_update)
 
         return remove_objects
@@ -198,96 +205,3 @@ class BulkEntityHandler:
             return None
         else:
             return global_wstr + f"\nSELECT {{\n{query_str}\n}}"
-
-
-def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
-    # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
-    inserts = dict()
-    removals = []
-    changes = dict()
-    selects = dict()
-
-    # Additions
-    for entity_add in ifc_diff_tool.added:
-        for key, value in entity_add.added.linked_objects.items():
-            if value == entity_add.added.entity:
-                continue
-            inserts[key] = EdgeInsert(value, key)
-
-    # Removals
-    for entity in ifc_diff_tool.removed:
-        er = EntityRemove(entity.class_name, EdgeFilter("GlobalId", entity.guid, FilterType.STR))
-        removals.append(er)
-
-    # Changes
-    c = count(1)
-    for diff_el in ifc_diff_tool.changed:
-        existing_select = selects.get(diff_el.guid)
-        if existing_select is None:
-            select_name = f"root{next(c)}"
-            current_select = EdgeSelect(
-                select_name, diff_el.entity, None, filter=EdgeFilter("GlobalId", diff_el.guid, FilterType.STR)
-            )
-            selects[select_name] = current_select
-        else:
-            current_select = existing_select
-
-        for path, value in diff_el.value_changes.items():
-            root_key = value.indices[0]
-            if root_key == "ObjectPlacement":
-                existing_object_placement = changes.get(diff_el.guid)
-                if existing_object_placement is not None:
-                    continue
-                object_place_ifc_elem = value.levels[1]
-                new_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(object_place_ifc_elem)
-                sr = SelectResolver(
-                    new_entity_tool.entity,
-                )
-                sr.resolve_selects()
-                new_insert = EdgeInsert(new_entity_tool.entity)
-                new_update = EdgeUpdate(current_select, EntityUpdateValue(new_insert, None, "ObjectPlacement"))
-
-                changes[diff_el.guid] = new_update
-                inserts[new_insert.name] = new_insert
-            else:
-                raise NotImplementedError(f"Have not yet added support for changes related to {root_key=}")
-
-    res = BulkHandler2(selects, inserts, changes, removals)
-    _ = res.to_edql_str()
-    return BulkEntityHandler(ifc_diff_tool)
-
-
-@dataclass
-class BulkHandler2:
-    selects: dict[str, EdgeSelect]
-    inserts: dict[str, EdgeInsert]
-    changes: dict[str, EdgeUpdate]
-    removes: list[EntityRemove]
-
-    def to_edql_str(self, indent=2 * " ") -> str | None:
-        # INSERT statements
-        insert_statement = ""
-        for key, insert in self.inserts.items():
-            insert_statement += indent + insert.to_edql_str(assign_to_variable=True)
-
-        # SELECT statements
-        select_statement = ""
-        for key, select in self.selects.items():
-            select_statement += indent + select.to_edql_str(assign_to_variable=True, sep=",\n")
-
-        # UPDATE statements
-        update_str = ""
-        for key, update in self.changes.items():
-            update_str += update.to_edql_str()
-
-        # DELETE statements
-        remove_str = ""
-        for rem in self.removes:
-            remove_str += rem.to_edql_str()
-
-        global_w_str = "with\n" + select_statement + insert_statement
-        query_str = update_str + remove_str
-
-        total_str = global_w_str + f"\nSELECT {{\n{query_str}\n}}"
-
-        return total_str

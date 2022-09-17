@@ -1,6 +1,5 @@
-import time
-
 import os
+import time
 
 import ifcopenshell
 
@@ -54,6 +53,15 @@ def wipe_db(in_sequence=True):
         end = time.time()
 
         print(f"Wiped database in {end-start:.2f} seconds {in_sequence=}")
+
+
+def download():
+    with EdgeIO("MyCube", load_env=True) as io:
+        start = time.time()
+        io.to_ifc_file("temp/MyCube.ifc")
+        end = time.time()
+
+        print(f"Downloaded from database in {end-start:.2f} seconds")
 
 
 # if __name__ == "__main__":

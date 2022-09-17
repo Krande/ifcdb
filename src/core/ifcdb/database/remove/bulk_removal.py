@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class EntityRemove:
+class EdgeRemove:
     class_name: str
     entity_filter: EdgeFilter
 
@@ -27,7 +27,7 @@ class BulkEntityRemoval:
     def to_edql_str(self, variable_counter):
         insert_str = ""
         for entity in self.entities:
-            er = EntityRemove(entity.class_name, EdgeFilter("GlobalId", entity.guid, FilterType.STR))
+            er = EdgeRemove(entity.class_name, EdgeFilter("GlobalId", entity.guid, FilterType.STR))
             delete_str = er.to_edql_str()
             if variable_counter is not None:
                 new_name = f"remove_{next(variable_counter)}"

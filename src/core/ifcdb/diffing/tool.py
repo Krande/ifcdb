@@ -4,12 +4,12 @@ import copy
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any
 
 import ifcopenshell
 from deepdiff import DeepDiff
 
-from ifcdb.database.bulk_handler import BulkEntityHandler, to_bulk_entity_handler
+from ifcdb.database.bulk_handler import BulkEntityHandler
+from ifcdb.database.bulk_handler_v2 import BulkHandler2, to_bulk_entity_handler
 from ifcdb.entities import (
     Entity,
     EntityResolver,
@@ -18,117 +18,19 @@ from ifcdb.entities import (
 )
 from ifcdb.io.ifc.optimizing import general_optimization
 
+from .diff_types import (
+    PropUpdateType,
+    ValueAddedToIterable,
+    ValueChange,
+    ValueRemovedFromIterable,
+)
+from .overlinking import IfcValueToChange, OverlinkAlgo
+from .overlinking import OverlinkResolver as OLR_v2
+from .overlinking_v1 import OverlinkResolver as OLR_v1
 from .utils import get_elem_paths
 
 _ifc_ent = ifcopenshell.entity_instance
 _guid = "GlobalId"
-
-
-@dataclass
-class IfcValueToChange:
-    entity: _ifc_ent
-    index: str | int
-    value: Any
-
-
-@dataclass
-class OverlinkedEntity:
-    index: int
-    item: _ifc_ent
-    inverse_entities: list[_ifc_ent]
-
-
-@dataclass
-class IfcEntityValueEditor:
-    f: ifcopenshell.file
-    elem: _ifc_ent
-    path: str
-    new_value: Any
-
-    def __post_init__(self):
-        self.levels, self.indices = get_elem_paths(self.elem, self.path)
-
-        self.parent_entity = self.levels[-3]
-        self.parent_index = self.indices[-2]
-        self.last_entity = self.levels[-2]
-        self.last_index = self.indices[-1]
-
-    def update_tuple(self) -> tuple:
-        list_ver = list(self.levels[-2])
-        list_ver[self.last_index] = self.new_value
-        return tuple(list_ver)
-
-    def _identify_top_most_overlinked_entity(self) -> OverlinkedEntity | None:
-        overlinked_ancestors = []
-
-        ancestry = [x for x in self.levels]
-        ancestry.reverse()
-
-        for i, ancestor in enumerate(ancestry):
-            if isinstance(ancestor, _ifc_ent) is False:
-                continue
-
-            inverse_owners = self.f.get_inverse(ancestor)
-            is_owned_by_multiple = len(inverse_owners) > 1
-
-            if is_owned_by_multiple:
-                index = self.levels.index(ancestor)
-                overlinked_ancestors.append(OverlinkedEntity(index, ancestor, inverse_owners))
-
-        if len(overlinked_ancestors) == 0:
-            return None
-
-        return overlinked_ancestors[0]
-
-    def get_new_value(self) -> IfcValueToChange:
-        result = self._identify_top_most_overlinked_entity()
-        if result is None:
-            return self.get_new_value_old_algo()
-
-        index = self.indices[result.index - 1]
-        if isinstance(index, int):
-            return self.get_new_value_old_algo()
-        class_name = result.item.is_a()
-        res = result.item.get_info(include_identifier=False)
-        res.pop("type")
-        # If this object is linked to other objects, a new object should be created instead
-        new_entity = self.f.create_entity(class_name, **res)
-
-        return IfcValueToChange(result.item, index, new_entity)
-
-    def get_new_value_old_algo(self):
-        parent_entity = self.parent_entity
-        f = self.f
-
-        if isinstance(parent_entity, ifcopenshell.entity_instance) and len(f.get_inverse(parent_entity)) > 1:
-            inverse_entity = self.levels[-4]
-            inverse_index = self.indices[-3]
-            res = parent_entity.get_info(include_identifier=False)
-            res.pop("type")
-            if isinstance(self.last_entity, tuple):
-                res[self.parent_index] = self.update_tuple()
-                new_entity = f.create_entity(parent_entity.is_a(), **res)
-            else:
-                raise NotImplementedError()
-
-            return IfcValueToChange(inverse_entity, inverse_index, new_entity)
-
-        if isinstance(self.last_entity, tuple):
-            result = self.update_tuple()
-            if isinstance(parent_entity, ifcopenshell.entity_instance):
-                return IfcValueToChange(parent_entity, self.parent_index, result)
-            else:
-                raise NotImplementedError("This is not yet supported")
-        else:
-            new_value = IfcValueToChange(self.last_entity, self.last_index, self.new_value)
-        return new_value
-
-    def replace_value(self) -> None:
-        new_value = self.get_new_value()
-        try:
-            setattr(new_value.entity, new_value.index, new_value.value)
-        except IndexError as e:
-            raise IndexError(e)
 
 
 @dataclass
@@ -144,21 +46,9 @@ class EntityDiffBase:
 
 
 @dataclass
-class ValueChange:
-    path: str
-    old_value: Any
-    new_value: Any
-    key: int | str
-    ifc_elem: _ifc_ent
-    levels: list[_ifc_ent | float | tuple]
-    indices: list[str | int]
-    new_value_alt: Any
-
-
-@dataclass
 class EntityDiffChange(EntityDiffBase):
     diff: dict
-    value_changes: dict[str, ValueChange]
+    value_changes: dict[str, ValueChange | ValueRemovedFromIterable | ValueAddedToIterable]
     entity: Entity = None
     overlinked_entities: dict[str, IfcValueToChange] = field(default_factory=dict)
 
@@ -200,10 +90,13 @@ class IfcDiffTool:
     f2: ifcopenshell.file = None
     schema_ver: str = "IFC4x1"
     optimize_before_diffing: bool = True
+    overlinking_algo: OverlinkAlgo = OverlinkAlgo.OFF
 
     changed: list[EntityDiffChange] = field(default_factory=list)
     added: list[EntityDiffAdd] = field(default_factory=list)
     removed: list[EntityDiffRemove] = field(default_factory=list)
+
+    OVERLINK_ALGO = OverlinkAlgo
 
     def __post_init__(self):
         if self.f2 is not None:
@@ -240,6 +133,19 @@ class IfcDiffTool:
             result = self.compare_rooted_elements(el, f2.by_guid(guid))
             if result is None:
                 continue
+
+            if self.overlinking_algo == OverlinkAlgo.V2:
+                for key, value in result.value_changes.items():
+                    olr = OLR_v2(value, self.f2)
+                    updated_result = olr.perform()
+                    raise NotImplementedError()
+            elif self.overlinking_algo == OverlinkAlgo.V1:
+                olr = OLR_v1(result, self.f2)
+                updated_result = olr.perform()
+                if updated_result is not None:
+                    result = updated_result
+            else:
+                pass
 
             self.changed.append(result)
 
@@ -279,8 +185,11 @@ class IfcDiffTool:
 
         return None
 
-    def to_bulk_entity_handler(self) -> BulkEntityHandler:
-        return to_bulk_entity_handler(self)
+    def to_bulk_entity_handler(self, use_v2=False) -> BulkEntityHandler | BulkHandler2:
+        if use_v2 is True:
+            return to_bulk_entity_handler(self)
+        else:
+            return BulkEntityHandler(self)
 
     def to_dict(self) -> dict:
         return dict(
@@ -354,14 +263,35 @@ def path_to_value_change(path: str, elem: _ifc_ent, old_value, new_value) -> Val
     return ValueChange(path, old_value, new_value, key, ifc_elem_to_change, levels, indices, new_value_alt)
 
 
-def diff_to_value_changes(f, guid: str, diff: dict) -> dict[str, ValueChange]:
+def path_to_value_add_to_iterable(path, elem, guid) -> ValueAddedToIterable:
+    levels, indices = get_elem_paths(elem, path)
+
+    entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
+    parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(levels[0])
+    return ValueAddedToIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
+
+
+def path_to_value_remove_from_iterable(path, elem) -> ValueRemovedFromIterable:
+    levels, indices = get_elem_paths(elem, path)
+    entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
+    parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(levels[0])
+
+    return ValueRemovedFromIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
+
+
+def diff_to_value_changes(
+    f, guid: str, diff: dict
+) -> dict[str, ValueChange | ValueRemovedFromIterable | ValueAddedToIterable]:
     vc = dict()
     elem = f.by_guid(guid)
     for key, value in diff.items():
-        if key == "values_changed":
-            for path, value_changes in value.items():
+        safe_key = PropUpdateType.get_prop_type(key)
+        for path, value_changes in value.items():
+            if safe_key == PropUpdateType.UPDATE:
                 vc[path] = path_to_value_change(path, elem, **value_changes)
-        else:
-            raise NotImplementedError(f"{key=} is not yet supported")
+            elif safe_key == PropUpdateType.ADD_TO_ITERABLE:
+                vc[path] = path_to_value_add_to_iterable(path, elem, guid)
+            elif safe_key == PropUpdateType.REMOVE_FROM_ITERABLE:
+                vc[path] = path_to_value_remove_from_iterable(path, elem)
 
     return vc

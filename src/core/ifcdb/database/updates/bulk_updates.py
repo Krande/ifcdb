@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
 from itertools import count
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ifcdb.database.inserts import EdgeInsert
-from ifcdb.database.select import EdgeSelect, SelectResolver
-from ifcdb.diffing.utils import RE_COMP
+from ifcdb.database.select import EdgeSelect
+from ifcdb.diffing.diff_types import PropUpdateType
 from ifcdb.entities import Entity
 from ifcdb.utils import change_case
+
+if TYPE_CHECKING:
+    from ifcdb.diffing.tool import ValueChange
+
 
 _UPDATE_VAR = count(1)
 
@@ -17,19 +20,23 @@ _UPDATE_VAR = count(1)
 @dataclass
 class EdgeUpdate:
     select_obj: EdgeSelect | EdgeInsert
-    update_value: EntityUpdateValue
+    update_value: EntityUpdateValue = None
+    update_value2: ValueChange = None
     name: str = None
 
     def __post_init__(self):
         if self.name is None:
             self.name = f"{change_case(self.select_obj.name)}_{next(_UPDATE_VAR)}"
 
-    def to_edql_str(self, indent=2 * " "):
-        edql_str = indent + f"UPDATE {self.select_obj.name}\n{2 * indent}" + "SET {\n"
-        edql_str += 3 * indent + self.update_value.to_update_str()
-        edql_str += 2 * indent + "}\n"
+    def to_edql_str(self, assign_to_variable=False, indent=2 * " ", sep=",\n"):
+        update_str = indent + f"UPDATE {self.select_obj.name}\n{2 * indent}" + "SET {\n"
+        update_str += 3 * indent + self.update_value.to_update_str()
+        update_str += 2 * indent + "}\n"
 
-        return edql_str
+        if assign_to_variable:
+            return f"{indent}{self.name} := ({update_str}){sep}"
+        else:
+            return update_str
 
 
 @dataclass
@@ -37,6 +44,8 @@ class EntityUpdateValue:
     value: Any
     old_value: Any
     key: str = None
+
+    # Optional params relevant only for tuple insertions
     index: int | None = None
     len: int | None = None
 
@@ -69,90 +78,13 @@ class EntityUpdateValue:
         return edql_str
 
 
-class PropUpdateType(Enum):
-    UPDATE = "update"
-    ADD_TO_ITERABLE = "add_to_iterable"
-    REMOVE_FROM_ITERABLE = "remove_from_iterable"
-
-
 @dataclass
 class EntityPropUpdate:
     root_object: Entity
     property_path: str = field(repr=False)
     update_value: EntityUpdateValue
     update_type: PropUpdateType
-
-    all_selects: list[EdgeSelect] = field(default=None)
-    selects: list[EdgeSelect] = field(default=None)
-    last_select: EdgeSelect = field(default=None)
-
-    _levels: list[str] = field(default=None)
-
-    def __post_init__(self):
-        self._resolve_levels_and_classes()
-
-    def _get_classes_from_entity_subpath(self, entity: Entity = None, classes: list[str] = None, lvl: int = 0):
-        if entity is None:
-            entity = self.root_object
-
-        if classes is None:
-            classes = []
-        out_of_level_bounds = lvl > len(self._levels) - 1
-        if out_of_level_bounds:
-            if self.update_type == PropUpdateType.UPDATE and isinstance(self.update_value.value, Entity):
-                classes.pop()
-
-            return classes
-
-        curr_level = self._levels[lvl]
-        next_level_idx = lvl + 1
-        next_level = None
-        sub_entity = entity.links.get(curr_level)
-        if next_level_idx < len(self._levels) and isinstance(self._levels[next_level_idx], int):
-            next_level = self._levels[next_level_idx]
-        if sub_entity is not None:
-            if next_level is not None:
-                intermediate_level = sub_entity
-                exceeding_len_of_intermediary = next_level > len(intermediate_level) - 1
-                if self.update_type == PropUpdateType.ADD_TO_ITERABLE and exceeding_len_of_intermediary:
-                    self.update_value.key = curr_level
-                    self.update_value.index = next_level
-                    return classes
-                sub_entity = intermediate_level[next_level]
-                lvl += 1
-        else:
-            sub_entity = entity.props.get(curr_level)
-            if sub_entity is None:
-                raise ValueError("Unable to trace nested object path")
-
-        if isinstance(sub_entity, Entity) is False:
-            insert_key = curr_level
-            self.update_value.key = insert_key
-            if isinstance(next_level, int):
-                self.update_value.index = next_level
-                self.update_value.len = len(sub_entity)
-
-            return classes
-
-        if next_level is not None:
-            classes.append(((curr_level, next_level), sub_entity.name))
-        else:
-            classes.append((curr_level, sub_entity.name))
-
-        self._get_classes_from_entity_subpath(sub_entity, classes, lvl + 1)
-
-        return classes
-
-    def _resolve_levels_and_classes(self):
-        res = [r.replace("'", "") for r in RE_COMP.findall(self.property_path)]
-        self._levels = [int(r) if r.isnumeric() else r for r in res]
-
-        classes = self._get_classes_from_entity_subpath()
-        select_resolver = SelectResolver(self.root_object, classes)
-        self.all_selects = select_resolver.resolve_selects()
-
-        self.selects = self.all_selects[:-1]
-        self.last_select = self.all_selects[-1]
+    selects: list[EdgeSelect]
 
 
 @dataclass
@@ -171,15 +103,15 @@ class BulkEntityUpdate:
 
     def __post_init__(self):
         for u in self.updates:
-            self.select_items.append(u.last_select)
-            for s in u.all_selects:
+            self.select_items.append(u.selects[-1])
+            for s in u.selects:
                 if s in self.all_select_items:
                     continue
                 self.all_select_items.append(s)
 
     def _get_unique_entities(self) -> dict[str, list[EdgeSelect]]:
         unique_entity_paths = dict()
-        select_chunks = [update.selects for update in self.updates]
+        select_chunks = [update.selects[:-1] for update in self.updates]
         for update_list in select_chunks:
             for select_object in update_list:
                 epath = select_object.get_absolute_path()
@@ -254,7 +186,7 @@ class BulkEntityUpdate:
 
         entity = prop_update.update_value.old_value
         guid = entity.props.get("GlobalId")
-        key = prop_update.last_select.entity_path
+        key = prop_update.selects[-1].entity_path
 
         select_str = f"select {entity.name} FILTER .GlobalId=<str>'{guid}'"
 

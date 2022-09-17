@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import ifcopenshell
 
+from .overlinking import IfcValueToChange
 from .utils import get_elem_paths
 
 _ifc_ent = ifcopenshell.entity_instance
 
 if TYPE_CHECKING:
-    from .tool import ValueChange
+    from .tool import EntityDiffChange
 
 
 @dataclass
@@ -21,44 +21,41 @@ class OverlinkedEntity:
     inverse_entities: list[_ifc_ent]
 
 
-class OverlinkAlgo(Enum):
-    V1 = "V1"
-    V2 = "V2"
-    OFF = "OFF"
-
-
 @dataclass
 class OverlinkResolver:
-    value_change: ValueChange
+    entity_diff_change: EntityDiffChange
     f: ifcopenshell.file
 
-    def check_dep_path(self, ifc_elem: _ifc_ent, list_of_deps: list[_ifc_ent] = None):
-        if list_of_deps is None:
-            list_of_deps = []
+    def _check_prop_for_overlinking(self, ifc_elem: _ifc_ent, path: str, new_value: Any) -> None | IfcValueToChange:
+        if isinstance(new_value, str):
+            # for PoC only numerical values are of interest here
+            return None
+        ieve = IfcEntityValueEditor(self.f, ifc_elem, path, new_value)
+        parent_entity = ieve.parent_entity
+        if isinstance(parent_entity, ifcopenshell.entity_instance) and len(self.f.get_inverse(parent_entity)) == 1:
+            return None
+        elif isinstance(parent_entity, tuple):
+            all_have_no_overlinking = True
+            for entity in parent_entity:
+                if len(self.f.get_inverse(entity)) > 1:
+                    all_have_no_overlinking = False
+            if all_have_no_overlinking is True:
+                return None
 
-        inverse_elems = self.f.get_inverse(ifc_elem)
+        new_value = ieve.get_new_value()
+        if new_value.entity != ieve.parent_entity and isinstance(new_value.value, _ifc_ent):
+            return new_value
+        return None
 
-        for x in inverse_elems:
-            list_of_deps.append(x)
-            self.check_dep_path(x, list_of_deps)
-
-        return list_of_deps
-
-    def perform(self) -> None:
-        inverse_elems = self.check_dep_path(self.value_change.ifc_elem)
-
-        # find shared linked object
-        object_to_replace = inverse_elems[-1]
-        res = self.value_change.levels.index(object_to_replace)
-        _ = self.value_change.indices[res - 1]
-        print("sd")
-
-
-@dataclass
-class IfcValueToChange:
-    entity: _ifc_ent
-    index: str | int
-    value: Any
+    def perform(self) -> None | EntityDiffChange:
+        ifc_elem = self.f.by_guid(self.entity_diff_change.guid)
+        changed_values = self.entity_diff_change.diff.get("values_changed")
+        if changed_values is None:
+            return None
+        for path, value in changed_values.items():
+            result = self._check_prop_for_overlinking(ifc_elem, path, value["new_value"])
+            if result is not None:
+                self.entity_diff_change.overlinked_entities[path] = result
 
 
 @dataclass

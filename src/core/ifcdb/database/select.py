@@ -2,9 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
+from ifcdb.diffing.diff_types import PropUpdateType
+from ifcdb.diffing.utils import dict_path_to_iterable
 from ifcdb.entities import Entity
+
+if TYPE_CHECKING:
+    from ifcdb.database.updates.bulk_updates import EntityUpdateValue
+    from ifcdb.diffing.tool import ValueChange
 
 
 class FilterType(Enum):
@@ -30,7 +36,6 @@ class EdgeSelect:
     entity_path: str | None
     entity_index: int = None
 
-    assert_class: str = None
     is_multi_link: bool = False
     filter: EdgeFilter = None
 
@@ -92,54 +97,65 @@ class EdgeSelect:
 
 
 @dataclass
-class SelectResolver:
-    root_object: Entity
-    classes: list[str]
+class SelectPathInfo:
+    path_str: str
+    index: int
+    is_agg: bool
 
-    def resolve_selects(self) -> list[EdgeSelect]:
+
+@dataclass
+class PropSelectResolver:
+    root_object: Entity
+    property_path: str
+    update_type: PropUpdateType
+
+    def get_resolved_selects(self) -> list[EdgeSelect]:
         root_guid = self.root_object.props.get("GlobalId")
         root_select = EdgeSelect(
             "root", self.root_object, None, filter=EdgeFilter("GlobalId", root_guid, FilterType.STR)
         )
         select_objects = []
-
         prev_ref = root_select
-        for i, chunk in enumerate(self._chunk_classes(), start=1):
-            curr_ref = f"lvl{i}"
-            is_agg = False
-            path_neutral_str = ""
-            index = None
-            assert_class = None
-            for j, (keys, class_name) in enumerate(chunk):
-                if j != 0:
-                    path_neutral_str += "."
-                assert_class = class_name
-                if isinstance(keys, str):
-                    path_neutral_str += keys
-                else:
-                    path_neutral_str += keys[0]
-                    is_agg = True
-                    index = keys[1]
-                if assert_class is not None:
-                    path_neutral_str += f"[is {assert_class}]"
 
-            es = EdgeSelect(
-                curr_ref,
-                prev_ref,
-                path_neutral_str,
-                index,
-                assert_class=assert_class,
-                is_multi_link=is_agg,
-            )
+        classes = self._resolve_classes()
+        chunked_classes = self._split_classes_by_aggregates(classes)
+
+        for i, chunk in enumerate(chunked_classes, start=1):
+            curr_ref = f"lvl{i}"
+            path_info = self._get_select_path_info(chunk)
+            es = EdgeSelect(curr_ref, prev_ref, path_info.path_str, path_info.index, is_multi_link=path_info.is_agg)
             select_objects.append(es)
             prev_ref = es
 
         return [root_select] + select_objects
 
-    def _chunk_classes(self):
+    def get_update_entity(self, value: ValueChange) -> EntityUpdateValue:
+
+        return EntityUpdateValue(value.new_value, value.old_value, value.key)
+
+    def _get_select_path_info(self, chunk) -> SelectPathInfo:
+        path_neutral_str = ""
+        is_agg = False
+        index = None
+        for j, (keys, class_name) in enumerate(chunk):
+            if j != 0:
+                path_neutral_str += "."
+            assert_class = class_name
+            if isinstance(keys, str):
+                path_neutral_str += keys
+            else:
+                path_neutral_str += keys[0]
+                is_agg = True
+                index = keys[1]
+
+            if assert_class is not None:
+                path_neutral_str += f"[is {assert_class}]"
+        return SelectPathInfo(path_neutral_str, index, is_agg)
+
+    def _split_classes_by_aggregates(self, classes):
         chunks = []
         chunk = []
-        for i, (keys, class_name) in enumerate(self.classes):
+        for i, (keys, class_name) in enumerate(classes):
             if isinstance(keys, str):
                 chunk.append((keys, class_name))
             else:
@@ -150,3 +166,65 @@ class SelectResolver:
         if len(chunk) > 0:
             chunks.append(chunk)
         return chunks
+
+    def _resolve_classes(
+        self, entity: Entity = None, classes: list[str] = None, lvl: int = 0, levels: list[str] = None
+    ) -> list[str]:
+        from ifcdb.database.updates.bulk_updates import PropUpdateType
+
+        if levels is None:
+            levels = list(dict_path_to_iterable(self.property_path))
+
+        if entity is None:
+            entity = self.root_object
+
+        if classes is None:
+            classes = []
+        out_of_level_bounds = lvl > len(levels) - 1
+        if out_of_level_bounds:
+            # if self.update_type == PropUpdateType.UPDATE and isinstance(self.update_value.value, Entity):
+            #     classes.pop()
+
+            return classes
+
+        curr_level = levels[lvl]
+        next_level_idx = lvl + 1
+        next_level = None
+        sub_entity = entity.links.get(curr_level)
+        if next_level_idx < len(levels) and isinstance(levels[next_level_idx], int):
+            next_level = levels[next_level_idx]
+        if sub_entity is not None:
+            if next_level is not None:
+                intermediate_level = sub_entity
+                exceeding_len_of_intermediary = next_level > len(intermediate_level) - 1
+                if self.update_type == PropUpdateType.ADD_TO_ITERABLE and exceeding_len_of_intermediary:
+                    # self.update_value.key = curr_level
+                    # self.update_value.index = next_level
+                    return classes
+                try:
+                    sub_entity = intermediate_level[next_level]
+                except IndexError as e:
+                    raise IndexError(e)
+                lvl += 1
+        else:
+            sub_entity = entity.props.get(curr_level)
+            if sub_entity is None:
+                raise ValueError("Unable to trace nested object path")
+
+        if isinstance(sub_entity, Entity) is False:
+            # insert_key = curr_level
+            # self.update_value.key = insert_key
+            # if isinstance(next_level, int):
+            #     self.update_value.index = next_level
+            #     self.update_value.len = len(sub_entity)
+
+            return classes
+
+        if next_level is not None:
+            classes.append(((curr_level, next_level), sub_entity.name))
+        else:
+            classes.append((curr_level, sub_entity.name))
+
+        self._resolve_classes(sub_entity, classes, lvl + 1)
+
+        return classes
