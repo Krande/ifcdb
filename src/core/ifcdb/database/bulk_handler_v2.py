@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
+from itertools import count
 from typing import TYPE_CHECKING
 
 from ifcdb.diffing.diff_types import (
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class BulkHandler2:
+class BulkEntityHandler:
     selects: dict[str, EdgeSelect]
     inserts: dict[str, EdgeInsert]
     changes: dict[str, EdgeUpdate]
@@ -55,12 +55,16 @@ class BulkHandler2:
         return total_str
 
 
-def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkHandler2:
+def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
     # Should instead look for ways of merging bulk update objects is not yet supported instead of returning list
     inserts = dict()
     removals = []
     changes = dict()
-    selects = dict()
+    selects: dict[str, EdgeSelect] = dict()
+
+    select_abs_path_map: dict[str, EdgeSelect] = dict()
+
+    c = count(1)
 
     # Additions
     for entity_add in ifc_diff_tool.added:
@@ -76,22 +80,29 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkHandler2:
 
     # Changes
     def add_to_selects(add_selects: list[EdgeSelect]):
+        final_selects = []
         for new_select in add_selects:
-            existing_select = selects.get(new_select.name)
+            new_abs_path = new_select.get_absolute_path()
+            existing_select = select_abs_path_map.get(new_abs_path)
             if existing_select is not None:
-                if new_select.entity_index != existing_select.entity_index:
-                    new_select.name += "_1"
-                else:
-                    logging.warning(f"{new_select=}\n\n replaced by: \n\n{existing_select=}")
-            selects[new_select.name] = new_select
+                for ref in new_select.referred_selects:
+                    ref.entity_top = existing_select
+                final_selects.append(existing_select)
+            else:
+                if new_select.name in selects.keys():
+                    new_select.name += f"_{next(c)}"
+                select_abs_path_map[new_abs_path] = new_select
+                selects[new_select.name] = new_select
+                final_selects.append(new_select)
+        return final_selects
 
     for diff_el in ifc_diff_tool.changed:
         for path, value in diff_el.value_changes.items():
             if isinstance(value, ValueChange):
                 sr = PropSelectResolver(diff_el.entity, path, PropUpdateType.UPDATE)
                 new_selects = sr.get_resolved_selects()
-                add_to_selects(new_selects)
-                last_select = new_selects[-1]
+                updated_selects = add_to_selects(new_selects)
+                last_select = updated_selects[-1]
                 att = getattr(value.ifc_elem, value.key)
                 index = None
                 tuple_len = None
@@ -121,4 +132,4 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkHandler2:
                 eu = EdgeRemove(value.entity.name, EdgeFilter("GlobalId", value))
                 raise NotImplementedError()
 
-    return BulkHandler2(selects, inserts, changes, removals)
+    return BulkEntityHandler(selects, inserts, changes, removals)

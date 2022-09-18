@@ -8,8 +8,7 @@ from dataclasses import dataclass, field
 import ifcopenshell
 from deepdiff import DeepDiff
 
-from ifcdb.database.bulk_handler import BulkEntityHandler
-from ifcdb.database.bulk_handler_v2 import BulkHandler2, to_bulk_entity_handler
+from ifcdb.database.bulk_handler_v2 import BulkEntityHandler, to_bulk_entity_handler
 from ifcdb.entities import (
     Entity,
     EntityResolver,
@@ -185,11 +184,8 @@ class IfcDiffTool:
 
         return None
 
-    def to_bulk_entity_handler(self, use_v2=False) -> BulkEntityHandler | BulkHandler2:
-        if use_v2 is True:
-            return to_bulk_entity_handler(self)
-        else:
-            return BulkEntityHandler(self)
+    def to_bulk_entity_handler(self) -> BulkEntityHandler:
+        return to_bulk_entity_handler(self)
 
     def to_dict(self) -> dict:
         return dict(

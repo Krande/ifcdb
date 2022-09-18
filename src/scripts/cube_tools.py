@@ -1,4 +1,5 @@
 import os
+import pathlib
 import time
 
 import ifcopenshell
@@ -55,13 +56,17 @@ def wipe_db(in_sequence=True):
         print(f"Wiped database in {end-start:.2f} seconds {in_sequence=}")
 
 
-def download():
+def download(dest_file: str = "temp/MyCube.ifc"):
+    dest_file = pathlib.Path(dest_file)
+    if dest_file.parent.is_dir():
+        os.makedirs(dest_file.parent, exist_ok=True)
+
     with EdgeIO("MyCube", load_env=True) as io:
         start = time.time()
-        io.to_ifc_file("temp/MyCube.ifc")
+        io.to_ifc_file(dest_file)
         end = time.time()
 
-        print(f"Downloaded from database in {end-start:.2f} seconds")
+        print(f'Created ifc file "{dest_file.absolute()}" from database in {end-start:.2f} seconds')
 
 
 # if __name__ == "__main__":

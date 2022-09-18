@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import ifcopenshell
 from deepdiff import DeepDiff
-from typing import TYPE_CHECKING
 
 from .utils import get_elem_paths
 
 if TYPE_CHECKING:
     from ifcdb.diffing.tool import EntityDiffAdd, IfcDiffTool
-
 
 
 def add_iterable_item(f: ifcopenshell.file, elem: ifcopenshell.entity_instance, path: str, value: dict):
@@ -81,7 +81,7 @@ def remove_elem(f: ifcopenshell.file, guid: str):
 
 
 def apply_diffs_ifcopenshell(f: ifcopenshell.file, diff_tool: IfcDiffTool):
-    from .tool import IfcEntityValueEditor
+    from .overlinking import IfcEntityValueEditor
 
     for diff_el in diff_tool.added:
         add_elem(f, diff_el)

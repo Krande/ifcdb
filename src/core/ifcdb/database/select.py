@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, ClassVar
 
@@ -40,6 +40,12 @@ class EdgeSelect:
     filter: EdgeFilter = None
 
     use_agg_array: ClassVar[bool] = False
+
+    referred_selects: list[EdgeSelect] = field(default_factory=list)
+
+    def __post_init__(self):
+        if isinstance(self.entity_top, EdgeSelect):
+            self.entity_top.referred_selects.append(self)
 
     def get_absolute_path(self) -> str:
         if self.entity_path is None:
