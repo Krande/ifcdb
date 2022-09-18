@@ -9,7 +9,6 @@ from ifcdb.diffing.diff_types import (
     ValueChange,
     ValueRemovedFromIterable,
 )
-
 from .inserts import EdgeInsert
 from .remove.bulk_removal import EdgeRemove
 from .select import EdgeFilter, EdgeSelect, FilterType, PropSelectResolver
@@ -30,7 +29,7 @@ class BulkEntityHandler:
         # INSERT statements
         insert_statement = ""
         for key, insert in self.inserts.items():
-            insert_statement += indent + insert.to_edql_str(assign_to_variable=True)
+            insert_statement += indent + insert.to_edql_str(assign_to_variable=True, sep=",\n")
 
         # SELECT statements
         select_statement = ""
@@ -63,7 +62,8 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
     selects: dict[str, EdgeSelect] = dict()
 
     select_abs_path_map: dict[str, EdgeSelect] = dict()
-
+    # TODO: bridge inserts and updates here
+    insert_map: dict[str, EdgeInsert]
     c = count(1)
 
     # Additions
@@ -79,30 +79,14 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
         removals.append(er)
 
     # Changes
-    def add_to_selects(add_selects: list[EdgeSelect]):
-        final_selects = []
-        for new_select in add_selects:
-            new_abs_path = new_select.get_absolute_path()
-            existing_select = select_abs_path_map.get(new_abs_path)
-            if existing_select is not None:
-                for ref in new_select.referred_selects:
-                    ref.entity_top = existing_select
-                final_selects.append(existing_select)
-            else:
-                if new_select.name in selects.keys():
-                    new_select.name += f"_{next(c)}"
-                select_abs_path_map[new_abs_path] = new_select
-                selects[new_select.name] = new_select
-                final_selects.append(new_select)
-        return final_selects
 
     for diff_el in ifc_diff_tool.changed:
         for path, value in diff_el.value_changes.items():
             if isinstance(value, ValueChange):
                 sr = PropSelectResolver(diff_el.entity, path, PropUpdateType.UPDATE)
                 new_selects = sr.get_resolved_selects()
-                updated_selects = add_to_selects(new_selects)
-                last_select = updated_selects[-1]
+                last_select = add_to_selects(new_selects, selects, select_abs_path_map, c)
+
                 att = getattr(value.ifc_elem, value.key)
                 index = None
                 tuple_len = None
@@ -110,26 +94,45 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
                     index = att.index(value.new_value)
                     tuple_len = len(att)
 
-                eu = EdgeUpdate(
-                    last_select, EntityUpdateValue(value.new_value, value.old_value, value.key, index, tuple_len)
+                update_value = EntityUpdateValue(
+                    value.new_value, value.old_value, PropUpdateType.UPDATE, value.key, index, tuple_len
                 )
+                eu = EdgeUpdate(last_select, update_value)
                 changes[eu.name] = eu
 
             elif isinstance(value, ValueAddedToIterable):
                 sr = PropSelectResolver(diff_el.entity, path, PropUpdateType.ADD_TO_ITERABLE)
                 new_selects = sr.get_resolved_selects()
-                add_to_selects(new_selects)
-                last_select = new_selects[-1]
-                eu = EdgeUpdate(last_select, EntityUpdateValue(value.new_entity, None, value.key))
-                changes[eu.name] = eu
+                last_select = add_to_selects(new_selects, selects, select_abs_path_map, c)
 
-                raise NotImplementedError()
+                new_entity_insert = EdgeInsert(value.new_entity)
+                inserts[new_entity_insert.name] = new_entity_insert
+                update_value = EntityUpdateValue(new_entity_insert, None, PropUpdateType.ADD_TO_ITERABLE, value.key)
+                eu = EdgeUpdate(last_select, update_value)
+                changes[eu.name] = eu
             elif isinstance(value, ValueRemovedFromIterable):
-                sr = PropSelectResolver(diff_el.entity, path, PropUpdateType.REMOVE_FROM_ITERABLE)
-                new_selects = sr.get_resolved_selects()
-                add_to_selects(new_selects)
-                last_select = new_selects[-1]
-                eu = EdgeRemove(value.entity.name, EdgeFilter("GlobalId", value))
-                raise NotImplementedError()
+                er = EdgeRemove(value.entity.name, EdgeFilter("GlobalId", diff_el.guid, FilterType.STR))
+                removals.append(er)
+            else:
+                raise ValueError(f"Unsupported change type '{type(value)}'")
 
     return BulkEntityHandler(selects, inserts, changes, removals)
+
+
+def add_to_selects(add_selects: list[EdgeSelect], selects, select_abs_path_map, c) -> EdgeSelect:
+    final_selects = []
+    for new_select in add_selects:
+        new_abs_path = new_select.get_absolute_path()
+        existing_select = select_abs_path_map.get(new_abs_path)
+        if existing_select is not None:
+            for ref in new_select.referred_selects:
+                ref.entity_top = existing_select
+            final_selects.append(existing_select)
+        else:
+            if new_select.name in selects.keys():
+                new_select.name += f"_{next(c)}"
+            select_abs_path_map[new_abs_path] = new_select
+            selects[new_select.name] = new_select
+            final_selects.append(new_select)
+    final_select = final_selects[-1]
+    return final_select

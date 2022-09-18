@@ -5,7 +5,7 @@ channels:
   - krande
 dependencies:
   - ifcopenshell
-  - adapy
+  - ada-py
   - python==3.10.5
   - pyparsing
   - pytest

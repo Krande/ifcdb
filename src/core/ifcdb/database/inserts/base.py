@@ -18,35 +18,28 @@ class EdgeInsert:
         if self.name is None:
             self.name = f"{change_case(self.entity.name)}_{next(_INSERT_VAR)}"
 
-    def to_edql_str(self, assign_to_variable=False, indent_override: str = None, sep=", "):
+    def to_edql_str(self, assign_to_variable=False, indent_override: str = None, prop_sep=",", sep=","):
         indent = "" if indent_override is None else indent_override
         props = ""
         props_writable = {p: v for p, v in self.entity.props.items() if v is not None}
         if len(props_writable) > 0:
-            if "wrappedValue" in self.entity.props.keys():
-                print("sd")
-                props = ""
-            else:
-                props = to_props_str(self.entity, sep=sep)
+            props = to_props_str(self.entity, sep=prop_sep)
         links = ""
         if len(self.entity.links) > 0:
             if len(props_writable) > 0:
-                links += sep
-            links += to_links_str(self.entity, sep=sep)
+                links += prop_sep
+            links += to_links_str(self.entity, sep=prop_sep)
         if assign_to_variable:
-            if self.name is None:
-                raise ValueError('Variable "name" cannot be None')
             return f"{indent}{self.name} := (INSERT {self.entity.name} {{ {props}{links} }}){sep}"
         else:
             return f"INSERT {self.entity.name} {{ {props}{links} }}"
 
 
-def to_props_str(entity: Entity, sep=", "):
-
+def to_props_str(entity: Entity, sep=","):
     return sep.join([f"{key}:= {value_writer(value)}" for key, value in entity.props.items() if value is not None])
 
 
-def to_links_str(entity: Entity, sep=", "):
+def to_links_str(entity: Entity, sep=","):
     lstr = ""
 
     for key, value in entity.links.items():

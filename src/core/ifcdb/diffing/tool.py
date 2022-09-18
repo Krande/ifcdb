@@ -261,9 +261,9 @@ def path_to_value_change(path: str, elem: _ifc_ent, old_value, new_value) -> Val
 
 def path_to_value_add_to_iterable(path, elem, guid) -> ValueAddedToIterable:
     levels, indices = get_elem_paths(elem, path)
-
-    entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
-    parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(levels[0])
+    elem_to_be_added = levels[-1]
+    parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
+    entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem_to_be_added)
     return ValueAddedToIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
 
 
@@ -289,5 +289,7 @@ def diff_to_value_changes(
                 vc[path] = path_to_value_add_to_iterable(path, elem, guid)
             elif safe_key == PropUpdateType.REMOVE_FROM_ITERABLE:
                 vc[path] = path_to_value_remove_from_iterable(path, elem)
+            else:
+                raise ValueError(f'Unrecognized key "{safe_key}"')
 
     return vc

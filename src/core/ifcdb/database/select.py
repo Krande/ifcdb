@@ -135,10 +135,6 @@ class PropSelectResolver:
 
         return [root_select] + select_objects
 
-    def get_update_entity(self, value: ValueChange) -> EntityUpdateValue:
-
-        return EntityUpdateValue(value.new_value, value.old_value, value.key)
-
     def _get_select_path_info(self, chunk) -> SelectPathInfo:
         path_neutral_str = ""
         is_agg = False

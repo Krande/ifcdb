@@ -24,9 +24,10 @@ def test_cube_edited_z(my_cube, my_cube_edited_z):
     assert len(diff_tool.added) == 0
     assert len(diff_tool.removed) == 0
 
-    diff_tool.to_json_file("temp/diff_edited_z.json")
+    # diff_tool.to_json_file("temp/diff_edited_z.json")
 
     bulk_entity_handler = diff_tool.to_bulk_entity_handler()
+
     edql_str = bulk_entity_handler.to_edql_str()
     print(edql_str)
 
@@ -42,6 +43,7 @@ def test_cube_added(my_cube, my_cube_added):
     assert len(diff_tool.removed) == 0
 
     bulk_entity_handler = diff_tool.to_bulk_entity_handler()
+    
     edql_str = bulk_entity_handler.to_edql_str()
     print(edql_str)
 
