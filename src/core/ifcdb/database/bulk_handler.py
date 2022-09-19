@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from itertools import count
 from typing import TYPE_CHECKING
 
-from ifcdb.diffing.diff_types import (
+from ifcdb.diffing.types import (
+    PropUpdateType,
     ValueAddedToIterable,
     ValueChange,
     ValueRemovedFromIterable,
@@ -13,7 +14,7 @@ from ifcdb.diffing.diff_types import (
 from .inserts import EdgeInsert
 from .remove import EdgeRemove
 from .select import EdgeFilter, EdgeSelect, FilterType, PropSelectResolver
-from .updates import EdgeUpdate, EntityUpdateValue, PropUpdateType
+from .updates import EdgeUpdate, EntityUpdateValue
 
 if TYPE_CHECKING:
     from ifcdb.diffing.tool import IfcDiffTool
@@ -90,25 +91,16 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
     for diff_el in ifc_diff_tool.changed:
         for path, value in diff_el.value_changes.items():
             if isinstance(value, ValueChange):
-                sr = PropSelectResolver(diff_el.entity, path, PropUpdateType.UPDATE)
+                sr = PropSelectResolver(diff_el.root_entity, path, PropUpdateType.UPDATE)
                 new_selects = sr.get_resolved_selects()
                 last_select = add_to_selects(new_selects, selects, select_abs_path_map, c)
 
-                att = getattr(value.ifc_elem, value.key)
-                index = None
-                tuple_len = None
-                if isinstance(att, tuple):
-                    index = att.index(value.new_value)
-                    tuple_len = len(att)
-
-                update_value = EntityUpdateValue(
-                    value.new_value, value.old_value, PropUpdateType.UPDATE, value.key, index, tuple_len
-                )
+                update_value = EntityUpdateValue(value.new_value, value)
                 eu = EdgeUpdate(last_select, update_value)
                 changes[eu.name] = eu
 
             elif isinstance(value, ValueAddedToIterable):
-                sr = PropSelectResolver(diff_el.entity, path, PropUpdateType.ADD_TO_ITERABLE)
+                sr = PropSelectResolver(diff_el.root_entity, path, PropUpdateType.ADD_TO_ITERABLE)
                 new_selects = sr.get_resolved_selects()
                 last_select = add_to_selects(new_selects, selects, select_abs_path_map, c)
                 new_guid = value.new_entity.props.get("GlobalId")
@@ -118,7 +110,7 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
                     inserts[new_entity_insert.name] = new_entity_insert
                 else:
                     new_entity_insert = existing_insert
-                update_value = EntityUpdateValue(new_entity_insert, None, PropUpdateType.ADD_TO_ITERABLE, value.key)
+                update_value = EntityUpdateValue(new_entity_insert, value)
                 eu = EdgeUpdate(last_select, update_value)
                 changes[eu.name] = eu
             elif isinstance(value, ValueRemovedFromIterable):
@@ -130,7 +122,7 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
                 if select_for_rem is None:
                     raise NotImplementedError()
 
-                update_value = EntityUpdateValue(select_for_rem, None, PropUpdateType.REMOVE_FROM_ITERABLE, value.key)
+                update_value = EntityUpdateValue(select_for_rem, value)
 
                 owner_name = f"{value.owning_entity.name}_{next(c)}"
                 owner_guid = value.owning_entity.props.get("GlobalId")

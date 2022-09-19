@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import ClassVar
 
-from ifcdb.diffing.diff_types import PropUpdateType
+from ifcdb.diffing.types import PropUpdateType
 from ifcdb.diffing.utils import dict_path_to_iterable
 from ifcdb.entities import Entity
 
@@ -168,7 +168,6 @@ class PropSelectResolver:
     def _resolve_classes(
         self, entity: Entity = None, classes: list[str] = None, lvl: int = 0, levels: list[str] = None
     ) -> list[str]:
-        from ifcdb.database.updates import PropUpdateType
 
         if levels is None:
             levels = list(dict_path_to_iterable(self.property_path))

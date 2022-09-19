@@ -31,13 +31,10 @@ class PropUpdateType(Enum):
 @dataclass
 class ValueChange:
     path: str
-    old_value: Any
     new_value: Any
     key: int | str
-    ifc_elem: _ifc_ent
-    levels: list[_ifc_ent | float | tuple]
-    indices: list[str | int]
-    new_value_alt: Any
+    index: int = None
+    tuple_len: int = None
 
 
 @dataclass

@@ -9,16 +9,12 @@ import ifcopenshell
 from deepdiff import DeepDiff
 
 from ifcdb.database.bulk_handler import BulkEntityHandler, to_bulk_entity_handler
-from ifcdb.diffing.diff_types import (
+from ifcdb.diffing.types import (
     PropUpdateType,
     ValueAddedToIterable,
     ValueChange,
     ValueRemovedFromIterable,
 )
-from ifcdb.diffing.entity_path import IfcValueToChange
-from ifcdb.diffing.overlinking_v1 import OverlinkResolver as OLR_v1
-from ifcdb.diffing.overlinking_v2 import OverlinkAlgo
-from ifcdb.diffing.overlinking_v2 import OverlinkResolver as OLR_v2
 from ifcdb.diffing.utils import get_elem_paths
 from ifcdb.entities import (
     Entity,
@@ -48,8 +44,7 @@ class EntityDiffBase:
 class EntityDiffChange(EntityDiffBase):
     diff: dict
     value_changes: dict[str, ValueChange | ValueRemovedFromIterable | ValueAddedToIterable]
-    entity: Entity = None
-    overlinked_entities: dict[str, IfcValueToChange] = field(default_factory=dict)
+    root_entity: Entity = None
 
     def to_dict(self):
         return dict(diff=self.diff, guid=self.guid, class_name=self.class_name)
@@ -89,18 +84,17 @@ class EntityDiffRemove(EntityDiffBase):
 class IfcDiffTool:
     f1: ifcopenshell.file
     f2: ifcopenshell.file = None
+
+    auto_run: bool = True
     schema_ver: str = "IFC4x1"
     optimize_before_diffing: bool = True
-    overlinking_algo: OverlinkAlgo = OverlinkAlgo.OFF
 
     changed: list[EntityDiffChange] = field(default_factory=list)
     added: list[EntityDiffAdd] = field(default_factory=list)
     removed: list[EntityDiffRemove] = field(default_factory=list)
 
-    OVERLINK_ALGO = OverlinkAlgo
-
     def __post_init__(self):
-        if self.f2 is not None:
+        if self.f2 is not None and self.auto_run is True:
             self._run()
 
     def _run(self):
@@ -135,19 +129,6 @@ class IfcDiffTool:
             result = self.compare_rooted_elements(el, f2.by_guid(guid))
             if result is None:
                 continue
-
-            if self.overlinking_algo == OverlinkAlgo.V2:
-                for key, value in result.value_changes.items():
-                    olr = OLR_v2(value, self.f2)
-                    updated_result = olr.perform()
-                    raise NotImplementedError()
-            elif self.overlinking_algo == OverlinkAlgo.V1:
-                olr = OLR_v1(result, self.f2)
-                updated_result = olr.perform()
-                if updated_result is not None:
-                    result = updated_result
-            else:
-                pass
 
             self.changed.append(result)
 
@@ -201,6 +182,13 @@ class IfcDiffTool:
     def to_json_file(self, filepath, indent=4) -> None:
         with open(filepath, "w") as f:
             json.dump(self.to_dict(), f, indent=indent)
+
+    def copy(self) -> IfcDiffTool:
+        changed = [x for x in self.changed]
+        removed = [x for x in self.removed]
+        added = [x for x in self.added]
+
+        return IfcDiffTool(self.f1, self.f2, auto_run=False, changed=changed, removed=removed, added=added)
 
     @property
     def contains_changes(self) -> bool:
@@ -266,38 +254,33 @@ class DiffResolver:
 
         return vc
 
-    def path_to_value_change(self, path: str, elem: _ifc_ent, old_value, new_value) -> ValueChange:
-        levels, indices = get_elem_paths(elem, path)
-        levels_rev = [x for x in levels]
-        levels_rev.reverse()
+    def path_to_value_change(self, path: str, root_elem: _ifc_ent, old_value, new_value) -> ValueChange:
+        ifc_elem_path = get_elem_paths(root_elem, path)
 
-        ifc_elem_to_change = None
-        level_index = None
-        for i, lvl in enumerate(levels_rev):
-            if isinstance(lvl, _ifc_ent):
-                ifc_elem_to_change = lvl
-                level_index = i
-                break
+        index = ifc_elem_path.get_index_of_nearest_ifc_elem()
+        key = ifc_elem_path.indices[index]
+        new_value_alt = ifc_elem_path.levels[index + 1]
 
-        index = len(levels) - level_index
-        key = indices[index - 1]
-        new_value_alt = levels[index]
+        tuple_len = None
+        if isinstance(new_value_alt, tuple):
+            tuple_len = len(new_value_alt)
 
-        return ValueChange(path, old_value, new_value, key, ifc_elem_to_change, levels, indices, new_value_alt)
+        return ValueChange(path, new_value, key, index - 1, tuple_len)
 
-    def path_to_value_add_to_iterable(self, path, elem) -> ValueAddedToIterable:
-        levels, indices = get_elem_paths(elem, path)
-        elem_to_be_added = levels[-1]
-        parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
+    def path_to_value_add_to_iterable(self, path, root_elem) -> ValueAddedToIterable:
+        ifc_elem_path = get_elem_paths(root_elem, path)
+
+        elem_to_be_added = ifc_elem_path.levels[-1]
+        parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(root_elem)
         entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem_to_be_added)
-        return ValueAddedToIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
+        return ValueAddedToIterable(path, entity_tool.entity, ifc_elem_path.indices[0], parent_entity_tool.entity)
 
     def path_to_value_remove_from_iterable(self, path, guid) -> ValueRemovedFromIterable:
         elem_old = self.f1.by_guid(guid)
-        levels, indices = get_elem_paths(elem_old, path)
-        elem_to_be_removed = levels[-1]
+        ifc_elem_path = get_elem_paths(elem_old, path)
+        elem_to_be_removed = ifc_elem_path.levels[-1]
         entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem_to_be_removed)
 
-        parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(levels[0])
+        parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(ifc_elem_path.levels[0])
 
-        return ValueRemovedFromIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
+        return ValueRemovedFromIterable(path, entity_tool.entity, ifc_elem_path.indices[0], parent_entity_tool.entity)

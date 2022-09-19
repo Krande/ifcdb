@@ -25,8 +25,8 @@ class IfcEntityValueEditor:
     new_value: Any
 
     def __post_init__(self):
-        self.levels, self.indices = get_elem_paths(self.elem, self.path)
-
+        ifc_elem_paths = get_elem_paths(self.elem, self.path)
+        self.levels, self.indices = ifc_elem_paths.levels, ifc_elem_paths.indices
         self.parent_entity = self.levels[-3]
         self.parent_index = self.indices[-2]
         self.last_entity = self.levels[-2]

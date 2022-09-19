@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Any
 
 import ifcopenshell
 
-from .entity_path import IfcValueToChange
-from .utils import get_elem_paths
+from ifcdb.diffing.entity_path import IfcValueToChange
+from ifcdb.diffing.utils import get_elem_paths
 
 _ifc_ent = ifcopenshell.entity_instance
 
 if TYPE_CHECKING:
-    from .tool import EntityDiffChange
+    from ifcdb.diffing.tool import EntityDiffChange
 
 
 @dataclass
@@ -66,8 +66,8 @@ class IfcEntityValueEditor:
     new_value: Any
 
     def __post_init__(self):
-        self.levels, self.indices = get_elem_paths(self.elem, self.path)
-
+        ifc_elem_path = get_elem_paths(self.elem, self.path)
+        self.levels, self.indices = ifc_elem_path.levels, ifc_elem_path.indices
         self.parent_entity = self.levels[-3]
         self.parent_index = self.indices[-2]
         self.last_entity = self.levels[-2]

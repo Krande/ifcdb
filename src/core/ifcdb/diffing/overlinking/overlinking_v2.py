@@ -9,7 +9,7 @@ import ifcopenshell
 _ifc_ent = ifcopenshell.entity_instance
 
 if TYPE_CHECKING:
-    from .tool import ValueChange
+    from ifcdb.diffing.tool import ValueChange
 
 
 @dataclass

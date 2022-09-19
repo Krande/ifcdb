@@ -6,7 +6,11 @@ from typing import Any
 
 from ifcdb.database.inserts import EdgeInsert
 from ifcdb.database.select import EdgeSelect
-from ifcdb.diffing.diff_types import PropUpdateType
+from ifcdb.diffing.types import (
+    ValueAddedToIterable,
+    ValueChange,
+    ValueRemovedFromIterable,
+)
 from ifcdb.utils import change_case
 
 _UPDATE_VAR = count(1)
@@ -35,48 +39,41 @@ class EdgeUpdate:
 
 @dataclass
 class EntityUpdateValue:
-    value: Any
-    old_value: Any
-    prop_update_type: PropUpdateType
-
-    key: str = None
-
-    # Optional params relevant only for tuple insertions
-    index: int | None = None
-    len: int | None = None
+    assignment_value: Any
+    value_data: ValueChange | ValueAddedToIterable | ValueRemovedFromIterable
 
     def to_edql_str(self) -> str:
-        if self.key is None:
+        if self.value_data.key is None:
             raise ValueError("Key cannot be zero")
 
-        if isinstance(self.value, (EdgeInsert, EdgeSelect)):
-            value = f"({self.value.name})"
+        if isinstance(self.assignment_value, (EdgeInsert, EdgeSelect)):
+            value = f"({self.assignment_value.name})"
         else:
-            value = self.value
+            value = self.assignment_value
 
-        edql_str = ""
-
-        if self.prop_update_type == PropUpdateType.UPDATE:
+        if isinstance(self.value_data, ValueChange):
             assignment_type = ":="
-        elif self.prop_update_type == PropUpdateType.ADD_TO_ITERABLE:
+        elif isinstance(self.value_data, ValueAddedToIterable):
             assignment_type = "+="
-        elif self.prop_update_type == PropUpdateType.REMOVE_FROM_ITERABLE:
+        elif isinstance(self.value_data, ValueRemovedFromIterable):
             assignment_type = "-="
         else:
-            raise NotImplementedError(f"Unsupported assignment type '{self.prop_update_type}'")
+            raise NotImplementedError(f"Unsupported assignment type '{self.value_data}'")
 
-        if self.index is not None:
+        edql_str = f"{self.value_data.key} {assignment_type}"
+
+        if isinstance(self.value_data, ValueChange) and self.value_data.tuple_len is not None:
             array_str = "["
-            for i in range(0, self.len):
+            for i in range(0, self.value_data.tuple_len):
                 if i != 0:
                     array_str += ", "
-                if i == self.index:
+                if i == self.value_data.index:
                     array_str += f"{value}"
                 else:
-                    array_str += f".{self.key}[{i}]"
+                    array_str += f".{self.value_data.key}[{i}]"
             array_str += "]"
-            edql_str += f"{self.key} {assignment_type} {array_str}\n"
+            edql_str += f" {array_str}\n"
         else:
-            edql_str += f"{self.key} {assignment_type} {value}\n"
+            edql_str += f" {value}\n"
 
         return edql_str

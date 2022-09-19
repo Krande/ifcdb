@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 
 def add_iterable_item(f: ifcopenshell.file, elem: ifcopenshell.entity_instance, path: str, value: dict):
-    levels, indices = get_elem_paths(elem, path, is_append_obj=True)
-    owning_entity = levels[-2]
-    last_index = indices[-2]
-    new_iterable = list(levels[-1])
+    elem_path = get_elem_paths(elem, path, is_append_obj=True)
+    owning_entity = elem_path.levels[-2]
+    last_index = elem_path.indices[-2]
+    new_iterable = list(elem_path.levels[-1])
     new_iterable.append(f.by_guid(value["GlobalId"]))
     setattr(owning_entity, last_index, tuple(new_iterable))
 
