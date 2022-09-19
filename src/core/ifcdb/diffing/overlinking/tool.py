@@ -26,13 +26,17 @@ class OverlinkResolver:
 
     def resolve(self) -> IfcDiffTool:
         ifc_diff_tool = self.ifc_diff_tool.copy()
-        for change in self.ifc_diff_tool.changed:
-            res = self.check_diff_entity(change)
-            if res is None:
+        for old_change in self.ifc_diff_tool.changed:
+            new_change = self.check_diff_entity(old_change)
+            if new_change is None:
                 continue
-            index = ifc_diff_tool.changed.index(change)
+
+            # remove old
+            index = ifc_diff_tool.changed.index(old_change)
             ifc_diff_tool.changed.pop(index)
-            ifc_diff_tool.changed.insert(index, res)
+
+            # insert new
+            ifc_diff_tool.changed.insert(index, new_change)
 
         return ifc_diff_tool
 
