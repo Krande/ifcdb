@@ -91,8 +91,8 @@ It would reduce number of selects in a single query to a minium, thus improving 
 **Uncertainty of persistent ID's of non-rooted IFC elements** 
 
 This would mean that the DB uuid map against IFC objects needs to persist. That would require the non-rooted IFC items 
-to have id's that persists over many sessions (e.g. a user edits the model locally in a Blender environment  
-and the user closes/reopens blender a few times). 
+to have id's that persists over many sessions (e.g. a user edits the model locally in a Blender environment and the 
+user closes/reopens blender a few times). 
 
 Would the numerical IFC-SPF id's persist over all those sessions?
 If so the numerical ID's could be used
