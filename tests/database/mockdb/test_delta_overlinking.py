@@ -10,11 +10,11 @@ def test_cube_edited_overlinked(my_cube, my_cube_edited):
     assert len(diff_tool.removed) == 0
 
     olr = OverlinkResolver(diff_tool)
-    olr.resolve()
+    new_diff_tool = olr.resolve()
 
-    # bulk_entity_handler = diff_tool.to_bulk_entity_handler()
-    # edql_str = bulk_entity_handler.to_edql_str()
-    # print(edql_str)
+    bulk_entity_handler = new_diff_tool.to_bulk_entity_handler()
+    edql_str = bulk_entity_handler.to_edql_str()
+    print(edql_str)
 
 
 def test_cube_edited_z_overlinked(my_cube, my_cube_edited_z):

@@ -33,7 +33,7 @@ def main(db_op: DbOperation):
 
 
 if __name__ == "__main__":
-    main(DbOperation.WIPE)
-    main(DbOperation.UPLOAD)
-    main(DbOperation.EDIT)
+    # main(DbOperation.WIPE)
+    # main(DbOperation.UPLOAD)
+    # main(DbOperation.EDIT)
     main(DbOperation.DOWNLOAD)

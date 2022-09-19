@@ -10,6 +10,7 @@ from ifcdb.diffing.types import (
     ValueChange,
     ValueRemovedFromIterable,
 )
+from ifcdb.entities import EntityTool
 
 from .inserts import EdgeInsert
 from .remove import EdgeRemove
@@ -94,8 +95,18 @@ def to_bulk_entity_handler(ifc_diff_tool: IfcDiffTool) -> BulkEntityHandler:
                 sr = PropSelectResolver(diff_el.root_entity, path, PropUpdateType.UPDATE)
                 new_selects = sr.get_resolved_selects()
                 last_select = add_to_selects(new_selects, selects, select_abs_path_map, c)
+                if isinstance(value.new_value, EntityTool):
+                    new_value = None
+                    for key, linked_obj in value.new_value.linked_objects.items():
+                        if value.new_value.entity == linked_obj:
+                            new_value = EdgeInsert(value.new_value.entity, key)
+                            inserts[key] = new_value
+                            continue
+                        inserts[key] = EdgeInsert(linked_obj, key)
+                else:
+                    new_value = value.new_value
 
-                update_value = EntityUpdateValue(value.new_value, value)
+                update_value = EntityUpdateValue(new_value, value)
                 eu = EdgeUpdate(last_select, update_value)
                 changes[eu.name] = eu
 

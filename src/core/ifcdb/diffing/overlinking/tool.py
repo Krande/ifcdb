@@ -15,6 +15,8 @@ from ifcdb.diffing.tool import (
 from ifcdb.diffing.utils import get_elem_paths
 from ifcdb.entities import EntityResolver
 
+OBJ_PLACE_STR = "ObjectPlacement"
+
 
 @dataclass
 class OverlinkResolver:
@@ -54,20 +56,49 @@ class OverlinkResolver:
 
         return inverse_elems
 
+    def replace_geom_placement(self, path: str, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance):
+        ifc_elem_path_old = get_elem_paths(el1, path)
+        ifc_elem_path_new = get_elem_paths(el2, path)
+        res1 = ifc_elem_path_old.get_related_ifc_object_placement()
+        res2 = ifc_elem_path_new.get_related_ifc_object_placement()
+        if len(res2) == 0:
+            return None
+
+        info_old = res1[0].location_object.get_info(recursive=True, include_identifier=False)
+        info_new = res2[0].location_object.get_info(recursive=True, include_identifier=False)
+        entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(res2[0].location_object)
+        key = res2[0].key
+        path_cropped = path.split(f"['{key}']")[0]
+        vc = ValueChange(path_cropped, entity_tool, key=key)
+
+        res = DeepDiff(info_old, info_new)
+        keys = list(res)
+
+        if len(keys) > 0:
+            return ReplaceValue(path_cropped, vc)
+
+        return None
+
     def replace_local_placements(
         self, path: str, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance
     ) -> ReplaceValue | None:
-        obj_place_old = getattr(el1, "ObjectPlacement")
+        obj_place_old = getattr(el1, OBJ_PLACE_STR)
+        obj_place_new = getattr(el2, OBJ_PLACE_STR)
+
         info_old = obj_place_old.get_info(recursive=True, include_identifier=False)
-        obj_place_new = getattr(el2, "ObjectPlacement")
         info_new = obj_place_new.get_info(recursive=True, include_identifier=False)
+        entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(obj_place_new)
+
+        key = OBJ_PLACE_STR
+        path_cropped = path.replace(path.split(f"{key}']")[-1], "")
+        vc = ValueChange(path_cropped, entity_tool, key=key)
+
         res = DeepDiff(info_old, info_new)
         keys = list(res)
-        entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(obj_place_new)
+
         if len(keys) > 0:
-            path_cropped = path.replace(path.split("ObjectPlacement']")[-1], "")
-            vc = ValueChange(path_cropped, entity_tool.entity, key="ObjectPlacement")
-            return ReplaceValue("ObjectPlacement", vc)
+            return ReplaceValue("root", vc)
+
         return None
 
     def check_diff_entity(self, diff_entity: EntityDiffChange) -> EntityDiffChange | None:
@@ -79,8 +110,15 @@ class OverlinkResolver:
             root_elem_new = self.ifc_diff_tool.f2.by_guid(root_entity)
             if self.replace_object_placements_when_changed:
                 new_diff = self.replace_local_placements(path, root_elem_original, root_elem_new)
+
                 if new_diff is not None:
                     path_to_be_replaced_by[path] = new_diff
+                    continue
+
+                other_diff = self.replace_geom_placement(path, root_elem_original, root_elem_new)
+                if other_diff is not None:
+                    path_to_be_replaced_by[path] = other_diff
+                    continue
             # inverses_old = self.check_inverse_relations_of_elem(self.ifc_diff_tool.f1, root_elem_original, path)
             # inverses_new = self.check_inverse_relations_of_elem(self.ifc_diff_tool.f2, root_elem_new, path)
         if len(path_to_be_replaced_by) == 0:

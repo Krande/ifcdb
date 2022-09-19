@@ -27,6 +27,26 @@ class IfcElemPath:
         index = len(self.levels) - level_index - 1
         return index
 
+    def get_related_ifc_object_placement(self) -> list[PlacementData]:
+        levels_rev = [x for x in self.levels]
+        levels_rev.reverse()
+
+        local_placements = []
+        for i, lvl in enumerate(levels_rev):
+            if isinstance(lvl, ifcopenshell.entity_instance) and lvl.is_a() == "IfcAxis2Placement3D":
+                index = len(self.levels) - i - 1
+                owner = self.levels[index - 1]
+                local_placements.append(PlacementData(owner, self.indices[index - 1], lvl))
+
+        return local_placements
+
+
+@dataclass
+class PlacementData:
+    owner: ifcopenshell.entity_instance
+    key: str
+    location_object: ifcopenshell.entity_instance
+
 
 def get_elem_paths(elem: ifcopenshell.entity_instance, path: str, is_append_obj=False) -> IfcElemPath:
     curr_elem = elem
