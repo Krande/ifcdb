@@ -48,7 +48,7 @@ async def post_file(file: UploadFile, user: User = Depends(azure_scheme), dbname
     with EdgeIO("ifc001", client=client) as io:
         existing_ifc_obj = io.to_ifcopenshell_object()
         if len(list(existing_ifc_obj.by_type("IfcRoot"))) > 0:
-            io.update_db_from_ifc_delta(existing_ifc_obj, ifc_io.ifc_obj)
+            io.update_db_from_ifc_delta(existing_ifc_obj, ifc_io.ifc_obj, resolve_overlinking=True)
             first_update = False
 
     if first_update is False:

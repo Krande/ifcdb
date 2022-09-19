@@ -4,7 +4,7 @@ import pathlib
 import subprocess
 
 
-blender_python = os.environ.get("BLENDER_PY", r"C:\Program Files\Blender Foundation\Blender 3.2\3.2\python")
+blender_python = os.environ.get("BLENDER_PY", r"C:\Program Files\Blender Foundation\Blender 3.3\3.3\python")
 python_prefix = os.environ.get("pythonLocation", blender_python)
 
 target = pathlib.Path(__file__).parent / "addons/bl_ifc_db/libs/site/packages"

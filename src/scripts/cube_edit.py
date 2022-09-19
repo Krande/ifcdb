@@ -19,7 +19,7 @@ def main(db_op: DbOperation):
     elif db_op == DbOperation.UPLOAD:
         upload(in_sequence=True)
     elif db_op == DbOperation.EDIT:
-        run_model_update("MyCubeEdited_Z.ifc")
+        run_model_update("MyCubeEdited.ifc", resolve_overlinking=True)
     elif db_op == DbOperation.ADD:
         run_model_update("MyCubeAdded.ifc")
     elif db_op == DbOperation.REVERT:
@@ -33,7 +33,7 @@ def main(db_op: DbOperation):
 
 
 if __name__ == "__main__":
-    # main(DbOperation.WIPE)
-    # main(DbOperation.UPLOAD)
+    main(DbOperation.WIPE)
+    main(DbOperation.UPLOAD)
     # main(DbOperation.EDIT)
     main(DbOperation.DOWNLOAD)

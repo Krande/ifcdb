@@ -1,6 +1,5 @@
 name: ifc-api
 channels:
-  - krande/label/dev
   - conda-forge
 dependencies:
   - python==3.10.5
@@ -16,3 +15,4 @@ dependencies:
       - pydantic[dotenv]
       - python-multipart
       - frozendict
+      - deepdiff

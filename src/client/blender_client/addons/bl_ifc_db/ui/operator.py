@@ -82,6 +82,10 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
             return {"FINISHED"}
 
         r = s.get(f"{api_url}/file", params={"dbname": props.db_name})
+        if r.status_code != 201:
+            logging.error(f"{r.text=}")
+            return {"FINISHED"}
+
         ifc_str = str(r.content[1:-1], encoding="utf8").replace(r"\n", "\n")
 
         if IfcStore.file is None:
@@ -100,15 +104,19 @@ class IfcDb_Pull_Operator(bpy.types.Operator):
             f.write(ifc_str)
 
         tmp_file = str(tmp_file)
-        IfcStore.load_file(tmp_file)
+        try:
+            IfcStore.load_file(tmp_file)
+        except ifcopenshell.Error as e:
+            logging.error(f"{tmp_file=}\n\n{ifc_str=}")
+            raise ifcopenshell.Error(e)
 
         context.scene.BIMProperties.ifc_file = tmp_file
         context.scene.BIMProjectProperties.is_loading = True
         context.scene.BIMProjectProperties.total_elements = len(tool.Ifc.get().by_type("IfcElement"))
 
         ifc: ifcopenshell.file = IfcStore.get_file()
-        if len(list(ifc.by_type('IfcRoot'))) == 0:
-            print('Downloaded IFC model has no rooted elements.')
+        if len(list(ifc.by_type("IfcRoot"))) == 0:
+            print("Downloaded IFC model has no rooted elements.")
             return None
 
         people = {ifcp.Identification: ifcp for ifcp in ifc.by_type("IfcPerson")}

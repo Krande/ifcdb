@@ -17,6 +17,7 @@ from ifcdb.database.getters.get_bulk import BulkGetter
 from ifcdb.database.inserts.seq_model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
 from ifcdb.diffing.tool import IfcDiffTool
+from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
 
@@ -175,10 +176,14 @@ class EdgeIO:
         print(f'Upload finished in "{end - start:.2f}" seconds')
         return ifc_io
 
-    def update_from_diff_tool(self, diff_tool: IfcDiffTool) -> None | str:
+    def update_from_diff_tool(self, diff_tool: IfcDiffTool, resolve_overlinking: bool = False) -> None | str:
         if diff_tool.contains_changes is False:
             print("No Changes to model detected")
             return None
+
+        if resolve_overlinking:
+            olr = OverlinkResolver(diff_tool)
+            diff_tool = olr.resolve()
 
         bulk_entity_handler = diff_tool.to_bulk_entity_handler()
 
@@ -194,7 +199,7 @@ class EdgeIO:
 
         print(f'Upload finished in "{end-start:.2f}" seconds')
 
-    def update_db_from_ifc_delta(self, updated_ifc, original_ifc=None, save_diff_as=None):
+    def update_db_from_ifc_delta(self, updated_ifc, original_ifc=None, save_diff_as=None, resolve_overlinking=False):
         def load_ifc_content(f: str | pathlib.Path | ifcopenshell.file) -> ifcopenshell.file:
             new_ifc = f if isinstance(f, ifcopenshell.file) else ifcopenshell.open(f)
             return new_ifc
@@ -210,7 +215,7 @@ class EdgeIO:
         if save_diff_as is not None:
             diff_tool.to_json_file(save_diff_as)
 
-        res = self.update_from_diff_tool(diff_tool)
+        res = self.update_from_diff_tool(diff_tool, resolve_overlinking=resolve_overlinking)
         print(res)
         return res
 

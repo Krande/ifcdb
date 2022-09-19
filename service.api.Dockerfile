@@ -7,7 +7,7 @@ ARG api_dir=./src/client/api
 #
 COPY ${api_dir}/environment.yml /code/environment.yml
 
-#
+# bump
 RUN conda env create -f /code/environment.yml
 SHELL ["conda", "run", "--no-capture-output", "-n", "ifc-api", "/bin/bash", "-c"]
 
