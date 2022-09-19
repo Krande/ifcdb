@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import ifcopenshell
 
-from .overlinking import IfcValueToChange
+from .entity_path import IfcValueToChange
 from .utils import get_elem_paths
 
 _ifc_ent = ifcopenshell.entity_instance

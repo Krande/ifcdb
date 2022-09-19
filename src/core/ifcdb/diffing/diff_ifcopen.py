@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import ifcopenshell
 from deepdiff import DeepDiff
 
+from .entity_path import IfcEntityValueEditor
 from .utils import get_elem_paths
 
 if TYPE_CHECKING:
@@ -81,7 +82,6 @@ def remove_elem(f: ifcopenshell.file, guid: str):
 
 
 def apply_diffs_ifcopenshell(f: ifcopenshell.file, diff_tool: IfcDiffTool):
-    from .overlinking import IfcEntityValueEditor
 
     for diff_el in diff_tool.added:
         add_elem(f, diff_el)

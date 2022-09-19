@@ -1,1 +1,3 @@
-from .bulk_insert import EdgeInsert
+from .base import EdgeInsert
+
+__all__ = ["EdgeInsert"]

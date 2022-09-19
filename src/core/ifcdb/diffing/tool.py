@@ -8,7 +8,18 @@ from dataclasses import dataclass, field
 import ifcopenshell
 from deepdiff import DeepDiff
 
-from ifcdb.database.bulk_handler_v2 import BulkEntityHandler, to_bulk_entity_handler
+from ifcdb.database.bulk_handler import BulkEntityHandler, to_bulk_entity_handler
+from ifcdb.diffing.diff_types import (
+    PropUpdateType,
+    ValueAddedToIterable,
+    ValueChange,
+    ValueRemovedFromIterable,
+)
+from ifcdb.diffing.entity_path import IfcValueToChange
+from ifcdb.diffing.overlinking_v1 import OverlinkResolver as OLR_v1
+from ifcdb.diffing.overlinking_v2 import OverlinkAlgo
+from ifcdb.diffing.overlinking_v2 import OverlinkResolver as OLR_v2
+from ifcdb.diffing.utils import get_elem_paths
 from ifcdb.entities import (
     Entity,
     EntityResolver,
@@ -16,17 +27,6 @@ from ifcdb.entities import (
     get_entity_from_source_dict,
 )
 from ifcdb.io.ifc.optimizing import general_optimization
-
-from .diff_types import (
-    PropUpdateType,
-    ValueAddedToIterable,
-    ValueChange,
-    ValueRemovedFromIterable,
-)
-from .overlinking import IfcValueToChange, OverlinkAlgo
-from .overlinking import OverlinkResolver as OLR_v2
-from .overlinking_v1 import OverlinkResolver as OLR_v1
-from .utils import get_elem_paths
 
 _ifc_ent = ifcopenshell.entity_instance
 _guid = "GlobalId"
@@ -79,6 +79,8 @@ class EntityDiffAdd(EntityDiffBase):
 
 @dataclass
 class EntityDiffRemove(EntityDiffBase):
+    removed: Entity
+
     def to_dict(self) -> dict:
         return dict(guid=self.guid)
 
@@ -117,7 +119,8 @@ class IfcDiffTool:
 
         for guid in removed:
             el = f1.by_guid(guid)
-            self.removed.append(EntityDiffRemove(guid, el.is_a()))
+            entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(el)
+            self.removed.append(EntityDiffRemove(guid, el.is_a(), entity_tool.entity))
 
         for guid in added:
             el = f2.by_guid(guid)
@@ -179,7 +182,8 @@ class IfcDiffTool:
         if len(keys) > 0:
             entity = get_entity_from_source_dict(info1, schema_ver=self.schema_ver)
             diff = {key: res[key] for key in keys}
-            vcs = diff_to_value_changes(self.f2, el1.GlobalId, diff)
+            dr = DiffResolver(self.f1, self.f2)
+            vcs = dr.diff_to_value_changes(el1.GlobalId, diff)
             return EntityDiffChange(el1.GlobalId, el1.is_a(), diff, vcs, entity)
 
         return None
@@ -238,58 +242,62 @@ def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:
     return copied_source
 
 
-def path_to_value_change(path: str, elem: _ifc_ent, old_value, new_value) -> ValueChange:
-    levels, indices = get_elem_paths(elem, path)
-    levels_rev = [x for x in levels]
-    levels_rev.reverse()
+@dataclass
+class DiffResolver:
+    f1: ifcopenshell.file
+    f2: ifcopenshell.file
 
-    ifc_elem_to_change = None
-    level_index = None
-    for i, lvl in enumerate(levels_rev):
-        if isinstance(lvl, _ifc_ent):
-            ifc_elem_to_change = lvl
-            level_index = i
-            break
+    def diff_to_value_changes(
+        self, guid: str, diff: dict
+    ) -> dict[str, ValueChange | ValueRemovedFromIterable | ValueAddedToIterable]:
+        vc = dict()
+        elem = self.f2.by_guid(guid)
+        for key, value in diff.items():
+            safe_key = PropUpdateType.get_prop_type(key)
+            for path, value_changes in value.items():
+                if safe_key == PropUpdateType.UPDATE:
+                    vc[path] = self.path_to_value_change(path, elem, **value_changes)
+                elif safe_key == PropUpdateType.ADD_TO_ITERABLE:
+                    vc[path] = self.path_to_value_add_to_iterable(path, elem)
+                elif safe_key == PropUpdateType.REMOVE_FROM_ITERABLE:
+                    vc[path] = self.path_to_value_remove_from_iterable(path, guid)
+                else:
+                    raise ValueError(f'Unrecognized key "{safe_key}"')
 
-    # Insert a new IfcLocalPlacement if path root i
-    index = len(levels) - level_index
-    key = indices[index - 1]
-    new_value_alt = levels[index]
+        return vc
 
-    return ValueChange(path, old_value, new_value, key, ifc_elem_to_change, levels, indices, new_value_alt)
+    def path_to_value_change(self, path: str, elem: _ifc_ent, old_value, new_value) -> ValueChange:
+        levels, indices = get_elem_paths(elem, path)
+        levels_rev = [x for x in levels]
+        levels_rev.reverse()
 
+        ifc_elem_to_change = None
+        level_index = None
+        for i, lvl in enumerate(levels_rev):
+            if isinstance(lvl, _ifc_ent):
+                ifc_elem_to_change = lvl
+                level_index = i
+                break
 
-def path_to_value_add_to_iterable(path, elem, guid) -> ValueAddedToIterable:
-    levels, indices = get_elem_paths(elem, path)
-    elem_to_be_added = levels[-1]
-    parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
-    entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem_to_be_added)
-    return ValueAddedToIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
+        index = len(levels) - level_index
+        key = indices[index - 1]
+        new_value_alt = levels[index]
 
+        return ValueChange(path, old_value, new_value, key, ifc_elem_to_change, levels, indices, new_value_alt)
 
-def path_to_value_remove_from_iterable(path, elem) -> ValueRemovedFromIterable:
-    levels, indices = get_elem_paths(elem, path)
-    entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
-    parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(levels[0])
+    def path_to_value_add_to_iterable(self, path, elem) -> ValueAddedToIterable:
+        levels, indices = get_elem_paths(elem, path)
+        elem_to_be_added = levels[-1]
+        parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem)
+        entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem_to_be_added)
+        return ValueAddedToIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
 
-    return ValueRemovedFromIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)
+    def path_to_value_remove_from_iterable(self, path, guid) -> ValueRemovedFromIterable:
+        elem_old = self.f1.by_guid(guid)
+        levels, indices = get_elem_paths(elem_old, path)
+        elem_to_be_removed = levels[-1]
+        entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(elem_to_be_removed)
 
+        parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(levels[0])
 
-def diff_to_value_changes(
-    f, guid: str, diff: dict
-) -> dict[str, ValueChange | ValueRemovedFromIterable | ValueAddedToIterable]:
-    vc = dict()
-    elem = f.by_guid(guid)
-    for key, value in diff.items():
-        safe_key = PropUpdateType.get_prop_type(key)
-        for path, value_changes in value.items():
-            if safe_key == PropUpdateType.UPDATE:
-                vc[path] = path_to_value_change(path, elem, **value_changes)
-            elif safe_key == PropUpdateType.ADD_TO_ITERABLE:
-                vc[path] = path_to_value_add_to_iterable(path, elem, guid)
-            elif safe_key == PropUpdateType.REMOVE_FROM_ITERABLE:
-                vc[path] = path_to_value_remove_from_iterable(path, elem)
-            else:
-                raise ValueError(f'Unrecognized key "{safe_key}"')
-
-    return vc
+        return ValueRemovedFromIterable(path, entity_tool.entity, indices[0], parent_entity_tool.entity)

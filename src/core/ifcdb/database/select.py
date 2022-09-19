@@ -2,15 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from ifcdb.diffing.diff_types import PropUpdateType
 from ifcdb.diffing.utils import dict_path_to_iterable
 from ifcdb.entities import Entity
-
-if TYPE_CHECKING:
-    from ifcdb.database.updates.bulk_updates import EntityUpdateValue
-    from ifcdb.diffing.tool import ValueChange
 
 
 class FilterType(Enum):
@@ -33,7 +29,7 @@ class EdgeSelect:
     name: str
 
     entity_top: Entity | EdgeSelect
-    entity_path: str | None
+    entity_path: str | None = None
     entity_index: int = None
 
     is_multi_link: bool = False
@@ -172,7 +168,7 @@ class PropSelectResolver:
     def _resolve_classes(
         self, entity: Entity = None, classes: list[str] = None, lvl: int = 0, levels: list[str] = None
     ) -> list[str]:
-        from ifcdb.database.updates.bulk_updates import PropUpdateType
+        from ifcdb.database.updates import PropUpdateType
 
         if levels is None:
             levels = list(dict_path_to_iterable(self.property_path))
