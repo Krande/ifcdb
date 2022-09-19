@@ -18,8 +18,8 @@ def mock_db_name():
 
 
 @pytest.mark.anyio
-async def test_auth_view(client: AsyncClient, mock_db_name):
-    response = await client.get("/users", params={"dbname": mock_db_name})
+async def test_auth_view(unwanted_client: AsyncClient, mock_db_name):
+    response = await unwanted_client.get("/users", params={"dbname": mock_db_name})
     assert response.status_code == 401
 
 

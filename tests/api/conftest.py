@@ -44,7 +44,7 @@ async def admin_user_client():
 
 
 @pytest.fixture
-async def client():
+async def unwanted_client():
     async with AsyncClient(app=fastapi_app, base_url="http://test") as ac:
         yield ac
 

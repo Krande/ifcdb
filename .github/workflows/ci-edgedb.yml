@@ -12,7 +12,7 @@ jobs:
     name: CI with EdgeDB action
     services:
       edgedb:
-        image: edgedb/edgedb:2.1
+        image: edgedb/edgedb:2.2
         env:
           EDGEDB_SERVER_SECURITY: insecure_dev_mode
           EDGEDB_USER: ifcdbadmin
