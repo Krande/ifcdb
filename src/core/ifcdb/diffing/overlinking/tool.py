@@ -61,8 +61,8 @@ class OverlinkResolver:
         return inverse_elems
 
     def replace_geom_placement(self, path: str, el1: ifcopenshell.entity_instance, el2: ifcopenshell.entity_instance):
-        ifc_elem_path_old = get_elem_paths(el1, path)
         ifc_elem_path_new = get_elem_paths(el2, path)
+        ifc_elem_path_old = get_elem_paths(el1, path)
         res1 = ifc_elem_path_old.get_related_ifc_object_placement()
         res2 = ifc_elem_path_new.get_related_ifc_object_placement()
         if len(res2) == 0:
@@ -112,13 +112,15 @@ class OverlinkResolver:
         for path, vc in diff_entity.value_changes.items():
             root_elem_original = self.ifc_diff_tool.f1.by_guid(root_entity)
             root_elem_new = self.ifc_diff_tool.f2.by_guid(root_entity)
+            if isinstance(vc, ValueChange) is False:
+                continue
             if self.replace_object_placements_when_changed:
-                new_diff = self.replace_local_placements(path, root_elem_original, root_elem_new)
+                if hasattr(root_elem_original, OBJ_PLACE_STR):
+                    new_diff = self.replace_local_placements(path, root_elem_original, root_elem_new)
 
-                if new_diff is not None:
-                    path_to_be_replaced_by[path] = new_diff
-                    continue
-
+                    if new_diff is not None:
+                        path_to_be_replaced_by[path] = new_diff
+                        continue
                 other_diff = self.replace_geom_placement(path, root_elem_original, root_elem_new)
                 if other_diff is not None:
                     path_to_be_replaced_by[path] = other_diff

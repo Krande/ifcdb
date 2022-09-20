@@ -5,6 +5,7 @@ ADD_CLASSES = [
     "IfcColumn",
     "IfcPerson",
     "IfcIndexedPolygonalFace",
+    "IfcMaterial"
 ]
 DEMO_PROJECT_CLASSES = [
     "IfcColourRgb",

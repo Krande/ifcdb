@@ -136,7 +136,7 @@ class IfcDiffTool:
         info1 = el1.get_info(recursive=True, include_identifier=False)
         info2 = el2.get_info(recursive=True, include_identifier=False)
 
-        # Walk hierarchy and pop linked elements that are already diffed
+        # Walk hierarchy and pop linked rooted elements that are already diffed
         new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
         new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
 

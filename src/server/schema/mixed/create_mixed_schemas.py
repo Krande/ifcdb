@@ -1,4 +1,4 @@
-from shared import ADD_CLASSES, FILES
+from shared import ADD_CLASSES, FILES, DEMO_PROJECT_CLASSES
 
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
@@ -12,4 +12,4 @@ def main(database: str, ifc_file: list[str], extra_ifc_classes: list[str]):
 
 
 if __name__ == "__main__":
-    main("ifc001", FILES, ADD_CLASSES)
+    main("ifc001", FILES, ADD_CLASSES + DEMO_PROJECT_CLASSES)

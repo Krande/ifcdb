@@ -1,13 +1,10 @@
+import ifcopenshell
 import os
 import pathlib
 import time
 
-import ifcopenshell
-
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
-from ifcdb.diffing.tool import IfcDiffTool
-from ifcdb.diffing.overlinking.tool import OverlinkResolver
 
 CUBE_DIR = top_dir() / "files/MyCube"
 
@@ -44,7 +41,6 @@ def run_model_update(filename: str, extra_identifier: str = None, resolve_overli
         with open(f"temp/before_{identifier}_model.ifc", "w") as f:
             f.write(ifc_obj.wrapped_data.to_string())
         diff_log = f"temp/edit_{identifier}_diff.json"
-
 
         io.update_db_from_ifc_delta(f_new, ifc_obj, save_diff_as=diff_log, resolve_overlinking=resolve_overlinking)
 

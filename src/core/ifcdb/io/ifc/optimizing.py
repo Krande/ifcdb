@@ -32,7 +32,7 @@ def recycle_non_rooted(ifc_file: ifcopenshell.file) -> ifcopenshell.file:
     return ifc_file.from_string(new)
 
 
-def general_optimization(ifc_file) -> ifcopenshell.file:
+def general_optimization(ifc_file: ifcopenshell.file) -> ifcopenshell.file:
     def generate_instances_and_references():
         """
         Generator which yields an entity id and
