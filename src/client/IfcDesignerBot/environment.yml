@@ -1,0 +1,11 @@
+name: ifc-designer-bot
+channels:
+  - ifcopenshell
+  - conda-forge
+  - krande
+dependencies:
+  - ada-py
+  - pip
+  - pip:
+    - azure-storage-queue
+    - python-dotenv

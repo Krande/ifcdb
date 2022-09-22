@@ -16,3 +16,4 @@ dependencies:
       - python-multipart
       - frozendict
       - deepdiff
+      - azure-storage-queue

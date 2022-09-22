@@ -1,10 +1,16 @@
 # docker-compose.yml
 version: '3'
 services:
-  IFC-API-Azure:
+  ifc-designer-bot:
+    build:
+      context: ../../../
+      dockerfile: ./src/client/IfcDesignerBot/service-ifc-designer-bot.Dockerfile
+    environment:
+      IFCDB_REST_API_URL: 'localhost:8000'
+  ifc-db-api:
     image: ifc-api/latest
     build:
-      context: .
+      context: ../../../
       dockerfile: service.api.Dockerfile
     volumes:
       - "./src/client/api/config/azure:/code/certs"

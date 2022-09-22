@@ -5,6 +5,7 @@ from http import HTTPStatus
 
 from app.dependencies import azure_scheme
 from app.internal.database import get_client
+from app.internal.event_bus import IfcDbQueueMessage, QueueHandler
 from fastapi import APIRouter, Depends, Security, UploadFile
 from fastapi_azure_auth.user import User
 
@@ -62,4 +63,9 @@ async def post_file(file: UploadFile, user: User = Depends(azure_scheme), dbname
                 query_res = json.loads(single_json)
                 sq.uuid_map[item] = query_res["id"]
 
+    if user.name is None and "role1" in user.roles:
+        return "SUCCESS"
+
+    qh = QueueHandler()
+    qh.send_update(IfcDbQueueMessage())
     return "SUCCESS"

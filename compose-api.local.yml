@@ -4,7 +4,7 @@ services:
   IFC-API-Local:
     image: ifc-api/latest
     build:
-      context: ../krande-IfcOpenShell/src/blenderbim
+      context: .
       dockerfile: Dockerfile
     pull_policy: build
     environment:
