@@ -167,7 +167,11 @@ class EdgeIO:
                 if method == INSERTS.SEQ:
                     sq = InsertSeq(ifc_io.schema, specific_ifc_ids=limit_ifc_ids)
                     for item, insert_str in sq.create_bulk_insert_str(ifc_items):
-                        single_json = tx.query_single_json(insert_str)
+                        try:
+                            single_json = tx.query_single_json(insert_str)
+                        except edgedb.errors.InvalidLinkTargetError as e:
+                            logging.error(insert_str)
+                            raise edgedb.errors.InvalidLinkTargetError(e)
                         query_res = json.loads(single_json)
                         sq.uuid_map[item] = query_res["id"]
                 else:
