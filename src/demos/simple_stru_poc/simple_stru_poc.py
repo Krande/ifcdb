@@ -1,9 +1,7 @@
 import ada
-from ada.config import Settings
 from ada.param_models.basic_module import SimpleStru
-from ifcdb import EdgeIO
 
-Settings.make_param_elbows = True
+from ifcdb import EdgeIO
 
 
 def upload_first():
