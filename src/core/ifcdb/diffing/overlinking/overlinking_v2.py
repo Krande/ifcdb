@@ -49,4 +49,3 @@ class OverlinkResolver:
         object_to_replace = inverse_elems[-1]
         res = self.value_change.levels.index(object_to_replace)
         _ = self.value_change.indices[res - 1]
-        print("sd")

@@ -689,25 +689,32 @@ class IfcSchemaModel:
         esdl_str += "}"
         return esdl_str
 
-    def to_esdl_file(self, esdl_file_path: str | pathlib.Path, entities: list[str], module_name="default") -> None:
+    def to_esdl_file(
+        self, esdl_file_path: os.PathLike, entities: list[str], module_name="default", use_new_esdl_engine=False
+    ) -> None:
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)
 
         with open(esdl_file_path, "w") as f:
             f.write(self.to_esdl_str(entities, module_name))
 
-    def to_db_entities(self, specific_entities: list[str] = None) -> list[DbEntity]:
+    def to_db_entities(self, entities: list[str] = None, return_as_dict=False) -> list[DbEntity] | dict[str, DbEntity]:
         from ifcdb.schema.new_model import DbEntityResolver
 
-        if specific_entities is not None:
-            all_ent_str = self.get_related_entities(specific_entities)
+        if entities is not None:
+            all_ent_str = self.get_related_entities(entities)
         else:
             all_ent_str = self.get_all_entities(sort=True)
 
         all_ents = [self.get_entity_by_name(x) for x in all_ent_str]
 
         der = DbEntityResolver(all_ents)
-        return der.get_db_entities()
+        db_entities = der.get_db_entities()
+
+        if return_as_dict is True:
+            return {r.name: r for r in db_entities}
+
+        return db_entities
 
 
 IfcSchemaType = TypeVar("IfcSchemaType", EntityModel, EnumModel, TypeModel, SelectModel, IntermediateClass)

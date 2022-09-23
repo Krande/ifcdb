@@ -32,7 +32,6 @@ def test_ifc_rel_defines_by_properties():
     ifc_io = IfcIO(ifc_file=top_dir() / "files/MyBeam.ifc")
     item = list(filter(lambda x: x.is_a() == ifc_class, ifc_io.get_ifc_objects_by_sorted_insert_order_flat()))[0]
 
-    # schema_entity = er.schema_model.get_entity_by_name(ifc_class)
     entity_tool = er.create_entity_tool_from_ifcopenshell_entity(item)
 
     related_inserts = entity_tool.linked_objects
@@ -48,24 +47,18 @@ def test_measure_with_unit():
     schema = "IFC4x1"
     ifc_class = "IfcMeasureWithUnit"
     er = EntityResolver(schema)
-    res3 = er.schema_model.to_db_entities([ifc_class])
-    rmap = {r.name: r for r in res3}
-    schema_obj = rmap.get(ifc_class)
-
+    schema_obj = er.schema_model.to_db_entities([ifc_class], return_as_dict=True).get(ifc_class)
     _ = schema_obj.to_schema_str()
 
-    ifc_io = IfcIO(ifc_file=top_dir() / "files/MyBeam.ifc")
+    ifc_io = IfcIO(ifc_file=top_dir() / "files/SimpleStru.ifc")
     items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-    # res = er.create_ordered_insert_entities_from_multiple_entities(items)
-
     item = list(filter(lambda x: x.is_a() == ifc_class, items))[0]
 
-    # schema_entity = er.schema_model.get_entity_by_name(ifc_class)
     entity_tool = er.create_entity_tool_from_ifcopenshell_entity(item)
 
     related_inserts = entity_tool.linked_objects
     insert = EdgeInsert(entity_tool.entity)
-    res = insert.entity.links["RelatingPropertyDefinition"]
+    res = insert.entity.links["UnitComponent"]
     link_insert = EdgeInsert(related_inserts[res.temp_unique_identifier])
     link_str = link_insert.to_edql_str(assign_to_variable=True)
 

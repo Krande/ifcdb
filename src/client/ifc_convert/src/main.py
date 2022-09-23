@@ -59,7 +59,6 @@ def get_geom(product, shape, f):
     num_vertex_indices = len(geometry.faces)
 
     color = get_colour(product, geometry, f)
-    print("sd")
 
 
 def convert_ifc_file_to_viz_mesh(ifc_path):

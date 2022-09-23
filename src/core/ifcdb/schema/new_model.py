@@ -33,8 +33,6 @@ class DbEntityResolver:
     to_be_updated_later: list[DbEntityUpdate] = field(default_factory=list)
 
     def convert_entity(self, entity: _ENTITY_CLASS) -> DbEntity | None:
-        entity_name = entity.name
-
         if isinstance(entity, TypeModel):
             value = get_base_type_name(entity.entity)
             return DbEntity(entity.name, props={entity.name: DbProp(value)})
@@ -66,7 +64,8 @@ class DbEntityResolver:
 
             links: dict[str, DbLink] = dict()
             props: dict[str, DbProp] = dict()
-            db_entity = DbEntity(entity_name, links, props, parent=db_parent)
+            db_entity = DbEntity(entity.name, links, props, parent=db_parent)
+
             for val in entity.get_attributes():
                 val_name = val.name
                 if self.is_val_prop(val):
@@ -82,7 +81,7 @@ class DbEntityResolver:
 
         elif isinstance(entity, IntermediateClass):
             links = dict()
-            db_entity = DbEntity(entity_name, links=links)
+            db_entity = DbEntity(entity.name, links=links)
             link = self.get_link(entity.source_attribute)
             if link is None:
                 self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, entity.source_attribute))
@@ -90,6 +89,30 @@ class DbEntityResolver:
             return
         else:
             raise NotImplementedError()
+
+    def update_db_entities(self, update_entity: DbEntityUpdate):
+        if isinstance(update_entity.val, list):
+            # These are select objects
+            entity = update_entity.db_entity
+            for missing_entity in update_entity.val:
+                link = entity.links[entity.name]
+                existing_obj = self.db_entities.get(missing_entity.name, None)
+                if existing_obj is None:
+                    raise ValueError("")
+                if None in link.link_to:
+                    index = link.link_to.index(None)
+                    link.link_to.pop(index)
+                link.link_to.append(existing_obj)
+        else:
+            key = update_entity.val.name
+            value = update_entity.db_entity.links.get(key)
+            if value is not None:
+                raise ValueError
+            link = self.get_link(update_entity.val)
+            if link is None:
+                raise ValueError("")
+
+            update_entity.db_entity.links[key] = link
 
     def is_val_prop(self, val: AttributeModel) -> bool:
         array_ref = val.array_ref()
@@ -143,32 +166,6 @@ class DbEntityResolver:
             self.update_db_entities(entity)
 
         return list(self.db_entities.values())
-
-    def update_db_entities(self, update_entity: DbEntityUpdate):
-        if isinstance(update_entity.val, list):
-            # These are select objects
-            entity = update_entity.db_entity
-            for missing_entity in update_entity.val:
-                link = entity.links[entity.name]
-                existing_obj = self.db_entities.get(missing_entity.name, None)
-                if existing_obj is None:
-                    raise ValueError("")
-                if None in link.link_to:
-                    index = link.link_to.index(None)
-                    link.link_to.pop(index)
-                link.link_to.append(existing_obj)
-                print("sd")
-        else:
-            keys = update_entity.db_entity.links.keys()
-            for key in keys:
-                value = update_entity.db_entity.links.get(key)
-                if value is not None:
-                    continue
-                link = self.get_link(update_entity.val)
-                if link is None:
-                    raise ValueError("")
-
-                update_entity.db_entity.links[key] = link
 
 
 class ListTypes(Enum):

@@ -118,9 +118,6 @@ class EntityResolver:
         if linked_objects is None:
             linked_objects: dict[_IFC_ENTITY, Entity] = dict()
 
-        if el.is_a() == "IfcMeasureWithUnit":
-            print("sd")
-
         def walk(source) -> Entity | dict | tuple | float | int | str:
             nonlocal linked_objects
             if isinstance(source, _IFC_ENTITY):
