@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import count
 
 from ifcdb.entities import Entity
 from ifcdb.utils import change_case
-from itertools import count
 
 _INSERT_VAR = count()
 
@@ -22,6 +22,7 @@ class EdgeInsert:
         indent = "" if indent_override is None else indent_override
         props = ""
         props_writable = {p: v for p, v in self.entity.props.items() if v is not None}
+
         if len(props_writable) > 0:
             props = to_props_str(self.entity, sep=prop_sep)
         links = ""
@@ -46,11 +47,21 @@ def to_links_str(entity: Entity, sep=","):
         if value is None:
             continue
 
-        if key == "wrappedValue":
-            print("sd")
-
         if isinstance(value, Entity):
-            lstr += f"{key}:= {link_select(value)}{sep}"
+            wrapped_value = value.props.get("wrappedValue", None)
+            if wrapped_value is not None:
+                if isinstance(wrapped_value, str):
+                    vstr = f"'{wrapped_value}'"
+                else:
+                    vstr = f"{wrapped_value}"
+                lstr += (
+                    f"{key}:= (INSERT IfcValue {{ "
+                    f"`IfcValue` := (INSERT {value.name} {{ `{value.name}` := {vstr} }}) }}){sep}"
+                )
+            elif value.uuid is not None:
+                lstr += f"{key}:= {link_select(value, wrap_select=True)}{sep}"
+            else:
+                lstr += f"{key}:= {link_select(value)}{sep}"
         elif isinstance(value, tuple):
             lstr += f"{key}:= {{"
             lstr += ",".join([link_select(v, wrap_select=True) for v in value])

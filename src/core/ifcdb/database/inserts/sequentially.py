@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-import ifcopenshell
 from dataclasses import dataclass
 
+import ifcopenshell
+
+from ifcdb.database.inserts.base import EdgeInsert
 from ifcdb.database.inserts.seq_model import InsertBase
 
 _IFC_ENTITY = ifcopenshell.entity_instance
@@ -17,3 +19,10 @@ class InsertSeq(InsertBase):
             if silent is False:
                 print(f'inserting ifc item ({i} of {len(ifc_items)}) "{item}"')
             yield item, self.create_entity_insert_str(item)
+
+    def create_bulk_entity_inserts(self, ifc_items: list[_IFC_ENTITY], silent=False) -> list[EdgeInsert]:
+        from ifcdb.entities import EntityResolver
+
+        er = EntityResolver(self.ifc_schema)
+        res = er.create_ordered_insert_entities_from_multiple_entities(ifc_items)
+        return [EdgeInsert(r) for r in res]

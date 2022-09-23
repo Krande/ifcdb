@@ -5,7 +5,7 @@ from ifcdb import EdgeIO
 
 
 def upload_first():
-    a = ada.Assembly("PoC-Stru") / SimpleStru("Basic ")
+    a = ada.Assembly("PoC-Stru") / SimpleStru("A Simple Structure")
     ifc_stringio_obj = a.to_ifc(return_file_obj=True)
     with EdgeIO("simplestru", load_env=True) as io:
         io.wipe_database()

@@ -4,7 +4,7 @@ import logging
 import os
 import pathlib
 from dataclasses import dataclass, field
-from typing import ClassVar, Dict, List, TypeVar, Union
+from typing import TYPE_CHECKING, ClassVar, Dict, List, TypeVar, Union
 
 import ifcopenshell
 from toposort import toposort_flatten
@@ -18,6 +18,9 @@ from .utils import (
 )
 
 wrap = ifcopenshell.ifcopenshell_wrapper
+
+if TYPE_CHECKING:
+    from .new_model import DbEntity
 
 
 @dataclass
@@ -600,7 +603,9 @@ class IfcSchemaModel:
             res = entity_dep_map.get(stype)
             if res is None:
                 continue
-            # entity_dep_map[stype] = []
+            # parent_obj = self.get_entity_by_name(stype)
+            # child_types = [self.get_entity_by_name(r) for r in res]
+            entity_dep_map[stype] = []
         circular_deps = {
             "IfcBooleanClippingResult": {"IfcBooleanResult"},
             "IfcBooleanOperand": {"IfcBooleanResult"},
@@ -622,8 +627,9 @@ class IfcSchemaModel:
         }
         logging.info(circular_deps)
 
-    def get_all_entities(self):
+    def get_all_entities(self, sort=False):
         entity_dep_map = dict()
+        entity_model_dep_map = dict()
         for type_name in self.base_types.keys():
             entity_dep_map[type_name] = []
         for type_name in self.enum_types.keys():
@@ -632,13 +638,13 @@ class IfcSchemaModel:
             self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
         for entity_name in self.entities.keys():
             self._find_dependencies(entity_name, entity_dep_map, search_recursively=False)
+            self._find_dependencies(entity_name, entity_model_dep_map, search_recursively=False)
 
-        if self.modify_circular_deps is False:
+        if self.modify_circular_deps is False and sort is False:
             return list(entity_dep_map.keys())
 
         self._fix_circular_deps(entity_dep_map)
-        res = list(toposort_flatten(entity_dep_map, sort=True))
-        return res
+        return list(toposort_flatten(entity_dep_map, sort=True))
 
     def get_related_entities(self, entity_names: Union[str, List[str]], entity_dep_map: dict = None) -> list[str]:
         if isinstance(entity_names, str):
@@ -654,7 +660,7 @@ class IfcSchemaModel:
         res = list(toposort_flatten(entity_dep_map, sort=True))
         return res
 
-    def get_entity_by_name(self, name: str) -> Union[EntityModel, EnumModel, TypeModel, SelectModel, IntermediateClass]:
+    def get_entity_by_name(self, name: str) -> EntityModel | EnumModel | TypeModel | SelectModel | IntermediateClass:
         for entity_types in [
             self.select_types,
             self.base_types,
@@ -689,6 +695,14 @@ class IfcSchemaModel:
 
         with open(esdl_file_path, "w") as f:
             f.write(self.to_esdl_str(entities, module_name))
+
+    def to_db_entities(self) -> list[DbEntity]:
+        from ifcdb.schema.new_model import DbEntityResolver
+
+        all_ents = [self.get_entity_by_name(x) for x in self.get_all_entities(sort=True)]
+
+        der = DbEntityResolver(all_ents)
+        return der.get_db_entities()
 
 
 IfcSchemaType = TypeVar("IfcSchemaType", EntityModel, EnumModel, TypeModel, SelectModel, IntermediateClass)

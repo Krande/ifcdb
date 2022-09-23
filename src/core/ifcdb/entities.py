@@ -5,8 +5,9 @@ from itertools import count
 from typing import Any, Iterable
 
 import ifcopenshell
+import toposort
 
-from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel
+from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel, TypeModel
 from ifcdb.utils import change_case
 
 _IFC_ENTITY = ifcopenshell.entity_instance
@@ -35,12 +36,30 @@ class EntityResolver:
         if self.schema_model is None:
             self.schema_model = IfcSchemaModel(schema_version=self.ifc_schema)
 
+    def create_ordered_insert_entities_from_multiple_entities(self, items: list[_IFC_ENTITY]):
+        linked_objects: dict[ifcopenshell.entity_instance, Entity] = dict()
+        ent_tools = []
+        for item in items:
+            ent_tool = self.create_entity_tool_from_ifcopenshell_entity(item, linked_objects)
+            linked_objects[item] = ent_tool.entity
+            ent_tools.append(ent_tool)
+
+        entity_identifier_map = {x.temp_unique_identifier: x for x in linked_objects.values()}
+        # resolve insert order
+        ref_map = {e.entity.temp_unique_identifier: list(e.linked_objects.keys()) for e in ent_tools}
+        sorted_map = list(toposort.toposort_flatten(ref_map))
+
+        return [entity_identifier_map.get(s) for s in sorted_map]
+
     def create_insert_entity_from_ifc_entity(self, item: _IFC_ENTITY) -> Entity:
         existing_entity = self.uuid_map.get(item, None)
         if existing_entity is not None:
             return existing_entity
 
         entity = self.schema_model.get_entity_by_name(item.is_a())
+        if isinstance(entity, TypeModel):
+            return item.wrappedValue
+
         all_atts = entity.get_entity_atts(item)
         links = dict()
         props = dict()
@@ -95,12 +114,16 @@ class EntityResolver:
         return Entity(class_type, props, links)
 
     @staticmethod
-    def create_entity_tool_from_ifcopenshell_entity(el: ifcopenshell.entity_instance) -> EntityTool:
-        linked_objects: dict[ifcopenshell.entity_instance, Entity] = dict()
+    def create_entity_tool_from_ifcopenshell_entity(el: _IFC_ENTITY, linked_objects=None) -> EntityTool:
+        if linked_objects is None:
+            linked_objects: dict[_IFC_ENTITY, Entity] = dict()
+
+        if el.is_a() == "IfcMeasureWithUnit":
+            print("sd")
 
         def walk(source) -> Entity | dict | tuple | float | int | str:
             nonlocal linked_objects
-            if isinstance(source, ifcopenshell.entity_instance):
+            if isinstance(source, _IFC_ENTITY):
                 existing_obj = linked_objects.get(source, None)
                 if existing_obj is not None:
                     return existing_obj
@@ -110,7 +133,7 @@ class EntityResolver:
                 for key, value in info.items():
                     if key in ("type",):
                         continue
-                    if isinstance(value, ifcopenshell.entity_instance):
+                    if isinstance(value, _IFC_ENTITY):
                         links[key] = walk(value)
                     elif isinstance(value, tuple):
                         res = walk(value)

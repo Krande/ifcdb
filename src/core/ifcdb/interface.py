@@ -16,8 +16,8 @@ from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import BulkGetter
 from ifcdb.database.inserts.seq_model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
-from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.diffing.overlinking.tool import OverlinkResolver
+from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
 
@@ -166,14 +166,40 @@ class EdgeIO:
             with tx:
                 if method == INSERTS.SEQ:
                     sq = InsertSeq(ifc_io.schema, specific_ifc_ids=limit_ifc_ids)
-                    for item, insert_str in sq.create_bulk_insert_str(ifc_items):
+                    inserts = sq.create_bulk_entity_inserts(ifc_items=ifc_items)
+                    skipped_map = dict()
+                    for insert in inserts:
+                        if insert.entity.props.get("wrappedValue", None) is not None:
+                            skipped_map[insert.entity.temp_unique_identifier] = insert
+                            continue
+
+                        links = insert.entity.links
+                        wrapped = {key: value for key, value in links.items() if value.props.get("wrappedValue")}
+                        if len(wrapped) > 0:
+                            for key, value in wrapped.items():
+                                insert.entity.links[key] = skipped_map.get(value.temp_unique_identifier).entity
+
+                        insert_str = insert.to_edql_str(assign_to_variable=False)
                         try:
                             single_json = tx.query_single_json(insert_str)
-                        except edgedb.errors.InvalidLinkTargetError as e:
+                        except (
+                            edgedb.errors.InvalidReferenceError,
+                            edgedb.errors.InvalidLinkTargetError,
+                            edgedb.errors.EdgeQLSyntaxError,
+                        ) as e:
                             logging.error(insert_str)
-                            raise edgedb.errors.InvalidLinkTargetError(e)
+                            raise edgedb.errors.InvalidReferenceError(e)
                         query_res = json.loads(single_json)
-                        sq.uuid_map[item] = query_res["id"]
+                        insert.entity.uuid = query_res["id"]
+                        print(insert_str)
+                    # for item, insert_str in sq.create_bulk_insert_str(ifc_items):
+                    #     try:
+                    #         single_json = tx.query_single_json(insert_str)
+                    #     except edgedb.errors.InvalidLinkTargetError as e:
+                    #         logging.error(insert_str)
+                    #         raise edgedb.errors.InvalidLinkTargetError(e)
+                    #     query_res = json.loads(single_json)
+                    #     sq.uuid_map[item] = query_res["id"]
                 else:
                     raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
         end = time.time()
