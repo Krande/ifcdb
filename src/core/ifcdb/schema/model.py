@@ -646,7 +646,7 @@ class IfcSchemaModel:
         self._fix_circular_deps(entity_dep_map)
         return list(toposort_flatten(entity_dep_map, sort=True))
 
-    def get_related_entities(self, entity_names: Union[str, List[str]], entity_dep_map: dict = None) -> list[str]:
+    def get_related_entities(self, entity_names: str | list[str], entity_dep_map: dict = None) -> list[str]:
         if isinstance(entity_names, str):
             entity_names = [entity_names]
 
@@ -696,10 +696,15 @@ class IfcSchemaModel:
         with open(esdl_file_path, "w") as f:
             f.write(self.to_esdl_str(entities, module_name))
 
-    def to_db_entities(self) -> list[DbEntity]:
+    def to_db_entities(self, specific_entities: list[str] = None) -> list[DbEntity]:
         from ifcdb.schema.new_model import DbEntityResolver
 
-        all_ents = [self.get_entity_by_name(x) for x in self.get_all_entities(sort=True)]
+        if specific_entities is not None:
+            all_ent_str = self.get_related_entities(specific_entities)
+        else:
+            all_ent_str = self.get_all_entities(sort=True)
+
+        all_ents = [self.get_entity_by_name(x) for x in all_ent_str]
 
         der = DbEntityResolver(all_ents)
         return der.get_db_entities()

@@ -48,12 +48,12 @@ def test_measure_with_unit():
     schema = "IFC4x1"
     ifc_class = "IfcMeasureWithUnit"
     er = EntityResolver(schema)
+    res3 = er.schema_model.to_db_entities([ifc_class])
+    rmap = {r.name: r for r in res3}
+    schema_obj = rmap.get(ifc_class)
 
-    # res3 = er.schema_model.to_db_entities()
-    # to_str = ""
-    # for r in res3:
-    #     to_str += r.to_schema_str()
-    # print(to_str)
+    _ = schema_obj.to_schema_str()
+
     ifc_io = IfcIO(ifc_file=top_dir() / "files/MyBeam.ifc")
     items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
     # res = er.create_ordered_insert_entities_from_multiple_entities(items)
