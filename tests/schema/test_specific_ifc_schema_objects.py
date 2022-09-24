@@ -1,10 +1,52 @@
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+
 from ifcdb.database.inserts.base import EdgeInsert
-from ifcdb.entities import EntityResolver
+from ifcdb.entities import EntityResolver, Entity
 from ifcdb.io.ifc.concept import IfcIO
+from ifcdb.schema.new_model import DbEntityResolver, from_schema_version, DbProp, DbLink
 from ifcdb.utils import top_dir
 
 
-def test_ifc_rel_defines_by_properties():
+@pytest.fixture
+def schema_der() -> DbEntityResolver:
+    der = from_schema_version("IFC4x1")
+    der.unwrap_enums()
+    return der
+
+
+def get_insert_entity(ifc_class: str, schema="IFC4x1") -> Entity:
+    er = EntityResolver(schema)
+
+    ifc_io = IfcIO(ifc_file=top_dir() / "files/MyBeam.ifc")
+    item = list(filter(lambda x: x.is_a() == ifc_class, ifc_io.get_ifc_objects_by_sorted_insert_order_flat()))[0]
+    entity_tool = er.create_entity_tool_from_ifcopenshell_entity(item)
+    return entity_tool.entity
+
+
+def validate_prop(prop: DbProp | DbLink, ifc_entity_value: Any):
+    raise NotImplementedError()
+
+
+def test_ifc_si_unit(schema_der):
+    ifc_class = "IfcSIUnit"
+    entity = get_insert_entity(ifc_class)
+    entity_props = entity.props
+    entity_props.update(entity.links)
+
+    db_entity = schema_der.db_entities.get(ifc_class)
+    db_entity_props = db_entity.get_all_props()
+    assert len(db_entity_props) == len(list(entity.props.keys()) + list(entity.links.keys()))
+
+    for key, value in db_entity_props.items():
+        entity_value = entity_props.get(key)
+        validate_prop(value, entity_value)
+
+
+def test_ifc_rel_defines_by_properties(schema_der):
     # The issue behind this test
     # edgedb.errors.InvalidLinkTargetError: invalid target for link 'RelatingPropertyDefinition' of object type
     # 'default::IfcRelDefinesByProperties': 'default::IfcPropertySetDefinitionSelect'
@@ -25,22 +67,15 @@ def test_ifc_rel_defines_by_properties():
     #    }
     # )
 
-    schema = "IFC4x1"
     ifc_class = "IfcRelDefinesByProperties"
-    er = EntityResolver(schema)
-
-    ifc_io = IfcIO(ifc_file=top_dir() / "files/MyBeam.ifc")
-    item = list(filter(lambda x: x.is_a() == ifc_class, ifc_io.get_ifc_objects_by_sorted_insert_order_flat()))[0]
-
-    entity_tool = er.create_entity_tool_from_ifcopenshell_entity(item)
-
-    related_inserts = entity_tool.linked_objects
-    insert = EdgeInsert(entity_tool.entity)
-    res = insert.entity.links["RelatingPropertyDefinition"]
-    link_insert = EdgeInsert(related_inserts[res.temp_unique_identifier])
-    link_str = link_insert.to_edql_str(assign_to_variable=True)
-
-    print(link_str)
+    link_name = "RelatingPropertyDefinition"
+    insert_entity = get_insert_entity(ifc_class)
+    insert_link = insert_entity.entity.links.get(link_name)
+    # insert_str = insert_entity.to_edql_str(True)
+    # link_str = link_insert.to_edql_str(assign_to_variable=True)
+    db_entity = schema_der.db_entities.get(ifc_class)
+    db_link = db_entity.links.get(link_name)
+    print("link_str")
 
 
 def test_measure_with_unit():

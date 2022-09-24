@@ -29,4 +29,4 @@ def main(database: str, ifc_files: list[str], extra_entities: list[str] = None):
 
 
 if __name__ == "__main__":
-    main("simplestru2", ["SimpleStru.ifc"])
+    main("test", ["SimpleStru.ifc"])

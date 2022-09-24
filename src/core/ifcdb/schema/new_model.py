@@ -254,10 +254,10 @@ class DbEntityResolver:
 
     def unwrap_enums(self):
         def get_enum(e: DbEntity) -> DbProp | None:
-            if "Enum" not in e.name:
-                return None
-            for prop in e.props.values():
-                if prop.is_enum is True:
+            link_vals = e.links.keys()
+            vals = e.props.values()
+            for prop in vals:
+                if prop.is_enum is True and len(vals) == 1 and len(link_vals) == 0:
                     return prop
             return None
 
@@ -279,6 +279,8 @@ class DbEntityResolver:
                 db_entity.links.pop(key)
 
         for entity in entities_to_pop:
+            # if 'Enum' not in entity.name:
+            #     continue
             self.db_entities.pop(entity.name)
 
         print(f'Converted and removed "{len(entities_to_pop)}" Enums to simple constraints on string properties')
@@ -437,6 +439,19 @@ class DbEntity:
                 continue
             link.link_from.append(self)
 
+    def get_all_props(self) -> dict[str, DbProp | DbLink]:
+        props = {}
+        props.update(self.props)
+        props.update(self.links)
+        curr_db_entity = self
+        while True:
+            if curr_db_entity.extending is None:
+                break
+            curr_db_entity = curr_db_entity.extending
+            props.update(curr_db_entity.props)
+            props.update(curr_db_entity.links)
+        return props
+
     def links_str(self, indent: str) -> str:
         links_str = ""
         for key, link in self.links.items():
@@ -495,3 +510,13 @@ def get_array_obj(array_ref) -> ArrayDef:
         shapes.append(ArrayShape(shape_ltype, db_list_type, b1, b2))
 
     return ArrayDef(ltype, shapes)
+
+
+def from_schema_version(schema_version: str) -> DbEntityResolver:
+    from .model import IfcSchemaModel
+
+    ifm = IfcSchemaModel(schema_version)
+    der = DbEntityResolver([ifm.get_entity_by_name(x) for x in ifm.get_all_entities()])
+    der.resolve()
+    der.all_entities = None
+    return der

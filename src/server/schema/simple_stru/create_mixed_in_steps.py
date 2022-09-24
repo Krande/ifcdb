@@ -13,4 +13,4 @@ def main(database: str, ifc_schema: str, batch_size: int, ifc_files: list[str], 
 
 
 if __name__ == "__main__":
-    main("simplestru", "IFC4x1", 50, ["SimpleStru.ifc"])
+    main("ifc001", "IFC4x1", 50, ["SimpleStru.ifc"])
