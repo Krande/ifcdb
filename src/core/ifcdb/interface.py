@@ -16,6 +16,7 @@ from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import BulkGetter
 from ifcdb.database.inserts.seq_model import INSERTS
 from ifcdb.database.inserts.sequentially import InsertSeq
+from ifcdb.database.remove import wipe_db
 from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
@@ -31,6 +32,7 @@ class EdgeIO:
     debug_log: bool = False
     schema_model: IfcSchemaModel = None
     load_env: bool = False
+    use_new_schema_gen: bool = False
 
     def __post_init__(self):
         self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
@@ -57,6 +59,7 @@ class EdgeIO:
             database=self.database_name,
             dbschema_dir=self.db_schema_dir,
             debug_logs=self.debug_log,
+            use_new_schema_gen=self.use_new_schema_gen,
         )
 
     def database_exists(self):
@@ -76,46 +79,7 @@ class EdgeIO:
 
     def wipe_database(self, max_attempts=3, delete_in_sequence=False):
         bg = self.to_bulk_getter()
-        empty = False
-        attempt_no = 0
-
-        def perform_logger_query(query_str) -> bool:
-            try:
-                self.client.execute(query_str)
-            except edgedb.errors.InternalServerError as e:
-                logging.warning(e)
-                return False
-            return True
-
-        while empty is False:
-            edge_objects = bg.get_all_in_ordered_sequence()
-            if len(edge_objects) == 0:
-                empty = True
-                break
-            edge_objects.reverse()
-
-            delete_str = ""
-            if delete_in_sequence is False:
-                delete_str = "select {"
-
-            for i, x in enumerate(edge_objects):
-                class_name = x["class"]
-                uuid = x["id"]
-                delstr = f"DELETE {class_name} FILTER .id = <uuid>'{uuid}'"
-                if delete_in_sequence:
-                    if perform_logger_query(delstr) is False:
-                        continue
-                else:
-                    delete_str += f"del{i} := ({delstr}),\n"
-
-            if delete_in_sequence is False:
-                delete_str += "}"
-                if perform_logger_query(delete_str) is False:
-                    continue
-            attempt_no += 1
-            if attempt_no > max_attempts:
-                logging.error(f"Unable to wipe database in maximum number of attempts={max_attempts}")
-                break
+        wipe_db(bg, delete_in_sequence, max_attempts)
 
     def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
         db_migrate = self._create_migration_client()
@@ -131,7 +95,6 @@ class EdgeIO:
         ifc_io_obj: IfcIO = None,
         extra_entities: list[str] = None,
         module_name="default",
-        use_new_esdl_engine=False,
     ):
         if isinstance(ifc_path, list):
             ifc_ents = self.get_entities_from_ifc_files(ifc_path)
@@ -142,26 +105,25 @@ class EdgeIO:
         if extra_entities is not None:
             ifc_ents += extra_entities
 
-        self._write_to_file(ifc_ents, module_name, use_new_esdl_engine)
+        self._write_to_file(ifc_ents, module_name)
 
-    def create_schema(self, entities: list[str] = None, module_name="default", use_new_esdl_engine=False, **kwargs):
+    def create_schema(self, entities: list[str] = None, module_name="default"):
         if entities is None:
             unique_entities = self.schema_model.get_all_entities()
         else:
             unique_entities = entities
 
-        self._write_to_file(unique_entities, module_name, use_new_esdl_engine, **kwargs)
+        self._write_to_file(unique_entities, module_name)
 
-    def _write_to_file(self, unique_entities, module_name, use_new_esdl_engine, **kwargs):
+    def _write_to_file(self, unique_entities, module_name):
         related_entities = self.schema_model.get_related_entities(unique_entities)
-
-        self.schema_model.to_esdl_file(
-            self.db_schema_dir / f"{module_name}.esdl",
-            related_entities,
-            module_name,
-            use_new_esdl_engine=use_new_esdl_engine,
-            **kwargs
-        )
+        esdl_filepath = self.db_schema_dir / f"{module_name}.esdl"
+        if self.use_new_schema_gen:
+            db_resolver = self.schema_model.to_db_entity_resolver(related_entities)
+            db_resolver.resolve()
+            db_resolver.to_esdl_file(esdl_filepath, module_name)
+        else:
+            self.schema_model.to_esdl_file(esdl_filepath, related_entities, module_name)
 
     def insert_ifc(
         self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, limit_ifc_ids: list[int] = None

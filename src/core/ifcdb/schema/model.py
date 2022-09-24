@@ -5,10 +5,11 @@ import os
 import pathlib
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Dict, TypeVar, Union
-from .common import CommonData
+
 import ifcopenshell
 from toposort import toposort_flatten
 
+from .common import CommonData
 from .utils import (
     get_aggregation_levels,
     get_aggregation_type,
@@ -680,31 +681,12 @@ class IfcSchemaModel:
         esdl_str += "}"
         return esdl_str
 
-    def to_esdl_file(
-        self,
-        esdl_file_path: os.PathLike,
-        entities: list[str],
-        module_name="default",
-        use_new_esdl_engine=False,
-        **kwargs,
-    ) -> None:
+    def to_esdl_file(self, esdl_file_path: os.PathLike, entities: list[str], module_name="default") -> None:
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)
 
-        if use_new_esdl_engine:
-            db_resolver = self.to_db_entity_resolver(entities)
-            db_resolver.resolve()
-            if kwargs.get("unwrap_enums", False):
-                db_resolver.unwrap_enums()
-            if kwargs.get("unwrap_selects", False):
-                db_resolver.unwrap_selects()
-            esdl_str = db_resolver.to_esdl_str(module_name)
-        else:
-
-            esdl_str = self.to_esdl_str(entities, module_name)
-
         with open(esdl_file_path, "w") as f:
-            f.write(esdl_str)
+            f.write(self.to_esdl_str(entities, module_name))
 
     def to_db_entity_resolver(self, entities: list[str] = None) -> DbEntityResolver:
         from ifcdb.schema.new_model import DbEntityResolver

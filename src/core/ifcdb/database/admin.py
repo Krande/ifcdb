@@ -71,6 +71,7 @@ class DbMigration:
     database: str
     dbschema_dir: pathlib.Path = "dbschema"
     debug_logs: bool = False
+    use_new_schema_gen: bool = False
 
     def __post_init__(self):
         self.dbschema_dir = pathlib.Path(self.dbschema_dir).resolve().absolute()
@@ -101,6 +102,8 @@ class DbMigration:
         batch_size=100,
         module_name: str = "default",
         begin_step: int = None,
+        unwrap_enums: bool = False,
+        unwrap_selects: bool = False,
     ):
         schema_model = IfcSchemaModel(ifc_schema)
         schema_model.modify_circular_deps = True
@@ -137,7 +140,16 @@ class DbMigration:
             now = datetime.now().time().strftime("%H:%M:%S")
             curr_size += len(chunk)
             print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities ({curr_size}/{n_ents}) @ {now}")
-            schema_model.to_esdl_file(esdl_file_path, current_schema, module_name)
+            if self.use_new_schema_gen:
+                db_entity_resolver = schema_model.to_db_entity_resolver(current_schema)
+                db_entity_resolver.resolve()
+                if unwrap_enums:
+                    db_entity_resolver.unwrap_enums()
+                if unwrap_selects:
+                    db_entity_resolver.unwrap_selects()
+                db_entity_resolver.to_esdl_file(esdl_file_path, module_name)
+            else:
+                schema_model.to_esdl_file(esdl_file_path, current_schema, module_name)
             if begin_step is not None:
                 if i < begin_step:
                     print(f"skipping step {i}")

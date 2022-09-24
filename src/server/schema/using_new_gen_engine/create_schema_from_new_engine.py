@@ -14,18 +14,19 @@ def main(database: str, ifc_files: list[str], extra_entities: list[str] = None):
         # io.create_schema(entities, module_name="old_engine")
 
         # Test new engine
-        db_resolver = io.schema_model.to_db_entity_resolver()
+        entities = None
+        db_resolver = io.schema_model.to_db_entity_resolver(entities)
         db_resolver.resolve()
         print(f"New Engine: {len(db_resolver.db_entities)=}")
-        db_resolver.to_esdl_file(io.db_schema_dir / "new_engine.esdl")
-        # db_resolver.unwrap_enums()
-        # print(f'after unwrapping enums: {len(db_resolver.db_entities)=}')
-        # db_resolver.to_esdl_file(io.db_schema_dir / "new_engine_unwrap_enums.esdl")
+        # db_resolver.to_esdl_file(io.db_schema_dir / "new_engine.esdl")
+        db_resolver.unwrap_enums()
+        print(f"after unwrapping enums: {len(db_resolver.db_entities)=}")
+        db_resolver.to_esdl_file(io.db_schema_dir / "new_engine_unwrap_enums.esdl")
         # db_resolver.unwrap_selects()
         # print(f'after unwrapping selects: {len(db_resolver.db_entities)=}')
         # db_resolver.to_esdl_file(io.db_schema_dir / "new_engine_unwrap_enums_selects.esdl")
-        io.setup_database()
+        # io.setup_database()
 
 
 if __name__ == "__main__":
-    main("simplestru", ["SimpleStru.ifc"])
+    main("simplestru2", ["SimpleStru.ifc"])

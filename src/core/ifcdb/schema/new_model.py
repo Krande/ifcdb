@@ -5,6 +5,7 @@ import pathlib
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+
 from .common import CommonData
 from .model import (
     ArrayModel,
@@ -22,7 +23,7 @@ _ENTITY_CLASS = EntityModel | EnumModel | TypeModel | SelectModel | Intermediate
 
 @dataclass
 class DbEntityUpdate:
-    db_entity: DbEntity
+    db_entity: DbEntity | DbLink
     entity: _ENTITY_CLASS
     val: AttributeModel | list[_ENTITY_CLASS]
 
@@ -172,6 +173,7 @@ class DbEntityResolver:
                 return None
 
             array_def = get_array_obj(array_ref) if array_ref is not None else None
+
             return DbLink(val.name, existing_db_object, array_def=array_def, optional=optional)
         else:
             raise NotImplementedError()
@@ -191,12 +193,28 @@ class DbEntityResolver:
             self.update_db_entities(entity)
 
         # Update supertype relationships
-
         for key, entity in self.db_entities.items():
             if entity.extending is None:
                 continue
             if isinstance(entity.extending, str):
                 entity.extending = self.db_entities.get(entity.extending)
+
+        # Check for incompatible nested linked list of
+        new_db_entities = []
+        for key, entity in self.db_entities.items():
+            for link_name, link in entity.links.items():
+                is_nested_link = link.array_def is not None and link.array_def.levels > 1
+                if is_nested_link is False:
+                    continue
+                new_intermediate_db_entity_name = "List_of_" + link.link_to.name
+                new_link_name = link.link_to.name + "s"
+                new_db_link = DbLink(new_link_name, link.link_to, array_def=link.array_def)
+                new_db_entity = DbEntity(new_intermediate_db_entity_name, links={new_link_name: new_db_link})
+                new_db_entities.append(new_db_entity)
+                link.link_to = new_db_entity
+
+        for new_db_entity in new_db_entities:
+            self.db_entities[new_db_entity.name] = new_db_entity
 
     def unwrap_selects(self):
         def get_all_selects(e: DbLink, selects: list[DbEntity] = None) -> list[DbEntity]:
@@ -278,7 +296,7 @@ class DbEntityResolver:
 
     def to_esdl_str(self, module_name: str):
         types_str = "\n".join([x.to_schema_str() for x in self.db_entities.values()])
-        return f"module {module_name} {{\n\n{types_str}\n\n}}"
+        return f"module {module_name} {{\n\n{types_str}\n}}"
 
     def to_esdl_file(self, filepath: os.PathLike, module_name: str = "default"):
         filepath = pathlib.Path(filepath).resolve().absolute()

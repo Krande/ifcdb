@@ -72,6 +72,15 @@ def test_ifc_arc_index():
     _ = er.schema_model.to_db_entities([ifc_class], return_as_dict=True).get(ifc_class)
 
 
+def test_bspline_surface():
+    schema = "IFC4x1"
+    ifc_class = "IfcBSplineSurface"
+    er = EntityResolver(schema)
+    db_entity = er.schema_model.to_db_entities([ifc_class], return_as_dict=True).get(ifc_class)
+    cpoint_list = db_entity.links["ControlPointsList"]
+    assert cpoint_list.link_to.name == "List_of_IfcCartesianPoint"
+
+
 def test_unwrap_enums():
     schema = "IFC4x1"
     er = EntityResolver(schema)
