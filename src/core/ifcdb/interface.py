@@ -144,15 +144,15 @@ class EdgeIO:
 
         self._write_to_file(ifc_ents, module_name, use_new_esdl_engine)
 
-    def create_schema(self, entities: list[str] = None, module_name="default", use_new_esdl_engine=False):
+    def create_schema(self, entities: list[str] = None, module_name="default", use_new_esdl_engine=False, **kwargs):
         if entities is None:
             unique_entities = self.schema_model.get_all_entities()
         else:
             unique_entities = entities
 
-        self._write_to_file(unique_entities, module_name, use_new_esdl_engine)
+        self._write_to_file(unique_entities, module_name, use_new_esdl_engine, **kwargs)
 
-    def _write_to_file(self, unique_entities, module_name, use_new_esdl_engine):
+    def _write_to_file(self, unique_entities, module_name, use_new_esdl_engine, **kwargs):
         related_entities = self.schema_model.get_related_entities(unique_entities)
 
         self.schema_model.to_esdl_file(
@@ -160,6 +160,7 @@ class EdgeIO:
             related_entities,
             module_name,
             use_new_esdl_engine=use_new_esdl_engine,
+            **kwargs
         )
 
     def insert_ifc(

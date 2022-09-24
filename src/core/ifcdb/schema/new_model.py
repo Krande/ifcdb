@@ -69,7 +69,8 @@ class DbEntityResolver:
 
             links: dict[str, DbLink] = dict()
             props: dict[str, DbProp] = dict()
-            db_entity = DbEntity(entity.name, links, props, extending=db_parent)
+
+            db_entity = DbEntity(entity.name, links, props, extending=db_parent, abstract=entity.entity.is_abstract())
 
             for val in entity.get_attributes():
                 val_name = val.name
@@ -97,7 +98,6 @@ class DbEntityResolver:
 
     def update_db_entities(self, update_entity: DbEntityUpdate):
         if isinstance(update_entity.val, list):
-            # These are select objects
             entity = update_entity.db_entity
             for missing_entity in update_entity.val:
                 link = entity.links[entity.name]
@@ -142,14 +142,16 @@ class DbEntityResolver:
             raise NotImplementedError()
 
     def get_link(self, val: AttributeModel) -> DbLink | None:
-        # array_ref = val.array_ref()
+        array_ref = val.array_ref()
         value_ref = val.entity_ref()
         optional = val.optional
         if isinstance(value_ref, (SelectModel, EntityModel, EnumModel)):
             existing_db_object = self.db_entities.get(value_ref.name, None)
             if existing_db_object is None:
                 return None
-            return DbLink(val.name, existing_db_object, optional=optional)
+
+            array_def = get_array_obj(array_ref) if array_ref is not None else None
+            return DbLink(val.name, existing_db_object, array_def=array_def, optional=optional)
         else:
             raise NotImplementedError()
 
@@ -176,7 +178,33 @@ class DbEntityResolver:
                 entity.extending = self.db_entities.get(entity.extending)
 
     def unwrap_selects(self):
-        raise NotImplementedError()
+        def get_all_selects(e: DbLink, selects: list[DbEntity] = None) -> list[DbEntity]:
+            selects = [] if selects is None else selects
+            for sub_link in e.link_to:
+                if isinstance(sub_link, DbEntity):
+                    selects.append(sub_link)
+                    continue
+                if sub_link.is_select is True:
+                    get_all_selects(sub_link, selects)
+                else:
+                    selects.append(sub_link)
+            return selects
+
+        entities_to_pop = []
+        for name, db_entity in self.db_entities.items():
+            links_to_pop = []
+
+            for key, link in db_entity.links.items():
+                if link.is_select is False:
+                    continue
+                entities = get_all_selects(link)
+                if len(entities) > len(link.link_to):
+                    print(f"selects {len(entities)}")
+
+        for entity in entities_to_pop:
+            self.db_entities.pop(entity.name)
+
+        print(f'Flattened and removed "{len(entities_to_pop)}" Selects')
 
     def unwrap_enums(self):
         def get_enum(e: DbEntity) -> DbProp | None:
@@ -207,12 +235,16 @@ class DbEntityResolver:
         for entity in entities_to_pop:
             self.db_entities.pop(entity.name)
 
-        print(f'Converted and Remove "{len(entities_to_pop)}" Enums to simple constraints on string properties')
+        print(f'Converted and removed "{len(entities_to_pop)}" Enums to simple constraints on string properties')
 
-    def get_db_entities(self, unwrap_enums=False) -> list[DbEntity]:
+    def get_db_entities(self, unwrap_enums=False, unwrap_selects=False) -> list[DbEntity]:
         self.resolve()
+
         if unwrap_enums:
             self.unwrap_enums()
+
+        if unwrap_selects:
+            self.unwrap_selects()
 
         return list(self.db_entities.values())
 
@@ -264,7 +296,7 @@ class ArrayDef:
         if s.upper_bound == s.lower_bound or upper == -1:
             return ""
 
-        g = 2 * indent
+        g = indent + 4 * " "
         g2 = indent
         range_str = ""
         range_l = list(range(lower, upper + 1))
@@ -293,9 +325,6 @@ class ArrayDef:
         for i, s in enumerate(self.shapes):
             left_side += f"{s.bound_type.value}<"
             right_side += ">"
-
-            if i != 0 and s.lower_bound != s.upper_bound:
-                raise NotImplementedError()
 
         return left_side + middle + right_side + constr_str
 
@@ -328,6 +357,7 @@ class DbLink:
     link_from: list[DbEntity] = field(repr=False, default_factory=list)
     is_select: bool = field(default=False)
     optional: bool = False
+    array_def: ArrayDef = None
 
     def to_str(self) -> str:
         if self.is_select:
@@ -344,6 +374,7 @@ class DbEntity:
     links: dict[str, DbLink] = field(default_factory=dict)
     props: dict[str, DbProp] = field(default_factory=dict)
     extending: DbEntity = field(default=None, repr=False)
+    abstract: bool = False
 
     def __post_init__(self):
         for link in self.links.values():
@@ -355,7 +386,8 @@ class DbEntity:
         links_str = ""
         for key, link in self.links.items():
             opt_str = "required " if link.optional is False else ""
-            links_str += f"{indent}{opt_str}link {key} -> {link.to_str()};\n"
+            multi_str = "multi " if link.array_def is not None else ""
+            links_str += f"{indent}{opt_str}{multi_str}link {key} -> {link.to_str()};\n"
         return links_str
 
     def props_str(self, indent: str) -> str:
@@ -374,8 +406,9 @@ class DbEntity:
             extending_str = f" extending {self.extending.name}"
 
         si = 2 * indent
-
-        return f"{indent}type {self.name}{extending_str} {{\n{self.links_str(si)}{self.props_str(si)}{indent}}}\n"
+        att_str = self.props_str(si) + self.links_str(si)
+        abstract_str = "" if self.abstract is False else "abstract "
+        return f"{indent}{abstract_str}type {self.name}{extending_str} {{\n{att_str}{indent}}}\n"
 
 
 def get_array_obj(array_ref) -> ArrayDef:

@@ -690,13 +690,24 @@ class IfcSchemaModel:
         return esdl_str
 
     def to_esdl_file(
-        self, esdl_file_path: os.PathLike, entities: list[str], module_name="default", use_new_esdl_engine=False
+        self,
+        esdl_file_path: os.PathLike,
+        entities: list[str],
+        module_name="default",
+        use_new_esdl_engine=False,
+        **kwargs,
     ) -> None:
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)
 
         if use_new_esdl_engine:
-            types_str = "\n".join([x.to_schema_str() for x in self.to_db_entities(entities)])
+            db_resolver = self.to_db_entities(entities, return_db_resolver=True)
+            db_resolver.resolve()
+            if kwargs.get("unwrap_enums", False):
+                db_resolver.unwrap_enums()
+            if kwargs.get("unwrap_selects", False):
+                db_resolver.unwrap_selects()
+            types_str = "\n".join([x.to_schema_str() for x in db_resolver.db_entities.values()])
             esdl_str = f"module {module_name} {{\n\n{types_str}\n\n}}"
         else:
 
