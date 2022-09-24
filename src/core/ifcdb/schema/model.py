@@ -5,7 +5,7 @@ import os
 import pathlib
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Dict, TypeVar, Union
-
+from .common import CommonData
 import ifcopenshell
 from toposort import toposort_flatten
 
@@ -130,7 +130,7 @@ class AttributeModel:
         array_ref = self.array_ref()
         value_ref = self.entity_ref()
         prefix_str = "" if self.optional is True else "required "
-        name = self.edge_model.reserved_keys.get(self.name.lower(), self.name)
+        name = CommonData.reserved_keys.get(self.name.lower(), self.name)
 
         if isinstance(value_ref, str):
             prefix_str += "property"
@@ -482,15 +482,6 @@ class IfcSchemaModel:
 
     intermediate_classes: dict[str, IntermediateClass] = field(default_factory=dict, repr=False)
 
-    reserved_keys: ClassVar[dict] = dict(
-        start="`Start`",
-        union="`UNION`",
-        group="`GROUP`",
-        move="`MOVE`",
-        check="`CHECK`",
-        window="`WINDOW`",
-    )
-
     def __post_init__(self):
         self.schema = wrap.schema_by_name(self.schema_version)
         decl = self.schema.declarations()
@@ -701,14 +692,13 @@ class IfcSchemaModel:
         os.makedirs(esdl_file_path.parent, exist_ok=True)
 
         if use_new_esdl_engine:
-            db_resolver = self.to_db_entities(entities, return_db_resolver=True)
+            db_resolver = self.to_db_entity_resolver(entities)
             db_resolver.resolve()
             if kwargs.get("unwrap_enums", False):
                 db_resolver.unwrap_enums()
             if kwargs.get("unwrap_selects", False):
                 db_resolver.unwrap_selects()
-            types_str = "\n".join([x.to_schema_str() for x in db_resolver.db_entities.values()])
-            esdl_str = f"module {module_name} {{\n\n{types_str}\n\n}}"
+            esdl_str = db_resolver.to_esdl_str(module_name)
         else:
 
             esdl_str = self.to_esdl_str(entities, module_name)
@@ -716,12 +706,7 @@ class IfcSchemaModel:
         with open(esdl_file_path, "w") as f:
             f.write(esdl_str)
 
-    def to_db_entities(
-        self,
-        entities: list[str] = None,
-        return_as_dict=False,
-        return_db_resolver=False,
-    ) -> list[DbEntity] | dict[str, DbEntity] | DbEntityResolver:
+    def to_db_entity_resolver(self, entities: list[str] = None) -> DbEntityResolver:
         from ifcdb.schema.new_model import DbEntityResolver
 
         if entities is not None:
@@ -731,9 +716,12 @@ class IfcSchemaModel:
 
         all_ents = [self.get_entity_by_name(x) for x in all_ent_str]
 
-        der = DbEntityResolver(all_ents)
-        if return_db_resolver:
-            return der
+        return DbEntityResolver(all_ents)
+
+    def to_db_entities(
+        self, entities: list[str] = None, return_as_dict=False
+    ) -> list[DbEntity] | dict[str, DbEntity] | DbEntityResolver:
+        der = self.to_db_entity_resolver(entities)
 
         db_entities = der.get_db_entities()
 

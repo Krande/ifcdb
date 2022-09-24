@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
+import pathlib
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
-
+from .common import CommonData
 from .model import (
     ArrayModel,
     AttributeModel,
@@ -39,7 +41,20 @@ class DbEntityResolver:
                 array_type = get_array_obj(entity)
 
             value = get_base_type_name(entity.entity)
-            return DbEntity(entity.name, props={entity.name: DbProp(value, array_def=array_type)})
+            if isinstance(value, str):
+                return DbEntity(entity.name, props={entity.name: DbProp(value, array_def=array_type)})
+            else:
+                ref_db_entity = self.db_entities.get(value.name())
+
+                if ref_db_entity is None:
+                    ref_db_entity = value.name()
+
+                link = DbLink(entity.name, link_to=ref_db_entity, array_def=array_type)
+                db_entity = DbEntity(entity.name, links={entity.name: link})
+                if isinstance(ref_db_entity, str):
+                    self.to_be_updated_later.append(DbEntityUpdate(link, entity, value.name()))
+
+                return db_entity
         elif isinstance(entity, EnumModel):
             enum_data = entity.get_enum_items()
             return DbEntity(entity.name, props={entity.name: DbProp(enum_data, is_enum=True)})
@@ -108,6 +123,12 @@ class DbEntityResolver:
                     index = link.link_to.index(None)
                     link.link_to.pop(index)
                 link.link_to.append(existing_obj)
+        elif isinstance(update_entity.val, str) and isinstance(update_entity.db_entity, DbLink):
+
+            linked_to = self.db_entities.get(update_entity.val)
+            if linked_to is None:
+                raise NotImplementedError()
+            update_entity.db_entity.link_to = linked_to
         else:
             key = update_entity.val.name
             value = update_entity.db_entity.links.get(key)
@@ -181,25 +202,32 @@ class DbEntityResolver:
         def get_all_selects(e: DbLink, selects: list[DbEntity] = None) -> list[DbEntity]:
             selects = [] if selects is None else selects
             for sub_link in e.link_to:
-                if isinstance(sub_link, DbEntity):
+                contains_sub_selects = False
+                for slink in sub_link.links.values():
+                    if slink.is_select is False:
+                        continue
+                    contains_sub_selects = True
+                    get_all_selects(slink, selects)
+                if contains_sub_selects is False:
                     selects.append(sub_link)
-                    continue
-                if sub_link.is_select is True:
-                    get_all_selects(sub_link, selects)
-                else:
-                    selects.append(sub_link)
+
             return selects
 
         entities_to_pop = []
         for name, db_entity in self.db_entities.items():
-            links_to_pop = []
-
+            if "Select" in name:
+                continue
             for key, link in db_entity.links.items():
                 if link.is_select is False:
                     continue
                 entities = get_all_selects(link)
-                if len(entities) > len(link.link_to):
-                    print(f"selects {len(entities)}")
+                if len(entities) == len(link.link_to):
+                    continue
+                # print(f"selects {len(entities)}")
+
+                if db_entity not in entities_to_pop:
+                    entities_to_pop.append(db_entity)
+                link.link_to = entities
 
         for entity in entities_to_pop:
             self.db_entities.pop(entity.name)
@@ -247,6 +275,16 @@ class DbEntityResolver:
             self.unwrap_selects()
 
         return list(self.db_entities.values())
+
+    def to_esdl_str(self, module_name: str):
+        types_str = "\n".join([x.to_schema_str() for x in self.db_entities.values()])
+        return f"module {module_name} {{\n\n{types_str}\n\n}}"
+
+    def to_esdl_file(self, filepath: os.PathLike, module_name: str = "default"):
+        filepath = pathlib.Path(filepath).resolve().absolute()
+        os.makedirs(filepath.parent, exist_ok=True)
+        with open(filepath, "w") as f:
+            f.write(self.to_esdl_str(module_name))
 
 
 class DbListTypes(Enum):
@@ -353,7 +391,6 @@ class DbProp:
 class DbLink:
     name: str
     link_to: DbEntity | list[DbEntity]
-    multi: bool = False
     link_from: list[DbEntity] = field(repr=False, default_factory=list)
     is_select: bool = field(default=False)
     optional: bool = False
@@ -387,7 +424,8 @@ class DbEntity:
         for key, link in self.links.items():
             opt_str = "required " if link.optional is False else ""
             multi_str = "multi " if link.array_def is not None else ""
-            links_str += f"{indent}{opt_str}{multi_str}link {key} -> {link.to_str()};\n"
+            safe_name = CommonData.get_safe_key(key)
+            links_str += f"{indent}{opt_str}{multi_str}link {safe_name} -> {link.to_str()};\n"
         return links_str
 
     def props_str(self, indent: str) -> str:
@@ -396,8 +434,10 @@ class DbEntity:
             safe_key = key
             if key == self.name:
                 safe_key = f"`{key}`"
+
+            safe_name = CommonData.get_safe_key(safe_key)
             opt_str = "required " if prop.optional is False else ""
-            props_str += f"{indent}{opt_str}property {safe_key} -> {prop.to_str(indent)};\n"
+            props_str += f"{indent}{opt_str}property {safe_name} -> {prop.to_str(indent)};\n"
         return props_str
 
     def to_schema_str(self, indent=4 * " "):
