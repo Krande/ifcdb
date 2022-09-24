@@ -63,3 +63,23 @@ def test_measure_with_unit():
     link_str = link_insert.to_edql_str(assign_to_variable=True)
 
     print(link_str)
+
+
+def test_ifc_arc_index():
+    schema = "IFC4x1"
+    ifc_class = "IfcArcIndex"
+    er = EntityResolver(schema)
+    _ = er.schema_model.to_db_entities([ifc_class], return_as_dict=True).get(ifc_class)
+
+
+def test_unwrap_enums():
+    schema = "IFC4x1"
+    er = EntityResolver(schema)
+    db_resolver = er.schema_model.to_db_entities(return_db_resolver=True)
+    db_resolver.resolve()
+    db_resolver.all_entities = None
+    assert len(db_resolver.db_entities) == 1201
+
+    db_resolver.unwrap_enums()
+
+    assert len(db_resolver.db_entities) == 1201 - 197

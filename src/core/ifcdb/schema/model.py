@@ -4,7 +4,7 @@ import logging
 import os
 import pathlib
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, ClassVar, Dict, List, TypeVar, Union
+from typing import TYPE_CHECKING, ClassVar, Dict, TypeVar, Union
 
 import ifcopenshell
 from toposort import toposort_flatten
@@ -20,7 +20,7 @@ from .utils import (
 wrap = ifcopenshell.ifcopenshell_wrapper
 
 if TYPE_CHECKING:
-    from .new_model import DbEntity
+    from .new_model import DbEntity, DbEntityResolver
 
 
 @dataclass
@@ -695,10 +695,22 @@ class IfcSchemaModel:
         esdl_file_path = pathlib.Path(esdl_file_path)
         os.makedirs(esdl_file_path.parent, exist_ok=True)
 
-        with open(esdl_file_path, "w") as f:
-            f.write(self.to_esdl_str(entities, module_name))
+        if use_new_esdl_engine:
+            types_str = "\n".join([x.to_schema_str() for x in self.to_db_entities(entities)])
+            esdl_str = f"module {module_name} {{\n\n{types_str}\n\n}}"
+        else:
 
-    def to_db_entities(self, entities: list[str] = None, return_as_dict=False) -> list[DbEntity] | dict[str, DbEntity]:
+            esdl_str = self.to_esdl_str(entities, module_name)
+
+        with open(esdl_file_path, "w") as f:
+            f.write(esdl_str)
+
+    def to_db_entities(
+        self,
+        entities: list[str] = None,
+        return_as_dict=False,
+        return_db_resolver=False,
+    ) -> list[DbEntity] | dict[str, DbEntity] | DbEntityResolver:
         from ifcdb.schema.new_model import DbEntityResolver
 
         if entities is not None:
@@ -709,6 +721,9 @@ class IfcSchemaModel:
         all_ents = [self.get_entity_by_name(x) for x in all_ent_str]
 
         der = DbEntityResolver(all_ents)
+        if return_db_resolver:
+            return der
+
         db_entities = der.get_db_entities()
 
         if return_as_dict is True:

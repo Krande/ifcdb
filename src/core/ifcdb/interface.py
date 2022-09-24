@@ -131,6 +131,7 @@ class EdgeIO:
         ifc_io_obj: IfcIO = None,
         extra_entities: list[str] = None,
         module_name="default",
+        use_new_esdl_engine=False,
     ):
         if isinstance(ifc_path, list):
             ifc_ents = self.get_entities_from_ifc_files(ifc_path)
@@ -141,19 +142,25 @@ class EdgeIO:
         if extra_entities is not None:
             ifc_ents += extra_entities
 
-        related_entities = self.schema_model.get_related_entities(ifc_ents)
+        self._write_to_file(ifc_ents, module_name, use_new_esdl_engine)
 
-        self.schema_model.to_esdl_file(self.db_schema_dir / "default.esdl", related_entities, module_name)
-
-    def create_schema(self, entities: list[str] = None, module_name="default"):
+    def create_schema(self, entities: list[str] = None, module_name="default", use_new_esdl_engine=False):
         if entities is None:
             unique_entities = self.schema_model.get_all_entities()
         else:
             unique_entities = entities
 
+        self._write_to_file(unique_entities, module_name, use_new_esdl_engine)
+
+    def _write_to_file(self, unique_entities, module_name, use_new_esdl_engine):
         related_entities = self.schema_model.get_related_entities(unique_entities)
 
-        self.schema_model.to_esdl_file(self.db_schema_dir / "default.esdl", related_entities, module_name)
+        self.schema_model.to_esdl_file(
+            self.db_schema_dir / f"{module_name}.esdl",
+            related_entities,
+            module_name,
+            use_new_esdl_engine=use_new_esdl_engine,
+        )
 
     def insert_ifc(
         self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, limit_ifc_ids: list[int] = None

@@ -13,7 +13,7 @@ from .model import (
     SelectModel,
     TypeModel,
 )
-from .utils import get_base_type_name
+from .utils import get_aggregation_levels, get_base_type_name
 
 _ENTITY_CLASS = EntityModel | EnumModel | TypeModel | SelectModel | IntermediateClass
 
@@ -34,8 +34,12 @@ class DbEntityResolver:
 
     def convert_entity(self, entity: _ENTITY_CLASS) -> DbEntity | None:
         if isinstance(entity, TypeModel):
+            array_type = None
+            if entity.is_aggregate():
+                array_type = get_array_obj(entity)
+
             value = get_base_type_name(entity.entity)
-            return DbEntity(entity.name, props={entity.name: DbProp(value)})
+            return DbEntity(entity.name, props={entity.name: DbProp(value, array_def=array_type)})
         elif isinstance(entity, EnumModel):
             enum_data = entity.get_enum_items()
             return DbEntity(entity.name, props={entity.name: DbProp(enum_data, is_enum=True)})
@@ -55,16 +59,17 @@ class DbEntityResolver:
             if len(missing_select_entities) > 0:
                 self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, missing_select_entities))
             return db_entity
-
         elif isinstance(entity, EntityModel):
             db_parent = None
             parent = entity.entity.supertype()
             if parent is not None:
-                db_parent = self.db_entities.get(parent.name)
+                db_parent = self.db_entities.get(parent.name())
+                if db_parent is None:
+                    db_parent = parent.name()
 
             links: dict[str, DbLink] = dict()
             props: dict[str, DbProp] = dict()
-            db_entity = DbEntity(entity.name, links, props, parent=db_parent)
+            db_entity = DbEntity(entity.name, links, props, extending=db_parent)
 
             for val in entity.get_attributes():
                 val_name = val.name
@@ -131,10 +136,7 @@ class DbEntityResolver:
         if isinstance(value_ref, str):
             return DbProp(value_ref, optional=optional)
         elif value_ref is None and isinstance(array_ref, ArrayModel):
-            ltype = ListTypes.from_str(array_ref.list_type)
-            levels = array_ref.get_levels()
-            array_type = ArrayType(ltype, len(levels))
-
+            array_type = get_array_obj(array_ref)
             return DbProp(array_ref.parameter_type, array_type, optional=optional)
         else:
             raise NotImplementedError()
@@ -151,7 +153,7 @@ class DbEntityResolver:
         else:
             raise NotImplementedError()
 
-    def get_db_entities(self) -> list[DbEntity]:
+    def resolve(self):
         for entity in self.all_entities:
             db_entity = self.convert_entity(entity)
             if db_entity is None:
@@ -165,48 +167,155 @@ class DbEntityResolver:
         for entity in to_be_updated:
             self.update_db_entities(entity)
 
+        # Update supertype relationships
+
+        for key, entity in self.db_entities.items():
+            if entity.extending is None:
+                continue
+            if isinstance(entity.extending, str):
+                entity.extending = self.db_entities.get(entity.extending)
+
+    def unwrap_selects(self):
+        raise NotImplementedError()
+
+    def unwrap_enums(self):
+        def get_enum(e: DbEntity) -> DbProp | None:
+            if "Enum" not in e.name:
+                return None
+            for prop in e.props.values():
+                if prop.is_enum is True:
+                    return prop
+            return None
+
+        entities_to_pop = []
+        for name, db_entity in self.db_entities.items():
+            links_to_pop = []
+
+            for key, link in db_entity.links.items():
+                if isinstance(link.link_to, DbEntity) is False:
+                    continue
+                enum_prop = get_enum(link.link_to)
+                if enum_prop is None:
+                    continue
+                if link.link_to not in entities_to_pop:
+                    entities_to_pop.append(link.link_to)
+                db_entity.props[key] = enum_prop
+                links_to_pop.append(key)
+            for key in links_to_pop:
+                db_entity.links.pop(key)
+
+        for entity in entities_to_pop:
+            self.db_entities.pop(entity.name)
+
+        print(f'Converted and Remove "{len(entities_to_pop)}" Enums to simple constraints on string properties')
+
+    def get_db_entities(self, unwrap_enums=False) -> list[DbEntity]:
+        self.resolve()
+        if unwrap_enums:
+            self.unwrap_enums()
+
         return list(self.db_entities.values())
 
 
-class ListTypes(Enum):
+class DbListTypes(Enum):
+    TUPLE = "tuple"
+    ARRAY = "array"
+
+
+class IfcListTypes(Enum):
     LIST = "list"
     SET = "set"
     ARRAY = "array"
+    BAG = "bag"
 
     @staticmethod
     def from_str(lstype: str):
-        emap = {e.value: e for e in ListTypes}
+        emap = {e.value: e for e in IfcListTypes}
         return emap.get(lstype)
+
+    @staticmethod
+    def from_ifc_agg_type(agg_type: int):
+        agg_map = {0: IfcListTypes.ARRAY, 1: IfcListTypes.BAG, 2: IfcListTypes.LIST, 3: IfcListTypes.SET}
+        return agg_map.get(agg_type)
 
 
 @dataclass
-class ArrayType:
-    list_type: ListTypes
-    levels: int
+class ArrayShape:
+    ifc_agg_type: IfcListTypes
+    bound_type: DbListTypes
+    lower_bound: int
+    upper_bound: int
+
+
+@dataclass
+class ArrayDef:
+    list_type: IfcListTypes
+    shapes: list[ArrayShape]
+
+    @property
+    def levels(self) -> int:
+        return len(self.shapes)
+
+    def get_variable_bound_constraint_str(self, indent: str) -> str:
+        s = self.shapes[-1]
+        lower = s.lower_bound
+        upper = s.upper_bound
+
+        if s.upper_bound == s.lower_bound or upper == -1:
+            return ""
+
+        g = 2 * indent
+        g2 = indent
+        range_str = ""
+        range_l = list(range(lower, upper + 1))
+        for j, k in enumerate(range_l, start=1):
+            range_str += f"len(__subject__) = {k}"
+            range_str += " or " if j != len(range_l) else ""
+        constr_str = f"{{\n{g}constraint expression on ({range_str})\n{g2}}}"
+        return constr_str
+
+    def get_base_property_str(self, prop_value: Any = None) -> str:
+        s = self.shapes[-1]
+        prop_text = "{prop_value}" if prop_value is None else f"{prop_value}"
+        if s.upper_bound != s.lower_bound:
+            return prop_text
+        final_prop = ",".join([prop_text] * s.upper_bound)
+        return final_prop
+
+    def to_str(self, indent: str, prop_value: Any = None) -> str:
+        if self.list_type not in (IfcListTypes.LIST, IfcListTypes.SET, IfcListTypes.ARRAY):
+            raise NotImplementedError()
+        left_side = ""
+        middle = self.get_base_property_str(prop_value)
+        constr_str = self.get_variable_bound_constraint_str(indent)
+        right_side = ""
+
+        for i, s in enumerate(self.shapes):
+            left_side += f"{s.bound_type.value}<"
+            right_side += ">"
+
+            if i != 0 and s.lower_bound != s.upper_bound:
+                raise NotImplementedError()
+
+        return left_side + middle + right_side + constr_str
 
 
 @dataclass
 class DbProp:
     prop_value: Any
-    array_def: ArrayType = field(default=None)
+    array_def: ArrayDef = field(default=None)
     is_enum: bool = field(default=False)
     optional: bool = False
 
-    def to_str(self) -> str:
+    def to_str(self, indent: str) -> str:
         if self.array_def is not None:
-            if self.array_def.list_type in (ListTypes.LIST, ListTypes.SET, ListTypes.ARRAY):
-                if self.array_def.levels == 1:
-                    return f"tuple<{self.prop_value}>"
-                elif self.array_def.levels == 2:
-                    return f"array<tuple<{self.prop_value}>>"
-                else:
-                    raise NotImplementedError()
-            else:
-                raise NotImplementedError()
+            array_str = self.array_def.to_str(indent, prop_value=self.prop_value)
+            return array_str
+
         elif self.is_enum is True:
             ident = 12 * " "
             enum_str = ",".join([f"'{x}'" for x in self.prop_value])
-            return f"str {{\n{ident}constraint one_of ({enum_str});\n}};\n"
+            return f"str {{\n{ident}constraint one_of ({enum_str});\n{indent}}}"
         else:
             return self.prop_value
 
@@ -234,7 +343,7 @@ class DbEntity:
     name: str
     links: dict[str, DbLink] = field(default_factory=dict)
     props: dict[str, DbProp] = field(default_factory=dict)
-    parent: DbEntity = field(default=None)
+    extending: DbEntity = field(default=None, repr=False)
 
     def __post_init__(self):
         for link in self.links.values():
@@ -242,22 +351,56 @@ class DbEntity:
                 continue
             link.link_from.append(self)
 
-    def links_str(self) -> str:
+    def links_str(self, indent: str) -> str:
         links_str = ""
         for key, link in self.links.items():
             opt_str = "required " if link.optional is False else ""
-            links_str += f"{opt_str}link {key} -> {link.to_str()};\n"
+            links_str += f"{indent}{opt_str}link {key} -> {link.to_str()};\n"
         return links_str
 
-    def props_str(self) -> str:
+    def props_str(self, indent: str) -> str:
         props_str = ""
         for key, prop in self.props.items():
+            safe_key = key
+            if key == self.name:
+                safe_key = f"`{key}`"
             opt_str = "required " if prop.optional is False else ""
-            props_str += f"{opt_str}property {key} -> {prop.to_str()};\n"
+            props_str += f"{indent}{opt_str}property {safe_key} -> {prop.to_str(indent)};\n"
         return props_str
 
-    def to_schema_str(self):
-        parent_str = ""
-        if self.parent is not None:
-            parent_str = f" extending {self.parent.name}"
-        return f"type {self.name}{parent_str} {{\n {self.links_str()}{self.props_str()}\n}}\n"
+    def to_schema_str(self, indent=4 * " "):
+        extending_str = ""
+        if self.extending is not None:
+            extending_str = f" extending {self.extending.name}"
+
+        si = 2 * indent
+
+        return f"{indent}type {self.name}{extending_str} {{\n{self.links_str(si)}{self.props_str(si)}{indent}}}\n"
+
+
+def get_array_obj(array_ref) -> ArrayDef:
+    if isinstance(array_ref, ArrayModel):
+        ltype = IfcListTypes.from_str(array_ref.list_type)
+        levels = array_ref.get_levels()
+    elif isinstance(array_ref, TypeModel):
+        levels = get_aggregation_levels(array_ref.entity.declared_type())
+        ltype = IfcListTypes.from_ifc_agg_type(levels[0].type_of_aggregation())
+    else:
+        raise NotImplementedError(f"Unrecognized type {type(array_ref)}")
+
+    shapes = []
+    for i, level in enumerate(levels):
+        shape_ltype = IfcListTypes.from_ifc_agg_type(levels[0].type_of_aggregation())
+        b1 = level.bound1()
+        b2 = level.bound2()
+        if len(levels) > 1 and i == 0:
+            db_list_type = DbListTypes.ARRAY
+        else:
+            db_list_type = DbListTypes.ARRAY if b2 == 1 else DbListTypes.TUPLE
+
+        if b1 != b2 and b2 != -1 and len(levels) == 1:
+            db_list_type = DbListTypes.ARRAY
+
+        shapes.append(ArrayShape(shape_ltype, db_list_type, b1, b2))
+
+    return ArrayDef(ltype, shapes)
