@@ -104,6 +104,8 @@ class DbMigration:
         begin_step: int = None,
         unwrap_enums: bool = False,
         unwrap_selects: bool = False,
+        dry_run: bool = False,
+        allow_unsafe=False,
     ):
         schema_model = IfcSchemaModel(ifc_schema)
         schema_model.modify_circular_deps = True
@@ -154,18 +156,24 @@ class DbMigration:
                 if i < begin_step:
                     print(f"skipping step {i}")
                     continue
-            self.migration_create()
-            self.migration_apply()
-            t_fin = time.time()
-            print(f"Completed migration in {t_fin - start:.1f} s\n")
-            start = t_fin
 
             shutil.copy(esdl_file_path, tmp_dir / f"esdl_file.{i}")
             with open(tmp_dir / f"chunk_{i}.txt", "w") as f:
                 f.write("\n".join(chunk))
 
-    def migration_create(self):
-        self._migration_cmd("create --non-interactive", MigrationCreateError)
+            if dry_run is False:
+                self.migration_create(allow_unsafe=allow_unsafe)
+                self.migration_apply()
+
+            t_fin = time.time()
+            print(f"Completed migration in {t_fin - start:.1f} s\n")
+            start = t_fin
+
+    def migration_create(self, allow_unsafe=False):
+        in_str = "create --non-interactive"
+        if allow_unsafe:
+            in_str += " --allow-unsafe"
+        self._migration_cmd(in_str, MigrationCreateError)
         print("migration create complete")
 
     def migration_apply(self):

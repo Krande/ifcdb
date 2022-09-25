@@ -2,20 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-import pytest
-
 from ifcdb.database.inserts.base import EdgeInsert
-from ifcdb.entities import EntityResolver, Entity
+from ifcdb.entities import Entity, EntityResolver
 from ifcdb.io.ifc.concept import IfcIO
-from ifcdb.schema.new_model import DbEntityResolver, from_schema_version, DbProp, DbLink
+from ifcdb.schema.new_model import DbLink, DbProp
 from ifcdb.utils import top_dir
-
-
-@pytest.fixture
-def schema_der() -> DbEntityResolver:
-    der = from_schema_version("IFC4x1")
-    der.unwrap_enums()
-    return der
 
 
 def get_insert_entity(ifc_class: str, schema="IFC4x1") -> Entity:
@@ -31,13 +22,13 @@ def validate_prop(prop: DbProp | DbLink, ifc_entity_value: Any):
     raise NotImplementedError()
 
 
-def test_ifc_si_unit(schema_der):
+def test_ifc_si_unit(schema_der_unwrapped_enums):
     ifc_class = "IfcSIUnit"
     entity = get_insert_entity(ifc_class)
     entity_props = entity.props
     entity_props.update(entity.links)
 
-    db_entity = schema_der.db_entities.get(ifc_class)
+    db_entity = schema_der_unwrapped_enums.db_entities.get(ifc_class)
     db_entity_props = db_entity.get_all_props()
     assert len(db_entity_props) == len(list(entity.props.keys()) + list(entity.links.keys()))
 
@@ -46,7 +37,7 @@ def test_ifc_si_unit(schema_der):
         validate_prop(value, entity_value)
 
 
-def test_ifc_rel_defines_by_properties(schema_der):
+def test_ifc_rel_defines_by_properties(schema_der_unwrapped_enums):
     # The issue behind this test
     # edgedb.errors.InvalidLinkTargetError: invalid target for link 'RelatingPropertyDefinition' of object type
     # 'default::IfcRelDefinesByProperties': 'default::IfcPropertySetDefinitionSelect'
@@ -69,20 +60,19 @@ def test_ifc_rel_defines_by_properties(schema_der):
 
     ifc_class = "IfcRelDefinesByProperties"
     link_name = "RelatingPropertyDefinition"
-    insert_entity = get_insert_entity(ifc_class)
-    insert_link = insert_entity.entity.links.get(link_name)
-    # insert_str = insert_entity.to_edql_str(True)
-    # link_str = link_insert.to_edql_str(assign_to_variable=True)
-    db_entity = schema_der.db_entities.get(ifc_class)
+    entity = get_insert_entity(ifc_class)
+    insert_link = entity.links.get(link_name)
+    db_entity = schema_der_unwrapped_enums.db_entities.get(ifc_class)
     db_link = db_entity.links.get(link_name)
-    print("link_str")
+
+    print(insert_link, db_link)
 
 
-def test_measure_with_unit():
+def test_measure_with_unit(schema_der_unwrapped_enums):
     schema = "IFC4x1"
     ifc_class = "IfcMeasureWithUnit"
     er = EntityResolver(schema)
-    schema_obj = er.schema_model.to_db_entities([ifc_class], return_as_dict=True).get(ifc_class)
+    schema_obj = schema_der_unwrapped_enums.db_entities.get(ifc_class)
     _ = schema_obj.to_schema_str()
 
     ifc_io = IfcIO(ifc_file=top_dir() / "files/SimpleStru.ifc")
@@ -100,30 +90,21 @@ def test_measure_with_unit():
     print(link_str)
 
 
-def test_ifc_arc_index():
-    schema = "IFC4x1"
-    ifc_class = "IfcArcIndex"
-    er = EntityResolver(schema)
-    _ = er.schema_model.to_db_entities([ifc_class], return_as_dict=True).get(ifc_class)
-
-
-def test_bspline_surface():
-    schema = "IFC4x1"
+def test_bspline_surface(schema_der):
     ifc_class = "IfcBSplineSurface"
-    er = EntityResolver(schema)
-    db_entity = er.schema_model.to_db_entities([ifc_class], return_as_dict=True).get(ifc_class)
+    db_entity = schema_der.db_entities.get(ifc_class)
     cpoint_list = db_entity.links["ControlPointsList"]
     assert cpoint_list.link_to.name == "List_of_IfcCartesianPoint"
 
 
-def test_unwrap_enums():
+def test_unwrap_enums(schema_der):
     schema = "IFC4x1"
     er = EntityResolver(schema)
-    db_resolver = er.schema_model.to_db_entities(return_db_resolver=True)
+    db_resolver = er.schema_model.to_db_entity_resolver()
     db_resolver.resolve()
     db_resolver.all_entities = None
-    assert len(db_resolver.db_entities) == 1201
+    assert len(schema_der.db_entities) == 1202
 
     db_resolver.unwrap_enums()
 
-    assert len(db_resolver.db_entities) == 1201 - 197
+    assert len(schema_der.db_entities) == 1202 - 211

@@ -18,7 +18,7 @@ def main(database: str, ifc_files: list[str], extra_entities: list[str] = None):
         db_resolver = io.schema_model.to_db_entity_resolver(entities)
         db_resolver.resolve()
         print(f"New Engine: {len(db_resolver.db_entities)=}")
-        # db_resolver.to_esdl_file(io.db_schema_dir / "new_engine.esdl")
+        db_resolver.to_esdl_file(io.db_schema_dir / "new_engine.esdl")
         db_resolver.unwrap_enums()
         print(f"after unwrapping enums: {len(db_resolver.db_entities)=}")
         db_resolver.to_esdl_file(io.db_schema_dir / "new_engine_unwrap_enums.esdl")

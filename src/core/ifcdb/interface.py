@@ -152,13 +152,9 @@ class EdgeIO:
                         insert_str = insert.to_edql_str(assign_to_variable=False)
                         try:
                             single_json = tx.query_single_json(insert_str)
-                        except (
-                            edgedb.errors.InvalidReferenceError,
-                            edgedb.errors.InvalidLinkTargetError,
-                            edgedb.errors.EdgeQLSyntaxError,
-                        ) as e:
-                            logging.error(insert_str)
-                            raise edgedb.errors.InvalidReferenceError(e)
+                        except Exception as e:
+                            logging.exception(insert_str)
+                            raise e
                         query_res = json.loads(single_json)
                         insert.entity.uuid = query_res["id"]
                         print(insert_str)
