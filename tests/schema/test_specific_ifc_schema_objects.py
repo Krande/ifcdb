@@ -18,15 +18,29 @@ def get_insert_entity(ifc_class: str, schema="IFC4x1") -> Entity:
     return entity_tool.entity
 
 
-def validate_prop(prop: DbProp | DbLink, ifc_entity_value: Any):
+def is_valid(prop: DbProp | DbLink, ifc_entity_value: Any):
+    if prop.optional is True and ifc_entity_value is None:
+        return True
+
+    if prop.is_enum and ifc_entity_value in prop.prop_value:
+        return True
+    else:
+        return False
+
     raise NotImplementedError()
 
 
-def test_ifc_si_unit(schema_der_unwrapped_enums):
+def test_ifc_si_unit(schema_der, schema_der_unwrapped_enums):
     ifc_class = "IfcSIUnit"
     entity = get_insert_entity(ifc_class)
     entity_props = entity.props
     entity_props.update(entity.links)
+
+    db_entity_pre = schema_der.db_entities.get(ifc_class)
+    db_entity_pre_props = db_entity_pre.get_all_props()
+    for key, value in db_entity_pre_props.items():
+        entity_value = entity_props.get(key)
+        assert is_valid(value, entity_value) is True
 
     db_entity = schema_der_unwrapped_enums.db_entities.get(ifc_class)
     db_entity_props = db_entity.get_all_props()
@@ -34,7 +48,7 @@ def test_ifc_si_unit(schema_der_unwrapped_enums):
 
     for key, value in db_entity_props.items():
         entity_value = entity_props.get(key)
-        validate_prop(value, entity_value)
+        assert is_valid(value, entity_value) is True
 
 
 def test_ifc_rel_defines_by_properties(schema_der_unwrapped_enums):
