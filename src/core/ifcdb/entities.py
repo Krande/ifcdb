@@ -8,6 +8,7 @@ import ifcopenshell
 import toposort
 
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel, TypeModel
+from ifcdb.schema.new_model import DbEntity, DbEntityModel, DbLink
 from ifcdb.utils import change_case
 
 _IFC_ENTITY = ifcopenshell.entity_instance
@@ -160,6 +161,97 @@ class EntityResolver:
 
         top_entity = walk(el)
         entity_identifier_map = {x.temp_unique_identifier: x for x in linked_objects.values()}
+        return EntityTool(top_entity, entity_identifier_map)
+
+
+@dataclass
+class EntityFromDbEntity:
+    er: DbEntityModel
+    linked_objects: dict[_IFC_ENTITY, Entity] = field(default_factory=dict)
+
+    def _fill_wrapped_value_with_db_entites(self, entity: Entity, db_l_start: DbLink, db_e_end: DbEntity) -> Entity:
+        # TODO: this should be reworked significantly.
+        entity_path = []
+        curr_entities = [db_e_end]
+        target_name = db_l_start.link_from.name
+        while True:
+            if len(curr_entities) == 0:
+                raise ValueError("Unable to establish path")
+            x = curr_entities.pop()
+            if x not in entity_path:
+                entity_path.append(x)
+            if x.name == target_name:
+                break
+            if x.extending is not None and x.extending.name == target_name:
+                if x.extending not in entity_path:
+                    entity_path.append(x.extending)
+                break
+            curr_entities += [e.link_from for e in x.linked_from if e.link_from not in entity_path]
+
+        return Entity()
+
+    def walk_entity(self, source: _IFC_ENTITY):
+        ifc_class = source.is_a()
+        info = source.get_info(recursive=False, include_identifier=False)
+        db_entity = self.er.entities.get(source.is_a())
+        props = dict()
+        links = dict()
+        for key, value in info.items():
+            if key in ("type",):
+                continue
+            if isinstance(value, _IFC_ENTITY):
+                dblink = db_entity.get_all_props().get(key)
+
+                if dblink is None:
+                    raise ValueError(f"{ifc_class=} links to {value.is_a()} which does not exists @ {db_entity.name=}")
+
+                entity_ifc_class = value.is_a()
+                result = dblink.get_derived_type(entity_ifc_class)
+                entity_result = self.walk(value)
+                if result is None:
+                    raise ValueError()
+                if entity_result.name == dblink.name:
+                    print("Can use as is")
+                    proper_entity = entity_result
+                else:
+                    proper_entity = self._fill_wrapped_value_with_db_entites(entity_result, dblink, result)
+                links[key] = proper_entity
+            elif isinstance(value, tuple):
+                res = self.walk(value)
+                if value_contains_link(res):
+                    links[key] = res
+                else:
+                    props[key] = res
+            elif isinstance(value, dict):
+                res = self.walk(value)
+                if value_contains_link(res):
+                    links[key] = res
+                else:
+                    props[key] = res
+            else:
+                props[key] = value
+        new_entity = Entity(source.is_a(), props, links)
+        self.linked_objects[source] = new_entity
+        return new_entity
+
+    def walk(self, source) -> Entity | dict | tuple | float | int | str:
+        if isinstance(source, _IFC_ENTITY):
+            existing_obj = self.linked_objects.get(source, None)
+            if existing_obj is not None:
+                return existing_obj
+            return self.walk_entity(source)
+        elif isinstance(source, tuple):
+            return tuple([self.walk(v) for v in source])
+        elif isinstance(source, dict):
+            return {key: self.walk(value) for key, value in source.items()}
+        elif isinstance(source, (float, str, int)):
+            return source
+        else:
+            raise NotImplementedError(f'Unsupported type "{type(source)}"')
+
+    def create_entity_tool_from_ifcopenshell_entity(self, el: _IFC_ENTITY) -> EntityTool:
+        top_entity = self.walk(el)
+        entity_identifier_map = {x.temp_unique_identifier: x for x in self.linked_objects.values()}
         return EntityTool(top_entity, entity_identifier_map)
 
 

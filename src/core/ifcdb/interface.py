@@ -12,6 +12,7 @@ import edgedb
 import ifcopenshell
 from dotenv import load_dotenv
 
+from ifcdb.config import IfcDbConfig
 from ifcdb.database.admin import DbConfig, DbMigration
 from ifcdb.database.getters.get_bulk import BulkGetter
 from ifcdb.database.inserts.seq_model import INSERTS
@@ -21,6 +22,7 @@ from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
+from ifcdb.schema.new_model import from_schema_version
 
 
 @dataclass
@@ -33,6 +35,8 @@ class EdgeIO:
     schema_model: IfcSchemaModel = None
     load_env: bool = False
     use_new_schema_gen: bool = False
+
+    db_config: IfcDbConfig = IfcDbConfig(ifc_schema)
 
     def __post_init__(self):
         self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
@@ -119,9 +123,8 @@ class EdgeIO:
         related_entities = self.schema_model.get_related_entities(unique_entities)
         esdl_filepath = self.db_schema_dir / f"{module_name}.esdl"
         if self.use_new_schema_gen:
-            db_resolver = self.schema_model.to_db_entity_resolver(related_entities)
-            db_resolver.resolve()
-            db_resolver.to_esdl_file(esdl_filepath, module_name)
+            dem = from_schema_version(self.ifc_schema, self.db_config.unwrapped_enums, self.db_config.unwrapped_selects)
+            dem.to_esdl_file(esdl_filepath, module_name)
         else:
             self.schema_model.to_esdl_file(esdl_filepath, related_entities, module_name)
 

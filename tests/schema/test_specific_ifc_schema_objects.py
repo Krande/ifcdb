@@ -4,7 +4,7 @@ from typing import Any
 
 from ifcdb.database.inserts.base import EdgeInsert
 from ifcdb.entities import Entity, EntityResolver
-from ifcdb.io.ifc.concept import IfcIO
+from ifcdb.io.ifc.interface import IfcIO
 from ifcdb.schema.new_model import DbLink, DbProp
 from ifcdb.utils import top_dir
 

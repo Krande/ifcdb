@@ -2,11 +2,11 @@ from itertools import count
 
 import ifcopenshell
 
-from ifcdb.database.inserts.sequentially import InsertSeq
 from ifcdb.database.inserts import EdgeInsert
+from ifcdb.database.inserts.sequentially import InsertSeq
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.entities import Entity, EntityResolver
-from ifcdb.io.ifc.concept import IfcIO
+from ifcdb.io.ifc.interface import IfcIO
 
 
 def test_cube_upload_to_blank_db_using_bulk_handler(my_cube):

@@ -21,7 +21,7 @@ from .utils import (
 wrap = ifcopenshell.ifcopenshell_wrapper
 
 if TYPE_CHECKING:
-    from .new_model import DbEntity, DbEntityResolver
+    from .new_model import DbEntityResolver
 
 
 @dataclass
@@ -697,20 +697,9 @@ class IfcSchemaModel:
             all_ent_str = self.get_all_entities(sort=True)
 
         all_ents = [self.get_entity_by_name(x) for x in all_ent_str]
-
-        return DbEntityResolver(all_ents)
-
-    def to_db_entities(
-        self, entities: list[str] = None, return_as_dict=False
-    ) -> list[DbEntity] | dict[str, DbEntity] | DbEntityResolver:
-        der = self.to_db_entity_resolver(entities)
-
-        db_entities = der.get_db_entities()
-
-        if return_as_dict is True:
-            return {r.name: r for r in db_entities}
-
-        return db_entities
+        der = DbEntityResolver()
+        der.resolve(all_ents)
+        return der
 
 
 IfcSchemaType = TypeVar("IfcSchemaType", EntityModel, EnumModel, TypeModel, SelectModel, IntermediateClass)

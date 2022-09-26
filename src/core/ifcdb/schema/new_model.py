@@ -4,7 +4,9 @@ import os
 import pathlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Iterable
+
+from ifcdb.config import IfcDbConfig
 
 from .common import CommonData
 from .model import (
@@ -25,121 +27,267 @@ _ENTITY_CLASS = EntityModel | EnumModel | TypeModel | SelectModel | Intermediate
 class DbEntityUpdate:
     db_entity: DbEntity | DbLink
     entity: _ENTITY_CLASS
-    val: AttributeModel | list[_ENTITY_CLASS]
+    val: AttributeModel | list[_ENTITY_CLASS] | str
+
+
+@dataclass
+class DbEntityModel:
+    entities: dict[str, DbEntity]
+    config: IfcDbConfig
+
+    def to_esdl_str(self, module_name: str):
+        types_str = "\n".join([x.to_schema_str() for x in self.entities.values()])
+        return f"module {module_name} {{\n\n{types_str}\n}}"
+
+    def to_esdl_file(self, filepath: os.PathLike, module_name: str = "default"):
+        filepath = pathlib.Path(filepath).resolve().absolute()
+        os.makedirs(filepath.parent, exist_ok=True)
+        with open(filepath, "w") as f:
+            f.write(self.to_esdl_str(module_name))
 
 
 @dataclass
 class DbEntityResolver:
-    all_entities: list[_ENTITY_CLASS]
-    db_entities: dict[str, DbEntity] = field(default_factory=dict)
 
+    db_entities: dict[str, DbEntity] = field(default_factory=dict)
     to_be_updated_later: list[DbEntityUpdate] = field(default_factory=list)
+
+    def resolve(self, entities: list[_ENTITY_CLASS]):
+        for entity in entities:
+            db_entity = self.convert_entity(entity)
+            if db_entity is None:
+                continue
+            if db_entity.name in self.db_entities.keys():
+                raise ValueError("Duplicate db entities should not happen")
+            self.db_entities[db_entity.name] = db_entity
+
+        to_be_updated = [x for x in self.to_be_updated_later]
+
+        for entity in to_be_updated:
+            self.update_db_entities(entity)
+
+        # Clear update list
+        self.to_be_updated_later = []
+
+        # Update supertype relationships
+        for key, entity in self.db_entities.items():
+            if entity.extending is None:
+                continue
+
+            if isinstance(entity.extending, str):
+                supertype_class = self.db_entities.get(entity.extending)
+                entity.extending = supertype_class
+            else:
+                supertype_class = entity.extending
+
+            supertype_class.extended_by.append(entity)
+
+        # Check for incompatible nested linked list of
+        new_db_entities = []
+        for entity in self.db_entities.values():
+            for link in entity.links.values():
+                is_nested_link = link.array_def is not None and link.array_def.levels > 1
+                if is_nested_link is False:
+                    continue
+                new_intermediate_db_entity_name = "List_of_" + link.link_to.name
+                new_link_name = link.link_to.name + "s"
+                new_db_link = DbLink(new_link_name, link.link_to, array_def=link.array_def)
+                new_db_entity = DbEntity(new_intermediate_db_entity_name, links={new_link_name: new_db_link})
+                new_db_entities.append(new_db_entity)
+                link.link_to = new_db_entity
+
+        for new_db_entity in new_db_entities:
+            self.db_entities[new_db_entity.name] = new_db_entity
+
+        # Add linked_from properties
+        for db_entity in self.db_entities.values():
+            for link in db_entity.links.values():
+                link.link_from = db_entity
+                if isinstance(link.link_to, DbEntity):
+                    link.link_to.linked_from.append(link)
+                else:
+                    for sl in link.link_to:
+                        sl.linked_from.append(link)
 
     def convert_entity(self, entity: _ENTITY_CLASS) -> DbEntity | None:
         if isinstance(entity, TypeModel):
-            array_type = None
-            if entity.is_aggregate():
-                array_type = get_array_obj(entity)
-
-            value = get_base_type_name(entity.entity)
-            if isinstance(value, str):
-                return DbEntity(entity.name, props={entity.name: DbProp(value, array_def=array_type)})
-            else:
-                ref_db_entity = self.db_entities.get(value.name())
-
-                if ref_db_entity is None:
-                    ref_db_entity = value.name()
-
-                link = DbLink(entity.name, link_to=ref_db_entity, array_def=array_type)
-                db_entity = DbEntity(entity.name, links={entity.name: link})
-                if isinstance(ref_db_entity, str):
-                    self.to_be_updated_later.append(DbEntityUpdate(link, entity, value.name()))
-
-                return db_entity
+            return self._convert_type_model(entity)
         elif isinstance(entity, EnumModel):
-            enum_data = entity.get_enum_items()
-            return DbEntity(entity.name, props={entity.name: DbProp(enum_data, is_enum=True)})
+            return self._convert_enum_model(entity)
         elif isinstance(entity, SelectModel):
-            select_entities = entity.get_select_entities()
-            select_db_entities = []
-            missing_select_entities = []
-            for s in select_entities:
-                existing_entity = self.db_entities.get(s.name)
-                if existing_entity is None:
-                    missing_select_entities.append(s)
-                select_db_entities.append(existing_entity)
-
-            link = DbLink(entity.name, select_db_entities, is_select=True)
-            db_entity = DbEntity(entity.name, links={entity.name: link})
-
-            if len(missing_select_entities) > 0:
-                self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, missing_select_entities))
-            return db_entity
+            return self._convert_select_model(entity)
         elif isinstance(entity, EntityModel):
-            db_parent = None
-            parent = entity.entity.supertype()
-            if parent is not None:
-                db_parent = self.db_entities.get(parent.name())
-                if db_parent is None:
-                    db_parent = parent.name()
-
-            links: dict[str, DbLink] = dict()
-            props: dict[str, DbProp] = dict()
-
-            db_entity = DbEntity(entity.name, links, props, extending=db_parent, abstract=entity.entity.is_abstract())
-
-            for val in entity.get_attributes():
-                val_name = val.name
-                if self.is_val_prop(val):
-                    props[val_name] = self.get_prop(val)
-                else:
-                    link = self.get_link(val)
-                    if link is None:
-                        self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, val))
-
-                    links[val_name] = link
-
-            return db_entity
-
+            return self._convert_entity_model(entity)
         elif isinstance(entity, IntermediateClass):
-            links = dict()
-            db_entity = DbEntity(entity.name, links=links)
-            link = self.get_link(entity.source_attribute)
-            if link is None:
-                self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, entity.source_attribute))
-            links[entity.att_name] = link
-            return
+            return self._convert_intermediate_class_model(entity)
         else:
             raise NotImplementedError()
 
     def update_db_entities(self, update_entity: DbEntityUpdate):
-        if isinstance(update_entity.val, list):
-            entity = update_entity.db_entity
-            for missing_entity in update_entity.val:
-                link = entity.links[entity.name]
-                existing_obj = self.db_entities.get(missing_entity.name, None)
-                if existing_obj is None:
-                    raise ValueError("")
-                if None in link.link_to:
-                    index = link.link_to.index(None)
-                    link.link_to.pop(index)
-                link.link_to.append(existing_obj)
-        elif isinstance(update_entity.val, str) and isinstance(update_entity.db_entity, DbLink):
-
-            linked_to = self.db_entities.get(update_entity.val)
-            if linked_to is None:
-                raise NotImplementedError()
-            update_entity.db_entity.link_to = linked_to
+        if isinstance(update_entity.db_entity, DbEntity) and update_entity.db_entity.is_select:
+            self._update_select(update_entity)
+        elif isinstance(update_entity.db_entity, DbEntity):
+            self._update_db_entity(update_entity)
+        elif isinstance(update_entity.db_entity, DbLink) and isinstance(update_entity.val, str):
+            self._update_db_link(update_entity)
         else:
-            key = update_entity.val.name
-            value = update_entity.db_entity.links.get(key)
-            if value is not None:
-                raise ValueError
-            link = self.get_link(update_entity.val)
-            if link is None:
-                raise ValueError("")
+            raise NotImplementedError()
 
-            update_entity.db_entity.links[key] = link
+    def unwrap_selects(self):
+        non_select_entities = list(filter(lambda x: x.is_select is False, self.db_entities.values()))
+        for link in walk_links_with_selects(non_select_entities):
+            select_entity = link.link_to
+            select_link = select_entity.links[select_entity.name]
+            sub_entities = unwrap_and_flatten_selects_to_list(select_link)
+            for se in sub_entities:
+                if se.name not in self.db_entities.keys():
+                    self.db_entities[se.name] = se
+            non_select_db_entity = link.link_from
+            # Replace link pointing to Select object with a link pointing directly to all wrapped entities
+            non_select_db_entity.links[link.name] = DbLink(
+                link.name, link_to=sub_entities, is_select=True, optional=link.optional, link_from=link.link_from
+            )
+
+        # Remove all select entities
+        select_entities = list(filter(lambda x: x.is_select, self.db_entities.values()))
+        for s in select_entities:
+            self.db_entities.pop(s.name)
+        print(f'Flattened and removed "{len(select_entities)}" Selects')
+
+    def unwrap_enums(self):
+        enums_removed = 0
+        links_severed = 0
+        entities_list = list(filter(lambda x: x.is_enum, self.db_entities.values()))
+        for db_entity in entities_list:
+
+            for link in db_entity.linked_from:
+                linking_db_entity = link.link_from
+                if linking_db_entity.is_select:
+                    continue
+                linking_db_entity.links.pop(link.name)
+                linking_db_entity.props[link.name] = db_entity.props[db_entity.name]
+                links_severed += 1
+
+            self.db_entities.pop(db_entity.name)
+            enums_removed += 1
+
+        print(f'Removed {enums_removed} Enums and replaced "{links_severed}" links to Enums with DbProp objects')
+
+    def get_db_entities(self, unwrap_enums=False, unwrap_selects=False) -> DbEntityModel:
+        if unwrap_enums:
+            self.unwrap_enums()
+
+        if unwrap_selects:
+            self.unwrap_selects()
+
+        return DbEntityModel(self.db_entities)
+
+    def _update_db_link(self, update_entity: DbEntityUpdate):
+        linked_to = self.db_entities.get(update_entity.val)
+        if linked_to is None:
+            raise NotImplementedError()
+        update_entity.db_entity.link_to = linked_to
+
+    def _update_db_entity(self, update_entity: DbEntityUpdate):
+        key = update_entity.val.name
+        value = update_entity.db_entity.links.get(key)
+        if value is not None:
+            raise ValueError
+        link = self.get_link(update_entity.val)
+        if link is None:
+            raise ValueError("")
+
+        update_entity.db_entity.links[key] = link
+
+    def _update_select(self, update_entity: DbEntityUpdate):
+        entity = update_entity.db_entity
+        for missing_entity in update_entity.val:
+            link = entity.links[entity.name]
+            if None in link.link_to:
+                link.link_to = [x for x in link.link_to if x is not None]
+
+            existing_obj = self.db_entities.get(missing_entity.name, None)
+            if existing_obj is None:
+                raise ValueError()
+
+            link.link_to.append(existing_obj)
+
+    def _convert_type_model(self, entity: TypeModel):
+        array_type = None
+        if entity.is_aggregate():
+            array_type = get_array_obj(entity)
+
+        value = get_base_type_name(entity.entity)
+        if isinstance(value, str):
+            return DbEntity(entity.name, props={entity.name: DbProp(value, array_def=array_type)})
+        else:
+            ref_db_entity = self.db_entities.get(value.name())
+
+            if ref_db_entity is None:
+                ref_db_entity = value.name()
+
+            link = DbLink(entity.name, link_to=ref_db_entity, array_def=array_type)
+            db_entity = DbEntity(entity.name, links={entity.name: link})
+            if isinstance(ref_db_entity, str):
+                self.to_be_updated_later.append(DbEntityUpdate(link, entity, value.name()))
+
+            return db_entity
+
+    def _convert_enum_model(self, entity: EnumModel):
+        enum_data = entity.get_enum_items()
+        return DbEntity(entity.name, props={entity.name: DbProp(enum_data, is_enum=True)}, is_enum=True)
+
+    def _convert_select_model(self, entity: SelectModel):
+        select_entities = entity.get_select_entities()
+        select_db_entities = []
+        missing_select_entities = []
+        for s in select_entities:
+            existing_entity = self.db_entities.get(s.name)
+            if existing_entity is None:
+                missing_select_entities.append(s)
+            select_db_entities.append(existing_entity)
+
+        link = DbLink(entity.name, select_db_entities, is_select=True)
+        db_entity = DbEntity(entity.name, links={entity.name: link}, is_select=True)
+
+        if len(missing_select_entities) > 0:
+            self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, missing_select_entities))
+        return db_entity
+
+    def _convert_entity_model(self, entity: EntityModel):
+        db_parent = None
+        parent = entity.entity.supertype()
+        if parent is not None:
+            db_parent = self.db_entities.get(parent.name())
+            if db_parent is None:
+                db_parent = parent.name()
+
+        links: dict[str, DbLink] = dict()
+        props: dict[str, DbProp] = dict()
+
+        db_entity = DbEntity(entity.name, links, props, extending=db_parent, abstract=entity.entity.is_abstract())
+
+        for val in entity.get_attributes():
+            val_name = val.name
+            if self.is_val_prop(val):
+                props[val_name] = self.get_prop(val)
+            else:
+                link = self.get_link(val)
+                if link is None:
+                    self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, val))
+
+                links[val_name] = link
+
+        return db_entity
+
+    def _convert_intermediate_class_model(self, entity: IntermediateClass):
+        links = dict()
+        db_entity = DbEntity(entity.name, links=links)
+        link = self.get_link(entity.source_attribute)
+        if link is None:
+            self.to_be_updated_later.append(DbEntityUpdate(db_entity, entity, entity.source_attribute))
+        links[entity.att_name] = link
+        return db_entity
 
     def is_val_prop(self, val: AttributeModel) -> bool:
         array_ref = val.array_ref()
@@ -177,134 +325,6 @@ class DbEntityResolver:
             return DbLink(val.name, existing_db_object, array_def=array_def, optional=optional)
         else:
             raise NotImplementedError()
-
-    def resolve(self):
-        for entity in self.all_entities:
-            db_entity = self.convert_entity(entity)
-            if db_entity is None:
-                continue
-            if db_entity.name in self.db_entities.keys():
-                raise ValueError("Duplicate db entities should not happen")
-            self.db_entities[db_entity.name] = db_entity
-
-        to_be_updated = [x for x in self.to_be_updated_later]
-
-        for entity in to_be_updated:
-            self.update_db_entities(entity)
-
-        # Update supertype relationships
-        for key, entity in self.db_entities.items():
-            if entity.extending is None:
-                continue
-            if isinstance(entity.extending, str):
-                entity.extending = self.db_entities.get(entity.extending)
-
-        # Check for incompatible nested linked list of
-        new_db_entities = []
-        for key, entity in self.db_entities.items():
-            for link_name, link in entity.links.items():
-                is_nested_link = link.array_def is not None and link.array_def.levels > 1
-                if is_nested_link is False:
-                    continue
-                new_intermediate_db_entity_name = "List_of_" + link.link_to.name
-                new_link_name = link.link_to.name + "s"
-                new_db_link = DbLink(new_link_name, link.link_to, array_def=link.array_def)
-                new_db_entity = DbEntity(new_intermediate_db_entity_name, links={new_link_name: new_db_link})
-                new_db_entities.append(new_db_entity)
-                link.link_to = new_db_entity
-
-        for new_db_entity in new_db_entities:
-            self.db_entities[new_db_entity.name] = new_db_entity
-
-    def unwrap_selects(self):
-        def get_all_selects(e: DbLink, selects: list[DbEntity] = None) -> list[DbEntity]:
-            selects = [] if selects is None else selects
-            for sub_link in e.link_to:
-                contains_sub_selects = False
-                for slink in sub_link.links.values():
-                    if slink.is_select is False:
-                        continue
-                    contains_sub_selects = True
-                    get_all_selects(slink, selects)
-                if contains_sub_selects is False:
-                    selects.append(sub_link)
-
-            return selects
-
-        entities_to_pop = []
-        for name, db_entity in self.db_entities.items():
-            if "Select" in name:
-                continue
-            for key, link in db_entity.links.items():
-                if link.is_select is False:
-                    continue
-                entities = get_all_selects(link)
-                if len(entities) == len(link.link_to):
-                    continue
-                # print(f"selects {len(entities)}")
-
-                if db_entity not in entities_to_pop:
-                    entities_to_pop.append(db_entity)
-                link.link_to = entities
-
-        for entity in entities_to_pop:
-            self.db_entities.pop(entity.name)
-
-        print(f'Flattened and removed "{len(entities_to_pop)}" Selects')
-
-    def unwrap_enums(self):
-        def get_enum(e: DbEntity) -> DbProp | None:
-            link_vals = e.links.keys()
-            vals = e.props.values()
-            for prop in vals:
-                if prop.is_enum is True and len(vals) == 1 and len(link_vals) == 0:
-                    return prop
-            return None
-
-        entities_to_pop = []
-        for name, db_entity in self.db_entities.items():
-            links_to_pop = []
-
-            for key, link in db_entity.links.items():
-                if isinstance(link.link_to, DbEntity) is False:
-                    continue
-                enum_prop = get_enum(link.link_to)
-                if enum_prop is None:
-                    continue
-                if link.link_to not in entities_to_pop:
-                    entities_to_pop.append(link.link_to)
-                db_entity.props[key] = enum_prop
-                links_to_pop.append(key)
-            for key in links_to_pop:
-                db_entity.links.pop(key)
-
-        for entity in entities_to_pop:
-            # if 'Enum' not in entity.name:
-            #     continue
-            self.db_entities.pop(entity.name)
-
-        print(f'Converted and removed "{len(entities_to_pop)}" Enums to simple constraints on string properties')
-
-    def get_db_entities(self, unwrap_enums=False, unwrap_selects=False) -> list[DbEntity]:
-        self.resolve()
-
-        if unwrap_enums:
-            self.unwrap_enums()
-
-        if unwrap_selects:
-            self.unwrap_selects()
-
-        return list(self.db_entities.values())
-
-    def to_esdl_str(self, module_name: str):
-        types_str = "\n".join([x.to_schema_str() for x in self.db_entities.values()])
-        return f"module {module_name} {{\n\n{types_str}\n}}"
-
-    def to_esdl_file(self, filepath: os.PathLike, module_name: str = "default"):
-        filepath = pathlib.Path(filepath).resolve().absolute()
-        os.makedirs(filepath.parent, exist_ok=True)
-        with open(filepath, "w") as f:
-            f.write(self.to_esdl_str(module_name))
 
 
 class DbListTypes(Enum):
@@ -411,7 +431,7 @@ class DbProp:
 class DbLink:
     name: str
     link_to: DbEntity | list[DbEntity]
-    link_from: list[DbEntity] = field(repr=False, default_factory=list)
+    link_from: DbEntity = field(repr=False, default=None)
     is_select: bool = field(default=False)
     optional: bool = False
     array_def: ArrayDef = None
@@ -424,6 +444,20 @@ class DbLink:
         else:
             raise NotImplementedError()
 
+    def get_derived_type(self, ifc_class_name) -> DbEntity | None:
+        if isinstance(self.link_to, list) is False:
+            link_to = [self.link_to]
+        else:
+            link_to = self.link_to
+
+        entities = []
+        for x in link_to:
+            entities += get_db_entity_children(x)
+
+        rmp = {x.name: x for x in entities}
+        result = rmp.get(ifc_class_name, None)
+        return result
+
 
 @dataclass
 class DbEntity:
@@ -431,25 +465,28 @@ class DbEntity:
     links: dict[str, DbLink] = field(default_factory=dict)
     props: dict[str, DbProp] = field(default_factory=dict)
     extending: DbEntity = field(default=None, repr=False)
+    linked_from: list[DbLink] = field(default_factory=list, repr=False)
     abstract: bool = False
+    extended_by: list[DbEntity] = field(default_factory=list, repr=False)
 
-    def __post_init__(self):
-        for link in self.links.values():
-            if link is None:
-                continue
-            link.link_from.append(self)
+    is_select: bool = False
+    is_enum: bool = False
 
-    def get_all_props(self) -> dict[str, DbProp | DbLink]:
+    def get_all_props(self, skip_props=False, skip_links=False) -> dict[str, DbProp | DbLink]:
         props = {}
-        props.update(self.props)
-        props.update(self.links)
+        if skip_props is False:
+            props.update(self.props)
+        if skip_links is False:
+            props.update(self.links)
         curr_db_entity = self
         while True:
             if curr_db_entity.extending is None:
                 break
             curr_db_entity = curr_db_entity.extending
-            props.update(curr_db_entity.props)
-            props.update(curr_db_entity.links)
+            if skip_props is False:
+                props.update(curr_db_entity.props)
+            if skip_links is False:
+                props.update(curr_db_entity.links)
         return props
 
     def links_str(self, indent: str) -> str:
@@ -512,11 +549,41 @@ def get_array_obj(array_ref) -> ArrayDef:
     return ArrayDef(ltype, shapes)
 
 
-def from_schema_version(schema_version: str) -> DbEntityResolver:
+def walk_links_with_selects(non_select_entities: list[DbEntity]) -> Iterable[DbLink]:
+    for db_entity in non_select_entities:
+        for link in db_entity.links.values():
+            if isinstance(link.link_to, DbEntity) and link.link_to.is_select is True:
+                yield link
+
+
+def unwrap_and_flatten_selects_to_list(link: DbLink, entities: list[DbEntity] = None) -> list[DbEntity]:
+    """Drill down all nested Select paths and return all relevant DbEntities into a single flat list"""
+    entities = [] if entities is None else entities
+    for sub_entity in link.link_to:
+        if sub_entity.is_select is False:
+            entities.append(sub_entity)
+        else:
+            unwrap_and_flatten_selects_to_list(sub_entity.links[sub_entity.name], entities)
+
+    return entities
+
+
+def from_schema_version(schema_version: str, unwrap_enums=False, unwrap_selects=False) -> DbEntityModel:
     from .model import IfcSchemaModel
 
     ifm = IfcSchemaModel(schema_version)
-    der = DbEntityResolver([ifm.get_entity_by_name(x) for x in ifm.get_all_entities()])
-    der.resolve()
-    der.all_entities = None
-    return der
+    der = DbEntityResolver()
+    der.resolve([ifm.get_entity_by_name(x) for x in ifm.get_all_entities()])
+    if unwrap_enums:
+        der.unwrap_enums()
+    if unwrap_selects:
+        der.unwrap_selects()
+    return DbEntityModel(der.db_entities, IfcDbConfig(schema_version, unwrap_enums, unwrap_selects))
+
+
+def get_db_entity_children(db_entity: DbEntity, entities: list[DbEntity] = None):
+    entities = [] if entities is None else entities
+    entities.append(db_entity)
+    for x in db_entity.extended_by:
+        get_db_entity_children(x, entities)
+    return entities
