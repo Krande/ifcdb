@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import logging
-
 import os
 import pathlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable
 
 from ifcdb.config import IfcDbConfig
 
@@ -175,11 +174,13 @@ class DbEntityResolver:
                 linking_db_entity = link.link_from
                 if linking_db_entity.is_select:
                     continue
-                linking_db_entity.links.pop(link.name)
+                # TODO: check if this link differs
+                # popped_link = linking_db_entity.links.pop(link.name)
                 enum_prop = db_entity.props[db_entity.name]
 
-                if enum_prop.optional != link.optional:
-                    enum_prop.optional = link.optional
+                # if db_entity.name == 'IfcBeam':
+                #     print('sd')
+                enum_prop.optional = link.optional
                 linking_db_entity.props[link.name] = enum_prop
                 links_severed += 1
 
@@ -272,7 +273,8 @@ class DbEntityResolver:
         props: dict[str, DbProp] = dict()
 
         db_entity = DbEntity(entity.name, links, props, extending=db_parent, abstract=entity.entity.is_abstract())
-
+        if entity.name == "IfcBeam":
+            print("sd")
         for val in entity.get_attributes():
             val_name = val.name
             if self.is_val_prop(val):
@@ -327,7 +329,6 @@ class DbEntityResolver:
                 return None
 
             array_def = get_array_obj(array_ref) if array_ref is not None else None
-
             return DbLink(val.name, existing_db_object, array_def=array_def, optional=optional)
         else:
             raise NotImplementedError()

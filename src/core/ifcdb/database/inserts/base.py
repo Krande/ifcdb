@@ -3,13 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import count
 
-from typing import TYPE_CHECKING
 from ifcdb.database.select import EdgeFilter, EdgeSelect
 from ifcdb.entities import Entity
 from ifcdb.utils import change_case
-
-if TYPE_CHECKING:
-    from ifcdb.schema.new_model import DbProp
 
 _INSERT_VAR = count()
 
@@ -23,31 +19,47 @@ class EdgeInsert:
         if self.name is None:
             self.name = f"{change_case(self.entity.name)}_{next(_INSERT_VAR)}"
 
-    def to_edql_str(self, assign_to_variable=False, indent_override: str = None, prop_sep=",", sep=","):
+    def to_edql_str(self, assign_to_variable=False, indent_override: str = None, prop_sep=",", sep=",", detached=False):
         indent = "" if indent_override is None else indent_override
         props = ""
         props_writable = {p: v for p, v in self.entity.props.items() if v is not None}
-
+        if self.entity.name == "IfcBeam":
+            print("sd")
         if len(props_writable) > 0:
             props = to_props_str(self.entity, sep=prop_sep)
         links = ""
+        with_block_content = None
         if len(self.entity.links) > 0:
             if len(props_writable) > 0:
                 links += prop_sep
 
             for key, l_obj in self.get_link_objects().items():
-
                 if isinstance(l_obj, Entity):
                     links += f"{key} := {l_obj.name}" + prop_sep
-                elif isinstance(l_obj, (EdgeInsert, EdgeSelect)):
+                elif isinstance(l_obj, EdgeInsert):
                     edql_str = l_obj.to_edql_str(assign_to_variable)
                     links += f"{key} := ({edql_str})" + prop_sep
+                elif isinstance(l_obj, EdgeSelect):
+                    # Self-referencing is not allowed. Will use detached if necessary
+                    detached = l_obj.entity_top.name == self.entity.name
+                    edql_str = l_obj.to_edql_str(assign_to_variable, detached=detached)
+                    links += f"{key} := ({edql_str})" + prop_sep
+                elif isinstance(l_obj, tuple):
+                    if with_block_content is None:
+                        with_block_content = ""
+                    refs = ""
+                    for o in l_obj:
+                        with_block_content += o.to_edql_str(assign_to_variable=True) + "\n"
+                        refs += o.name + prop_sep
+                    links += f"{key} := {{ {refs} }}" + prop_sep
                 else:
                     links += f"{key} := {value_writer(l_obj)}" + prop_sep
 
             # links += to_links_str(self.entity, sep=prop_sep)
-
-        insert_base = f"INSERT {self.entity.name} {{ {props}{links} }}"
+        if with_block_content is not None:
+            insert_base = f"with\n{with_block_content}\nINSERT {self.entity.name} {{ {props}{links} }}"
+        else:
+            insert_base = f"INSERT {self.entity.name} {{ {props}{links} }}"
 
         if assign_to_variable is False:
             return insert_base
@@ -70,14 +82,7 @@ class EdgeInsert:
 
 
 def to_props_str(entity: Entity, sep=",") -> str:
-    pstr = ""
-    for key, value in entity.props.items():
-        if value is None:
-            continue
-        db_props = entity.db_entity.props.get(key)
-
-        pstr = f"{key}:= {value_writer(value, db_props)}" + sep
-    return pstr
+    return f"{sep}".join([f"{key}:= {value_writer(value)}" for key, value in entity.props.items() if value is not None])
 
 
 def get_link_entity_object(value: Entity):
@@ -126,16 +131,9 @@ def link_select(v: Entity, wrap_select=False) -> str:
             return f"SELECT {v.name} filter .id=<uuid>'{v.uuid}'"
 
 
-def value_writer(value, db_props: DbProp = None) -> str:
+def value_writer(value) -> str:
     if isinstance(value, str):
         return f"'{value}'"
-    elif isinstance(value, tuple) and db_props is not None:
-        bound = db_props.array_def.shapes[-1]
-        btype = bound.bound_type
-        if btype == btype.ARRAY:
-            return f"{list(value)}"
-        else:
-            return f"{value}"
     elif isinstance(value, tuple):
         return f"{list(value)}"
     else:

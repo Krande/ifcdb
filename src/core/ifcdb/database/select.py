@@ -20,7 +20,7 @@ class EdgeFilter:
     value: str
     value_type: FilterType
 
-    TYPES: ClassVar[FilterType]
+    TYPES: ClassVar[FilterType] = FilterType
 
     def to_edql_str(self):
         return f"FILTER .{self.key}=<{self.value_type.value}>'{self.value}'"
@@ -77,8 +77,11 @@ class EdgeSelect:
             select_str += " limit 1"
             return select_str
 
-    def to_edql_str(self, assign_to_variable=True, sep=","):
+    def to_edql_str(self, assign_to_variable=True, sep=",", detached=False):
         select_str = "select "
+        if detached:
+            select_str += "detached "
+
         entity_path = (
             f"{self.entity_top.name}.{self.entity_path}" if self.entity_path is not None else self.entity_top.name
         )
