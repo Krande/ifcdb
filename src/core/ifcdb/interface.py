@@ -1,28 +1,27 @@
 from __future__ import annotations
 
-import json
-import logging
+import edgedb
 import os
 import pathlib
 import time
 from dataclasses import dataclass
-from io import StringIO
-
-import edgedb
-import ifcopenshell
 from dotenv import load_dotenv
+from io import StringIO
+from typing import TYPE_CHECKING
 
 from ifcdb.config import IfcDbConfig
-from ifcdb.database.admin import DbConfig, DbMigration
+from ifcdb.database.admin import DbAdmin, DbMigration
 from ifcdb.database.getters.get_bulk import BulkGetter
-from ifcdb.database.inserts.seq_model import INSERTS
-from ifcdb.database.inserts.sequentially import InsertSeq
+from ifcdb.database.inserts.file_inserts import insert_ifc_file, INSERTS
 from ifcdb.database.remove import wipe_db
 from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
-from ifcdb.schema.new_model import from_schema_version
+from ifcdb.schema.new_model import db_entity_model_from_schema_version
+
+if TYPE_CHECKING:
+    import ifcopenshell
 
 
 @dataclass
@@ -34,13 +33,14 @@ class EdgeIO:
     debug_log: bool = False
     schema_model: IfcSchemaModel = None
     load_env: bool = False
-    use_new_schema_gen: bool = False
+    use_new_schema_gen: bool = True
 
     db_config: IfcDbConfig = IfcDbConfig(ifc_schema)
 
     def __post_init__(self):
         self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
         self.schema_model = IfcSchemaModel(self.ifc_schema)
+
         if self.load_env:
             load_dotenv()
 
@@ -61,18 +61,19 @@ class EdgeIO:
     def _create_migration_client(self) -> DbMigration:
         return DbMigration(
             database=self.database_name,
+            db_config=self.db_config,
             dbschema_dir=self.db_schema_dir,
             debug_logs=self.debug_log,
             use_new_schema_gen=self.use_new_schema_gen,
         )
 
     def database_exists(self):
-        with DbConfig(self.database_name) as db_config:
-            return db_config.database_exists()
+        with DbAdmin(self.database_name) as db_admin:
+            return db_admin.database_exists()
 
     def create_database(self):
-        with DbConfig(self.database_name) as db_config:
-            db_config.create_database()
+        with DbAdmin(self.database_name) as db_admin:
+            db_admin.create_database()
 
     def setup_database(self, delete_existing_migrations=False, create_new_database=True):
         if create_new_database:
@@ -123,56 +124,18 @@ class EdgeIO:
         related_entities = self.schema_model.get_related_entities(unique_entities)
         esdl_filepath = self.db_schema_dir / f"{module_name}.esdl"
         if self.use_new_schema_gen:
-            dem = from_schema_version(self.ifc_schema, self.db_config.unwrapped_enums, self.db_config.unwrapped_selects)
+            dem = db_entity_model_from_schema_version(self.ifc_schema, self.db_config.unwrapped_enums, self.db_config.unwrapped_selects)
             dem.to_esdl_file(esdl_filepath, module_name)
         else:
             self.schema_model.to_esdl_file(esdl_filepath, related_entities, module_name)
 
     def insert_ifc(
-        self, ifc_file_path=None, ifc_file_str=None, method=INSERTS.SEQ, limit_ifc_ids: list[int] = None
+        self, ifc_file_path=None, ifc_file_str=None, method: INSERTS = INSERTS.SEQ, limit_ifc_ids: list[int] = None
     ) -> IfcIO:
         """Upload all IFC elements to EdgeDB instance"""
         ifc_io = IfcIO(ifc_file=ifc_file_path, ifc_str=ifc_file_str)
         ifc_items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-        start = time.time()
-        for tx in self.client.transaction():
-            with tx:
-                if method == INSERTS.SEQ:
-                    sq = InsertSeq(ifc_io.schema, specific_ifc_ids=limit_ifc_ids)
-                    inserts = sq.create_bulk_entity_inserts(ifc_items=ifc_items)
-                    skipped_map = dict()
-                    for insert in inserts:
-                        if insert.entity.props.get("wrappedValue", None) is not None:
-                            skipped_map[insert.entity.temp_unique_identifier] = insert
-                            continue
-
-                        links = insert.entity.links
-                        wrapped = {key: value for key, value in links.items() if value.props.get("wrappedValue")}
-                        if len(wrapped) > 0:
-                            for key, value in wrapped.items():
-                                insert.entity.links[key] = skipped_map.get(value.temp_unique_identifier).entity
-
-                        insert_str = insert.to_edql_str(assign_to_variable=False)
-                        try:
-                            single_json = tx.query_single_json(insert_str)
-                        except Exception as e:
-                            logging.exception(insert_str)
-                            raise e
-                        query_res = json.loads(single_json)
-                        insert.entity.uuid = query_res["id"]
-                        print(insert_str)
-                    # for item, insert_str in sq.create_bulk_insert_str(ifc_items):
-                    #     try:
-                    #         single_json = tx.query_single_json(insert_str)
-                    #     except edgedb.errors.InvalidLinkTargetError as e:
-                    #         logging.error(insert_str)
-                    #         raise edgedb.errors.InvalidLinkTargetError(e)
-                    #     query_res = json.loads(single_json)
-                    #     sq.uuid_map[item] = query_res["id"]
-                else:
-                    raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
-        end = time.time()
-        print(f'Upload finished in "{end - start:.2f}" seconds')
+        insert_ifc_file(ifc_items, self.client, method, self.ifc_schema, limit_ifc_ids=limit_ifc_ids)
         return ifc_io
 
     def update_from_diff_tool(self, diff_tool: IfcDiffTool, resolve_overlinking: bool = False) -> None | str:

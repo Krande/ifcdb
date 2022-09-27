@@ -4,13 +4,13 @@ import pytest
 
 from ifcdb.entities import Entity, EntityFromDbEntity
 from ifcdb.io.ifc.interface import IfcIO
-from ifcdb.schema.new_model import DbEntityResolver, from_schema_version
+from ifcdb.schema.new_model import DbEntityResolver, db_entity_model_from_schema_version
 from ifcdb.schema.validate import is_valid
 from ifcdb.utils import top_dir
 
 
 def get_insert_entities(ifc_file) -> list[Entity]:
-    ede = EntityFromDbEntity(from_schema_version("IFC4x1"))
+    ede = EntityFromDbEntity(db_entity_model_from_schema_version("IFC4x1"))
     ifc_io = IfcIO(ifc_file=top_dir() / f"files/{ifc_file}.ifc")
     ifc_items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
     entities = [x.entity for x in map(ede.create_entity_tool_from_ifcopenshell_entity, ifc_items)]

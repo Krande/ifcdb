@@ -1,11 +1,9 @@
 from __future__ import annotations
 
+import ifcopenshell
 import logging
 from dataclasses import dataclass, field
 from itertools import count
-from typing import ClassVar
-
-import ifcopenshell
 
 from ifcdb.schema.model import (
     ArrayModel,
@@ -18,10 +16,6 @@ from ifcdb.schema.model import (
 
 _INSERT_COUNTER = count(start=1)
 _IFC_ENTITY = ifcopenshell.entity_instance
-
-
-class INSERTS:
-    SEQ: ClassVar[str] = "seq"
 
 
 @dataclass

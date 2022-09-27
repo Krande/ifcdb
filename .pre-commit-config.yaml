@@ -3,7 +3,7 @@ repos:
     rev: 22.6.0
     hooks:
       - id: black
-        exclude: ^src/client/blender_client/
+        exclude: ^src/client/blender_client/addons/bl_ifc_db/libs
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:

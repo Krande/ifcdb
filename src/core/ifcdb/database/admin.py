@@ -13,6 +13,8 @@ from typing import Type
 import edgedb
 
 from ifcdb.schema.model import IfcSchemaModel
+from ifcdb.schema.new_model import db_entity_model_from_schema_model
+from ifcdb.config import IfcDbConfig
 
 
 class MigrationCreateError(Exception):
@@ -28,7 +30,7 @@ DB_DROP = "DROP DATABASE {database}"
 
 
 @dataclass
-class DbConfig:
+class DbAdmin:
     database: str = None
 
     def __post_init__(self):
@@ -69,6 +71,7 @@ class DbConfig:
 @dataclass
 class DbMigration:
     database: str
+    db_config: IfcDbConfig
     dbschema_dir: pathlib.Path = "dbschema"
     debug_logs: bool = False
     use_new_schema_gen: bool = False
@@ -102,8 +105,6 @@ class DbMigration:
         batch_size=100,
         module_name: str = "default",
         begin_step: int = None,
-        unwrap_enums: bool = False,
-        unwrap_selects: bool = False,
         dry_run: bool = False,
         allow_unsafe=False,
     ):
@@ -129,29 +130,30 @@ class DbMigration:
         for i in range(0, n_ents, batch_size):
             chunks.append(filtered_ents[i : i + batch_size])
 
-        current_schema = []
+        current_schema_entities = []
         start = time.time()
         tmp_dir = self.dbschema_dir / "_temp_dir"
         esdl_file_path = self.dbschema_dir / "default.esdl"
         os.makedirs(tmp_dir, exist_ok=True)
         curr_size = 0
+
+        unwrap_enums = self.db_config.unwrapped_enums
+        unwrap_selects = self.db_config.unwrapped_selects
+
         for i, chunk in enumerate(chunks, start=1):
             for imc in schema_model.intermediate_classes.values():
                 imc.written_to_file = False
-            current_schema += chunk
+            current_schema_entities += chunk
             now = datetime.now().time().strftime("%H:%M:%S")
             curr_size += len(chunk)
             print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities ({curr_size}/{n_ents}) @ {now}")
             if self.use_new_schema_gen:
-                db_entity_resolver = schema_model.to_db_entity_resolver(current_schema)
-                db_entity_resolver.resolve()
-                if unwrap_enums:
-                    db_entity_resolver.unwrap_enums()
-                if unwrap_selects:
-                    db_entity_resolver.unwrap_selects()
-                db_entity_resolver.to_esdl_file(esdl_file_path, module_name)
+                db_entities = db_entity_model_from_schema_model(
+                    schema_model, current_schema_entities, unwrap_enums, unwrap_selects
+                )
+                db_entities.to_esdl_file(esdl_file_path, module_name)
             else:
-                schema_model.to_esdl_file(esdl_file_path, current_schema, module_name)
+                schema_model.to_esdl_file(esdl_file_path, current_schema_entities, module_name)
             if begin_step is not None:
                 if i < begin_step:
                     print(f"skipping step {i}")

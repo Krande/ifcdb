@@ -20,6 +20,8 @@ class EdgeFilter:
     value: str
     value_type: FilterType
 
+    TYPES: ClassVar[FilterType]
+
     def to_edql_str(self):
         return f"FILTER .{self.key}=<{self.value_type.value}>'{self.value}'"
 

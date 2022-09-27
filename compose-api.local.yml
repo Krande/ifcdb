@@ -14,4 +14,4 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - src/server/api/fastapi_azure/config/local/local.env
+      - src/client/api/fastapi_azure/config/local/local.env

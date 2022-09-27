@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+import ifcopenshell
+import toposort
 from dataclasses import dataclass, field
 from itertools import count
 from typing import Any, Iterable
 
-import ifcopenshell
-import toposort
-
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel, TypeModel
-from ifcdb.schema.new_model import DbEntity, DbEntityModel, DbLink
+from ifcdb.schema.new_model import DbEntityModel, DbEntity
 from ifcdb.utils import change_case
 
 _IFC_ENTITY = ifcopenshell.entity_instance
@@ -169,33 +168,26 @@ class EntityFromDbEntity:
     er: DbEntityModel
     linked_objects: dict[_IFC_ENTITY, Entity] = field(default_factory=dict)
 
-    def _fill_wrapped_value_with_db_entites(self, entity: Entity, db_l_start: DbLink, db_e_end: DbEntity) -> Entity:
-        # TODO: this should be reworked significantly.
-        entity_path = []
-        curr_entities = [db_e_end]
-        target_name = db_l_start.link_from.name
-        while True:
-            if len(curr_entities) == 0:
-                raise ValueError("Unable to establish path")
-            x = curr_entities.pop()
-            if x not in entity_path:
-                entity_path.append(x)
-            if x.name == target_name:
-                break
-            if x.extending is not None and x.extending.name == target_name:
-                if x.extending not in entity_path:
-                    entity_path.append(x.extending)
-                break
-            curr_entities += [e.link_from for e in x.linked_from if e.link_from not in entity_path]
+    def create_ordered_insert_entities_from_multiple_entities(self, items: list[_IFC_ENTITY]):
+        ent_tools = []
+        for item in items:
+            et = self.create_entity_tool_from_ifcopenshell_entity(item)
+            ent_tools.append(et)
 
-        return Entity()
+        entity_identifier_map = {x.temp_unique_identifier: x for x in self.linked_objects.values()}
 
-    def walk_entity(self, source: _IFC_ENTITY):
+        # resolve insert order
+        ref_map = {e.entity.temp_unique_identifier: list(e.linked_objects.keys()) for e in ent_tools}
+        sorted_map = list(toposort.toposort_flatten(ref_map))
+        return [entity_identifier_map.get(s) for s in sorted_map]
+
+    def walk_entity(self, source: _IFC_ENTITY) -> Entity:
         ifc_class = source.is_a()
         info = source.get_info(recursive=False, include_identifier=False)
         db_entity = self.er.entities.get(source.is_a())
         props = dict()
         links = dict()
+
         for key, value in info.items():
             if key in ("type",):
                 continue
@@ -204,18 +196,13 @@ class EntityFromDbEntity:
 
                 if dblink is None:
                     raise ValueError(f"{ifc_class=} links to {value.is_a()} which does not exists @ {db_entity.name=}")
+                value_ifc_class = value.is_a()
+                value_db_entity = dblink.get_value_if_valid_linked_to(value_ifc_class)
+                if value_db_entity is None:
+                    raise ValueError(f"Value class {value_ifc_class} cannot be assigned to {dblink.name=}")
 
-                entity_ifc_class = value.is_a()
-                result = dblink.get_derived_type(entity_ifc_class)
                 entity_result = self.walk(value)
-                if result is None:
-                    raise ValueError()
-                if entity_result.name == dblink.name:
-                    print("Can use as is")
-                    proper_entity = entity_result
-                else:
-                    proper_entity = self._fill_wrapped_value_with_db_entites(entity_result, dblink, result)
-                links[key] = proper_entity
+                links[key] = entity_result
             elif isinstance(value, tuple):
                 res = self.walk(value)
                 if value_contains_link(res):
@@ -230,7 +217,20 @@ class EntityFromDbEntity:
                     props[key] = res
             else:
                 props[key] = value
-        new_entity = Entity(source.is_a(), props, links)
+
+        wrapped_value = props.get("wrappedValue", None)
+        if wrapped_value is not None:
+            if len(db_entity.props) != 1:
+                raise ValueError("These elements should only have 1 element")
+            key = list(db_entity.props.keys())[0]
+            value = list(db_entity.props.values())[0]
+            props.pop("wrappedValue")
+            if value.array_def is not None:
+                props[key] = wrapped_value
+            else:
+                props[key] = wrapped_value
+
+        new_entity = Entity(ifc_class, props, links, db_entity=db_entity)
         self.linked_objects[source] = new_entity
         return new_entity
 
@@ -262,6 +262,7 @@ class Entity:
     links: dict[str, Entity | tuple | dict] = field(repr=False, default_factory=dict)
     uuid: str = None
     temp_unique_identifier: str = None
+    db_entity: DbEntity = None
 
     def __post_init__(self):
         self.temp_unique_identifier = f"{change_case(self.name)}_{next(_INSERT_COUNT)}"

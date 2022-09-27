@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import ifcopenshell
+from dataclasses import dataclass
 
 from ifcdb.database.inserts.base import EdgeInsert
 from ifcdb.database.inserts.seq_model import InsertBase
@@ -21,8 +20,10 @@ class InsertSeq(InsertBase):
             yield item, self.create_entity_insert_str(item)
 
     def create_bulk_entity_inserts(self, ifc_items: list[_IFC_ENTITY], silent=False) -> list[EdgeInsert]:
-        from ifcdb.entities import EntityResolver
+        from ifcdb.entities import EntityFromDbEntity
+        from ifcdb.schema.new_model import db_entity_model_from_schema_model
 
-        er = EntityResolver(self.ifc_schema)
-        res = er.create_ordered_insert_entities_from_multiple_entities(ifc_items)
-        return [EdgeInsert(r) for r in res]
+        db_ents = db_entity_model_from_schema_model(self.schema_model)
+        ede = EntityFromDbEntity(db_ents)
+        res1 = ede.create_ordered_insert_entities_from_multiple_entities(ifc_items)
+        return [EdgeInsert(r) for r in res1]

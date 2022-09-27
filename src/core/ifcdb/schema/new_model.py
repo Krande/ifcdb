@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import logging
+
 import os
 import pathlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Iterable
+from typing import Any, Iterable, TYPE_CHECKING
 
 from ifcdb.config import IfcDbConfig
 
@@ -19,6 +21,9 @@ from .model import (
     TypeModel,
 )
 from .utils import get_aggregation_levels, get_base_type_name
+
+if TYPE_CHECKING:
+    from .model import IfcSchemaModel
 
 _ENTITY_CLASS = EntityModel | EnumModel | TypeModel | SelectModel | IntermediateClass
 
@@ -35,15 +40,15 @@ class DbEntityModel:
     entities: dict[str, DbEntity]
     config: IfcDbConfig
 
-    def to_esdl_str(self, module_name: str):
+    def to_esdl_str(self, module_name: str, limit_to_entities: list[str]):
         types_str = "\n".join([x.to_schema_str() for x in self.entities.values()])
         return f"module {module_name} {{\n\n{types_str}\n}}"
 
-    def to_esdl_file(self, filepath: os.PathLike, module_name: str = "default"):
+    def to_esdl_file(self, filepath: os.PathLike, module_name: str = "default", limit_to_entities: list[str] = None):
         filepath = pathlib.Path(filepath).resolve().absolute()
         os.makedirs(filepath.parent, exist_ok=True)
         with open(filepath, "w") as f:
-            f.write(self.to_esdl_str(module_name))
+            f.write(self.to_esdl_str(module_name, limit_to_entities))
 
 
 @dataclass
@@ -104,10 +109,12 @@ class DbEntityResolver:
             for link in db_entity.links.values():
                 link.link_from = db_entity
                 if isinstance(link.link_to, DbEntity):
-                    link.link_to.linked_from.append(link)
+                    if link not in link.link_to.linked_from:
+                        link.link_to.linked_from.append(link)
                 else:
                     for sl in link.link_to:
-                        sl.linked_from.append(link)
+                        if link not in sl.linked_from:
+                            sl.linked_from.append(link)
 
     def convert_entity(self, entity: _ENTITY_CLASS) -> DbEntity | None:
         if isinstance(entity, TypeModel):
@@ -145,42 +152,41 @@ class DbEntityResolver:
             non_select_db_entity = link.link_from
             # Replace link pointing to Select object with a link pointing directly to all wrapped entities
             non_select_db_entity.links[link.name] = DbLink(
-                link.name, link_to=sub_entities, is_select=True, optional=link.optional, link_from=link.link_from
+                link.name,
+                link_to=sub_entities,
+                is_select=True,
+                optional=link.optional,
+                link_from=link.link_from,
+                array_def=link.array_def,
             )
 
         # Remove all select entities
         select_entities = list(filter(lambda x: x.is_select, self.db_entities.values()))
         for s in select_entities:
             self.db_entities.pop(s.name)
-        print(f'Flattened and removed "{len(select_entities)}" Selects')
+        logging.info(f'Flattened and removed "{len(select_entities)}" Selects')
 
     def unwrap_enums(self):
         enums_removed = 0
         links_severed = 0
         entities_list = list(filter(lambda x: x.is_enum, self.db_entities.values()))
         for db_entity in entities_list:
-
             for link in db_entity.linked_from:
                 linking_db_entity = link.link_from
                 if linking_db_entity.is_select:
                     continue
                 linking_db_entity.links.pop(link.name)
-                linking_db_entity.props[link.name] = db_entity.props[db_entity.name]
+                enum_prop = db_entity.props[db_entity.name]
+
+                if enum_prop.optional != link.optional:
+                    enum_prop.optional = link.optional
+                linking_db_entity.props[link.name] = enum_prop
                 links_severed += 1
 
             self.db_entities.pop(db_entity.name)
             enums_removed += 1
 
-        print(f'Removed {enums_removed} Enums and replaced "{links_severed}" links to Enums with DbProp objects')
-
-    def get_db_entities(self, unwrap_enums=False, unwrap_selects=False) -> DbEntityModel:
-        if unwrap_enums:
-            self.unwrap_enums()
-
-        if unwrap_selects:
-            self.unwrap_selects()
-
-        return DbEntityModel(self.db_entities)
+        logging.info(f'Removed {enums_removed} Enums and replaced "{links_severed}" links to Enums with DbProp objects')
 
     def _update_db_link(self, update_entity: DbEntityUpdate):
         linked_to = self.db_entities.get(update_entity.val)
@@ -401,7 +407,14 @@ class ArrayDef:
         right_side = ""
 
         for i, s in enumerate(self.shapes):
-            left_side += f"{s.bound_type.value}<"
+            bound_type = s.bound_type
+            if bound_type == DbListTypes.TUPLE and s.upper_bound == -1:
+                bound_type = DbListTypes.ARRAY
+            else:
+                bound_type = bound_type
+
+            bound_type_str = bound_type.value
+            left_side += f"{bound_type_str}<"
             right_side += ">"
 
         return left_side + middle + right_side + constr_str
@@ -456,7 +469,33 @@ class DbLink:
 
         rmp = {x.name: x for x in entities}
         result = rmp.get(ifc_class_name, None)
+        if result is None:
+            print("sd")
         return result
+
+    def get_value_if_valid_linked_to(self, entity_ifc_class: str, max_levels=10) -> DbEntity | None:
+        if isinstance(self.link_to, list):
+            link_names = {x.name: x for x in self.link_to}
+        else:
+            link_names = {self.link_to.name: self.link_to}
+
+        db_entity = link_names.get(entity_ifc_class, None)
+        if db_entity is not None:
+            return db_entity
+
+        result = self.get_derived_type(entity_ifc_class)
+        extended = result.extending
+
+        level = 0
+        while extended:
+            if extended.name in link_names:
+                break
+            extended = extended.extending
+            level += 1
+            if level > max_levels:
+                return None
+
+        return extended
 
 
 @dataclass
@@ -568,17 +607,31 @@ def unwrap_and_flatten_selects_to_list(link: DbLink, entities: list[DbEntity] = 
     return entities
 
 
-def from_schema_version(schema_version: str, unwrap_enums=False, unwrap_selects=False) -> DbEntityModel:
-    from .model import IfcSchemaModel
-
-    ifm = IfcSchemaModel(schema_version)
+def db_entity_model_from_schema_model(
+    ifm: IfcSchemaModel, entities: list[str] = None, unwrap_enums=True, unwrap_selects=True
+) -> DbEntityModel:
     der = DbEntityResolver()
-    der.resolve([ifm.get_entity_by_name(x) for x in ifm.get_all_entities()])
+    if entities is None:
+        entities = [ifm.get_entity_by_name(x) for x in ifm.get_all_entities()]
+    else:
+        entities = [ifm.get_entity_by_name(x) for x in ifm.get_related_entities(entities)]
+
+    der.resolve(entities)
     if unwrap_enums:
         der.unwrap_enums()
     if unwrap_selects:
         der.unwrap_selects()
-    return DbEntityModel(der.db_entities, IfcDbConfig(schema_version, unwrap_enums, unwrap_selects))
+
+    return DbEntityModel(der.db_entities, IfcDbConfig(ifm.schema_version, unwrap_enums, unwrap_selects))
+
+
+def db_entity_model_from_schema_version(
+    schema_version: str, entities: list[str] = None, unwrap_enums=True, unwrap_selects=True
+) -> DbEntityModel:
+    from .model import IfcSchemaModel
+
+    ifm = IfcSchemaModel(schema_version)
+    return db_entity_model_from_schema_model(ifm, entities, unwrap_enums, unwrap_selects)
 
 
 def get_db_entity_children(db_entity: DbEntity, entities: list[DbEntity] = None):

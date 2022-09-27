@@ -5,7 +5,7 @@ name: ci-ifc-edgedb-schema
 on:
   push:
     paths:
-      - src/server/schema/**
+      - src/schema/**
       - .github/workflows/ci-edgedb-schema.yml
 env:
   EDGEDB_DSN: edgedb://edgedb@localhost
@@ -27,8 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         WORKDIR: [
-          { name: mixed, dir: "src/server/schema/mixed", use_python: "false" },
-          { name: stepwise, dir: "src/server/schema/complete/create_complete_schema.py", use_python: "true" }
+          { name: mixed, dir: "src/schema/mixed", use_python: "false" },
+          { name: stepwise, dir: "src/schema/complete/create_complete_schema.py", use_python: "true" }
         ]
     steps:
       - uses: actions/checkout@v2

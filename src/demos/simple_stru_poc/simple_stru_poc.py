@@ -8,7 +8,7 @@ def upload_first():
     a = ada.Assembly("PoC-Stru") / SimpleStru("A Simple Structure")
     ifc_stringio_obj = a.to_ifc(return_file_obj=True)
     with EdgeIO("ifc001", load_env=True) as io:
-        io.wipe_database()
+        # io.wipe_database()
         io.insert_ifc(ifc_file_str=ifc_stringio_obj.read())
 
 

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from ifcdb.schema.new_model import DbEntityResolver, from_schema_version
+from ifcdb.schema.new_model import DbEntityResolver, db_entity_model_from_schema_version
 
 
 @pytest.fixture
 def schema_der() -> DbEntityResolver:
-    der = from_schema_version("IFC4x1")
+    der = db_entity_model_from_schema_version("IFC4x1")
     return der
 
 

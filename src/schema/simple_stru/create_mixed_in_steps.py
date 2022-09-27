@@ -13,9 +13,7 @@ def main(database: str, ifc_schema: str, batch_size: int, ifc_files: list[str], 
             ifc_schema_ver=ifc_schema,
             entities=entities,
             batch_size=batch_size,
-            unwrap_enums=False,
             dry_run=False,
-            allow_unsafe=False,
         )
 
 

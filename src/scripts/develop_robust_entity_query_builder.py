@@ -4,11 +4,11 @@ import logging
 
 from ifcdb.entities import Entity, EntityFromDbEntity
 from ifcdb.io.ifc.interface import IfcIO
-from ifcdb.schema.new_model import from_schema_version
+from ifcdb.schema.new_model import db_entity_model_from_schema_version
 from ifcdb.schema.validate import is_valid
 from ifcdb.utils import top_dir
 
-db_entities = from_schema_version("IFC4x1", unwrap_enums=True, unwrap_selects=True)
+db_entities = db_entity_model_from_schema_version("IFC4x1", unwrap_enums=True, unwrap_selects=True)
 
 
 def get_insert_entities(ifc_file) -> list[Entity]:
