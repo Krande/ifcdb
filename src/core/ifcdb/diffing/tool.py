@@ -20,7 +20,7 @@ from ifcdb.entities import (
     Entity,
     EntityResolver,
     EntityTool,
-    get_entity_from_source_dict,
+    create_insert_entity_from_ifc_dict,
 )
 from ifcdb.io.ifc.optimizing import general_optimization
 
@@ -161,7 +161,7 @@ class IfcDiffTool:
         res = DeepDiff(new_info1, new_info2)
         keys = list(res)
         if len(keys) > 0:
-            entity = get_entity_from_source_dict(info1, schema_ver=self.schema_ver)
+            entity = create_insert_entity_from_ifc_dict(info1)
             diff = {key: res[key] for key in keys}
             dr = DiffResolver(self.f1, self.f2)
             vcs = dr.diff_to_value_changes(el1.GlobalId, diff)

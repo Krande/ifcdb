@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable
 
+import toposort
+
 from ifcdb.config import IfcDbConfig
 
 from .common import CommonData
@@ -38,6 +40,21 @@ class DbEntityUpdate:
 class DbEntityModel:
     entities: dict[str, DbEntity]
     config: IfcDbConfig
+
+    def get_entities_in_insert_order(self) -> list[DbEntity]:
+        def unwrap_links(links: Iterable[DbLink]):
+            all_linked_entity_names = []
+            for link in links:
+                if isinstance(link.link_to, list):
+                    for sub_link in link.link_to:
+                        all_linked_entity_names.append(sub_link.name)
+                else:
+                    all_linked_entity_names.append(link.link_to.name)
+            return all_linked_entity_names
+
+        dep_map = {key: unwrap_links(db_entity.links.values()) for key, db_entity in self.entities.items()}
+        result = toposort.toposort_flatten(dep_map)
+        return list(map(self.entities.get, result))
 
     def to_esdl_str(self, module_name: str, limit_to_entities: list[str]):
         types_str = "\n".join([x.to_schema_str() for x in self.entities.values()])
@@ -169,23 +186,30 @@ class DbEntityResolver:
         enums_removed = 0
         links_severed = 0
         entities_list = list(filter(lambda x: x.is_enum, self.db_entities.values()))
+        db_entities_with_links_to_pop = []
         for db_entity in entities_list:
             for link in db_entity.linked_from:
                 linking_db_entity = link.link_from
                 if linking_db_entity.is_select:
                     continue
-                # TODO: check if this link differs
-                # popped_link = linking_db_entity.links.pop(link.name)
-                enum_prop = db_entity.props[db_entity.name]
 
-                # if db_entity.name == 'IfcBeam':
-                #     print('sd')
+                # Make a copy of the enum as it is used by others with different link properties
+                enum_prop = db_entity.props[db_entity.name].copy()
+
                 enum_prop.optional = link.optional
+
                 linking_db_entity.props[link.name] = enum_prop
+                if link.name in linking_db_entity.links.keys():
+                    db_entities_with_links_to_pop.append((linking_db_entity, link.name))
+
                 links_severed += 1
 
             self.db_entities.pop(db_entity.name)
             enums_removed += 1
+
+        for linking_db_entity, link_name in db_entities_with_links_to_pop:
+            if link_name in linking_db_entity.links.keys():
+                linking_db_entity.links.pop(link_name)
 
         logging.info(f'Removed {enums_removed} Enums and replaced "{links_severed}" links to Enums with DbProp objects')
 
@@ -273,8 +297,6 @@ class DbEntityResolver:
         props: dict[str, DbProp] = dict()
 
         db_entity = DbEntity(entity.name, links, props, extending=db_parent, abstract=entity.entity.is_abstract())
-        if entity.name == "IfcBeam":
-            print("sd")
         for val in entity.get_attributes():
             val_name = val.name
             if self.is_val_prop(val):
@@ -421,12 +443,27 @@ class ArrayDef:
         return left_side + middle + right_side + constr_str
 
 
+class PropValue(Enum):
+    FLOAT64 = "float64"
+    INT64 = "int64"
+
+    @staticmethod
+    def from_str(lstype: str):
+        emap = {e.value: e for e in PropValue}
+        return emap.get(lstype)
+
+
 @dataclass
 class DbProp:
     prop_value: Any
     array_def: ArrayDef = field(default=None)
     is_enum: bool = field(default=False)
     optional: bool = False
+
+    PROP_VALUE: PropValue = PropValue
+
+    def copy(self) -> DbProp:
+        return DbProp(self.prop_value, self.array_def, self.is_enum, self.optional)
 
     def to_str(self, indent: str) -> str:
         if self.array_def is not None:
@@ -469,10 +506,7 @@ class DbLink:
             entities += get_db_entity_children(x)
 
         rmp = {x.name: x for x in entities}
-        result = rmp.get(ifc_class_name, None)
-        if result is None:
-            print("sd")
-        return result
+        return rmp.get(ifc_class_name, None)
 
     def get_value_if_valid_linked_to(self, entity_ifc_class: str, max_levels=10) -> DbEntity | None:
         if isinstance(self.link_to, list):

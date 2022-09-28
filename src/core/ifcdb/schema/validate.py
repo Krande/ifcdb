@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-import ifcopenshell
-
-from ifcdb.schema.new_model import DbLink, DbProp, DbEntity
 from ifcdb.entities import Entity
+from ifcdb.schema.new_model import DbEntity, DbLink, DbProp
 
 
 def check_prop(prop: DbProp, ifc_entity_value: Any):
@@ -52,7 +50,7 @@ def check_array_link(link: DbLink, entity: tuple[Entity]):
     if isinstance(entity, tuple) is False:
         raise ValueError()
 
-    array_def = link.array_def
+    # array_def = link.array_def
     entity0 = entity[0]
     db_entity = link.get_value_if_valid_linked_to(entity0.name)
     if db_entity.name != entity0.name:
@@ -69,8 +67,6 @@ def check_entity_props(entity: Entity, db_entity: DbEntity):
     all_props = db_entity.get_all_props()
     for key, value in entity.props.items():
         db_prop = all_props.get(key)
-        if db_prop is None:
-            print("sd")
         if isinstance(db_prop, DbProp):
             result = check_prop(db_prop, value)
         else:
@@ -109,8 +105,5 @@ def is_valid(db_prop: DbProp | DbLink, ifc_entity_value: Any):
         result = check_prop(db_prop, ifc_entity_value)
     else:
         result = check_link(db_prop, ifc_entity_value)
-
-    if result is False:
-        print("ds")
 
     return result

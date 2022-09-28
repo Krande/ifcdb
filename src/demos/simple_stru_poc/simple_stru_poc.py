@@ -12,5 +12,11 @@ def upload_first():
         io.insert_ifc(ifc_file_str=ifc_stringio_obj.read())
 
 
+def then_download():
+    with EdgeIO("ifc001", load_env=True) as io:
+        io.to_ifc_file("temp/first_model.ifc")
+
+
 if __name__ == "__main__":
-    upload_first()
+    # upload_first()
+    then_download()

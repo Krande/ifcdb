@@ -1,22 +1,18 @@
 from __future__ import annotations
 
-import ifcopenshell
-import toposort
 from dataclasses import dataclass, field
 from itertools import count
 from typing import Any, Iterable
 
+import ifcopenshell
+import toposort
+
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel, TypeModel
-from ifcdb.schema.new_model import DbEntityModel, DbEntity
+from ifcdb.schema.new_model import DbEntity, DbEntityModel
 from ifcdb.utils import change_case
 
 _IFC_ENTITY = ifcopenshell.entity_instance
 _INSERT_COUNT = count(1)
-
-
-def get_entity_from_source_dict(source: dict, schema_ver: str = "IFC4x1") -> Entity:
-    er = EntityResolver(schema_ver)
-    return er.create_insert_entity_from_ifc_dict(source)
 
 
 def get_entity_from_source_ifc_elem(item: _IFC_ENTITY, schema_ver: str = "IFC4x1") -> Entity:
@@ -86,34 +82,6 @@ class EntityResolver:
         return Entity(entity.name, props, links)
 
     @staticmethod
-    def create_insert_entity_from_ifc_dict(source: dict) -> Entity:
-        props = dict()
-        links = dict()
-
-        class_type = source.pop("type")
-
-        for key, value in source.items():
-            if isinstance(value, dict):
-                links[key] = EntityResolver.create_insert_entity_from_ifc_dict(value)
-            elif isinstance(value, tuple):
-                values = []
-                contains_linked_items = False
-                for val in value:
-                    if isinstance(val, dict):
-                        contains_linked_items = True
-                        values.append(EntityResolver.create_insert_entity_from_ifc_dict(val))
-                    else:
-                        values.append(val)
-                if contains_linked_items:
-                    links[key] = tuple(values)
-                else:
-                    props[key] = tuple(values)
-            else:
-                props[key] = value
-
-        return Entity(class_type, props, links)
-
-    @staticmethod
     def create_entity_tool_from_ifcopenshell_entity(el: _IFC_ENTITY, linked_objects=None) -> EntityTool:
         if linked_objects is None:
             linked_objects: dict[_IFC_ENTITY, Entity] = dict()
@@ -161,6 +129,34 @@ class EntityResolver:
         top_entity = walk(el)
         entity_identifier_map = {x.temp_unique_identifier: x for x in linked_objects.values()}
         return EntityTool(top_entity, entity_identifier_map)
+
+
+def create_insert_entity_from_ifc_dict(source: dict) -> Entity:
+    props = dict()
+    links = dict()
+
+    class_type = source.pop("type")
+
+    for key, value in source.items():
+        if isinstance(value, dict):
+            links[key] = create_insert_entity_from_ifc_dict(value)
+        elif isinstance(value, tuple):
+            values = []
+            contains_linked_items = False
+            for val in value:
+                if isinstance(val, dict):
+                    contains_linked_items = True
+                    values.append(create_insert_entity_from_ifc_dict(val))
+                else:
+                    values.append(val)
+            if contains_linked_items:
+                links[key] = tuple(values)
+            else:
+                props[key] = tuple(values)
+        else:
+            props[key] = value
+
+    return Entity(class_type, props, links)
 
 
 @dataclass

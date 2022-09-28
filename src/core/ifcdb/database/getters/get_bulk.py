@@ -1,25 +1,29 @@
 import copy
-import edgedb
 import json
 import logging
 from dataclasses import dataclass
 
+import edgedb
+
 from ifcdb.database.builder import EQBuilder
-from ifcdb.database.getters.model import (
-    EntityQueryModel,
-    SpatialNode,
-    WithNode,
-)
+from ifcdb.database.getters.model import EntityQueryModel, SpatialNode, WithNode
 from ifcdb.database.utils import (
+    clean_name,
     dict_value_replace,
     flatten_uuid_source,
     get_uuid_refs,
     insert_uuid_objects_from_source,
-    clean_name,
-    walk_edge_results_and_make_uuid_map,
     resolve_order_of_result_entities,
+    walk_edge_results_and_make_uuid_map,
 )
-from ifcdb.schema.model import EntityModel, EnumModel, IntermediateClass, SelectModel, TypeModel, IfcSchemaModel
+from ifcdb.schema.model import (
+    EntityModel,
+    EnumModel,
+    IfcSchemaModel,
+    IntermediateClass,
+    SelectModel,
+    TypeModel,
+)
 
 
 @dataclass
@@ -42,8 +46,6 @@ class BulkGetter:
             return type_obj["_e_type"].replace("default::", "")
 
         result = json.loads(self.client.query_json(in_str))
-        # out_str = json.dumps(result, indent=4)
-        # print(out_str)
         rel_aggs = result[0]["rel_aggs"]
         spatial_nodes: dict[str, SpatialNode] = dict()
         for rel in rel_aggs:

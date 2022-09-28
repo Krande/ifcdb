@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import ClassVar
+from typing import ClassVar, Iterable
 
 from ifcdb.diffing.types import PropUpdateType
 from ifcdb.diffing.utils import dict_path_to_iterable
@@ -33,13 +33,13 @@ class EdgeSelect:
     entity_top: Entity | EdgeSelect
     entity_path: str | None = None
     entity_index: int = None
-
     is_multi_link: bool = False
     filter: EdgeFilter = None
-
-    use_agg_array: ClassVar[bool] = False
+    entity_props: Iterable[str] = None
 
     referred_selects: list[EdgeSelect] = field(default_factory=list)
+
+    use_agg_array: ClassVar[bool] = False
 
     def __post_init__(self):
         if isinstance(self.entity_top, EdgeSelect):
@@ -90,15 +90,15 @@ class EdgeSelect:
         else:
             select_str += entity_path
 
-        # assert_str = ""
-        # if self.assert_class is not None:
-        #     assert_str = f"[is {self.assert_class}]"
-
         if self.filter is not None:
             select_str += " " + self.filter.to_edql_str()
 
+        props_str = ""
+        if self.entity_props is not None:
+            props_str += "{" + ",".join(self.entity_props) + "}"
+
         if assign_to_variable:
-            return f"{self.name} := ({select_str}){sep}"
+            return f"{self.name} := ({select_str}){props_str}{sep}"
         else:
             return select_str
 

@@ -1,24 +1,28 @@
 from __future__ import annotations
 
-import edgedb
 import os
 import pathlib
 import time
 from dataclasses import dataclass
-from dotenv import load_dotenv
 from io import StringIO
 from typing import TYPE_CHECKING
+
+import edgedb
+from dotenv import load_dotenv
 
 from ifcdb.config import IfcDbConfig
 from ifcdb.database.admin import DbAdmin, DbMigration
 from ifcdb.database.getters.get_bulk import BulkGetter
-from ifcdb.database.inserts.file_inserts import insert_ifc_file, INSERTS
+from ifcdb.database.inserts.file_inserts import INSERTS, insert_ifc_file
 from ifcdb.database.remove import wipe_db
 from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.model import IfcSchemaModel
-from ifcdb.schema.new_model import db_entity_model_from_schema_version
+from ifcdb.schema.new_model import (
+    db_entity_model_from_schema_model,
+    db_entity_model_from_schema_version,
+)
 
 if TYPE_CHECKING:
     import ifcopenshell
@@ -124,7 +128,9 @@ class EdgeIO:
         related_entities = self.schema_model.get_related_entities(unique_entities)
         esdl_filepath = self.db_schema_dir / f"{module_name}.esdl"
         if self.use_new_schema_gen:
-            dem = db_entity_model_from_schema_version(self.ifc_schema, self.db_config.unwrapped_enums, self.db_config.unwrapped_selects)
+            dem = db_entity_model_from_schema_version(
+                self.ifc_schema, related_entities, self.db_config.unwrapped_enums, self.db_config.unwrapped_selects
+            )
             dem.to_esdl_file(esdl_filepath, module_name)
         else:
             self.schema_model.to_esdl_file(esdl_filepath, related_entities, module_name)
@@ -185,9 +191,20 @@ class EdgeIO:
         return BulkGetter(self.client, self.schema_model)
 
     def to_ifcopenshell_object(self, specific_classes: list[str] = None, client=None) -> ifcopenshell.file:
-        bulk_g = self.to_bulk_getter()
-        res = bulk_g.get_all(entities=specific_classes, client=client)
-        return IfcIO.to_ifcopenshell_object(res, self.schema_model)
+        from ifcdb.database.getters.db_content import DbContent
+
+        dem = db_entity_model_from_schema_model(
+            self.schema_model,
+            unwrap_enums=self.db_config.unwrapped_enums,
+            unwrap_selects=self.db_config.unwrapped_selects,
+        )
+
+        dbc = DbContent(dem)
+        return dbc.get_db_content_as_ifcopenshell_object(self.client)
+        # bulk_g = self.to_bulk_getter()
+        # res = bulk_g.get_all(entities=specific_classes, client=client)
+        # res = bulk_g.get_all_2(entities=specific_classes, client=client)
+        # return IfcIO.to_ifcopenshell_object(res, self.schema_model)
 
     def to_ifc_str(self, specific_classes: list[str] = None) -> str:
         f = self.to_ifcopenshell_object(specific_classes)

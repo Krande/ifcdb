@@ -12,9 +12,9 @@ from typing import Type
 
 import edgedb
 
+from ifcdb.config import IfcDbConfig
 from ifcdb.schema.model import IfcSchemaModel
 from ifcdb.schema.new_model import db_entity_model_from_schema_model
-from ifcdb.config import IfcDbConfig
 
 
 class MigrationCreateError(Exception):
@@ -117,18 +117,16 @@ class DbMigration:
             unique_entities = specific_entities
 
         all_ents = schema_model.get_related_entities(unique_entities)
-
+        unwrap_enums = self.db_config.unwrapped_enums
+        unwrap_selects = self.db_config.unwrapped_selects
+        db_entities = db_entity_model_from_schema_model(schema_model, all_ents, unwrap_enums, unwrap_selects)
+        db_ents_names = [x.name for x in db_entities.get_entities_in_insert_order()]
         # Filter out all Enum's as they are not used in the EdgeDB representation
-        def filter_out_enums(name: str):
-            if name.endswith("Enum"):
-                return False
-            return True
 
-        filtered_ents = list(filter(filter_out_enums, all_ents))
         chunks = []
-        n_ents = len(filtered_ents)
+        n_ents = len(db_ents_names)
         for i in range(0, n_ents, batch_size):
-            chunks.append(filtered_ents[i : i + batch_size])
+            chunks.append(db_ents_names[i : i + batch_size])
 
         current_schema_entities = []
         start = time.time()
@@ -136,9 +134,6 @@ class DbMigration:
         esdl_file_path = self.dbschema_dir / "default.esdl"
         os.makedirs(tmp_dir, exist_ok=True)
         curr_size = 0
-
-        unwrap_enums = self.db_config.unwrapped_enums
-        unwrap_selects = self.db_config.unwrapped_selects
 
         for i, chunk in enumerate(chunks, start=1):
             for imc in schema_model.intermediate_classes.values():
@@ -148,9 +143,6 @@ class DbMigration:
             curr_size += len(chunk)
             print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities ({curr_size}/{n_ents}) @ {now}")
             if self.use_new_schema_gen:
-                db_entities = db_entity_model_from_schema_model(
-                    schema_model, current_schema_entities, unwrap_enums, unwrap_selects
-                )
                 db_entities.to_esdl_file(esdl_file_path, module_name)
             else:
                 schema_model.to_esdl_file(esdl_file_path, current_schema_entities, module_name)

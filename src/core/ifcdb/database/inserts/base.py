@@ -23,8 +23,6 @@ class EdgeInsert:
         indent = "" if indent_override is None else indent_override
         props = ""
         props_writable = {p: v for p, v in self.entity.props.items() if v is not None}
-        if self.entity.name == "IfcBeam":
-            print("sd")
         if len(props_writable) > 0:
             props = to_props_str(self.entity, sep=prop_sep)
         links = ""
