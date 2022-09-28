@@ -12,17 +12,12 @@ from dotenv import load_dotenv
 
 from ifcdb.config import IfcDbConfig
 from ifcdb.database.admin import DbAdmin, DbMigration
-from ifcdb.database.getters.get_bulk import BulkGetter
+from ifcdb.database.getters.db_content import DbContent
 from ifcdb.database.inserts.file_inserts import INSERTS, insert_ifc_file
-from ifcdb.database.remove import wipe_db
 from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
-from ifcdb.schema.model import IfcSchemaModel
-from ifcdb.schema.new_model import (
-    db_entity_model_from_schema_model,
-    db_entity_model_from_schema_version,
-)
+from ifcdb.schema.new_model import db_entity_model_from_schema_version
 
 if TYPE_CHECKING:
     import ifcopenshell
@@ -35,7 +30,6 @@ class EdgeIO:
     db_schema_dir: str | pathlib.Path = "dbschema"
     ifc_schema: str = "IFC4x1"
     debug_log: bool = False
-    schema_model: IfcSchemaModel = None
     load_env: bool = False
     use_new_schema_gen: bool = True
 
@@ -43,7 +37,7 @@ class EdgeIO:
 
     def __post_init__(self):
         self.db_schema_dir = pathlib.Path(self.db_schema_dir).resolve().absolute()
-        self.schema_model = IfcSchemaModel(self.ifc_schema)
+        self.db_entity_model = db_entity_model_from_schema_version(self.ifc_schema)
 
         if self.load_env:
             load_dotenv()
@@ -68,7 +62,6 @@ class EdgeIO:
             db_config=self.db_config,
             dbschema_dir=self.db_schema_dir,
             debug_logs=self.debug_log,
-            use_new_schema_gen=self.use_new_schema_gen,
         )
 
     def database_exists(self):
@@ -87,12 +80,14 @@ class EdgeIO:
         db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
 
     def wipe_database(self, max_attempts=3, delete_in_sequence=False):
-        bg = self.to_bulk_getter()
-        wipe_db(bg, delete_in_sequence, max_attempts)
+        dbc = DbContent(self.db_entity_model, self.client)
+        dbc.wipe_db(delete_in_sequence, max_attempts)
+        # bg = self.to_bulk_getter()
+        # wipe_db(bg, delete_in_sequence, max_attempts)
 
-    def stepwise_migration(self, ifc_schema_ver: str, entities: list[str] = None, batch_size=100, **kwargs):
+    def stepwise_migration(self, entities: list[str] = None, batch_size=100, dry_run=False):
         db_migrate = self._create_migration_client()
-        db_migrate.migrate_stepwise(ifc_schema_ver, entities, batch_size, **kwargs)
+        db_migrate.migrate_stepwise(entities, batch_size, dry_run=dry_run)
 
     def get_entities_from_ifc_files(self, ifc_paths: list[str | pathlib.Path]) -> list[str]:
         return IfcIO.get_ifc_entities_from_multiple_ifcs(ifc_paths)
@@ -117,23 +112,11 @@ class EdgeIO:
         self._write_to_file(ifc_ents, module_name)
 
     def create_schema(self, entities: list[str] = None, module_name="default"):
-        if entities is None:
-            unique_entities = self.schema_model.get_all_entities()
-        else:
-            unique_entities = entities
-
-        self._write_to_file(unique_entities, module_name)
+        self._write_to_file(entities, module_name)
 
     def _write_to_file(self, unique_entities, module_name):
-        related_entities = self.schema_model.get_related_entities(unique_entities)
         esdl_filepath = self.db_schema_dir / f"{module_name}.esdl"
-        if self.use_new_schema_gen:
-            dem = db_entity_model_from_schema_version(
-                self.ifc_schema, related_entities, self.db_config.unwrapped_enums, self.db_config.unwrapped_selects
-            )
-            dem.to_esdl_file(esdl_filepath, module_name)
-        else:
-            self.schema_model.to_esdl_file(esdl_filepath, related_entities, module_name)
+        self.db_entity_model.to_esdl_file(esdl_filepath, module_name, limit_to_entities=unique_entities)
 
     def insert_ifc(
         self, ifc_file_path=None, ifc_file_str=None, method: INSERTS = INSERTS.SEQ, limit_ifc_ids: list[int] = None
@@ -187,24 +170,9 @@ class EdgeIO:
         print(res)
         return res
 
-    def to_bulk_getter(self) -> BulkGetter:
-        return BulkGetter(self.client, self.schema_model)
-
     def to_ifcopenshell_object(self, specific_classes: list[str] = None, client=None) -> ifcopenshell.file:
-        from ifcdb.database.getters.db_content import DbContent
-
-        dem = db_entity_model_from_schema_model(
-            self.schema_model,
-            unwrap_enums=self.db_config.unwrapped_enums,
-            unwrap_selects=self.db_config.unwrapped_selects,
-        )
-
-        dbc = DbContent(dem)
-        return dbc.get_db_content_as_ifcopenshell_object(self.client)
-        # bulk_g = self.to_bulk_getter()
-        # res = bulk_g.get_all(entities=specific_classes, client=client)
-        # res = bulk_g.get_all_2(entities=specific_classes, client=client)
-        # return IfcIO.to_ifcopenshell_object(res, self.schema_model)
+        dbc = DbContent(self.db_entity_model, self.client if client is None else client)
+        return dbc.get_db_content_as_ifcopenshell_object()
 
     def to_ifc_str(self, specific_classes: list[str] = None) -> str:
         f = self.to_ifcopenshell_object(specific_classes)

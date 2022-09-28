@@ -1,5 +1,4 @@
 import json
-import logging
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -8,6 +7,7 @@ import ifcopenshell
 import toposort
 
 from ifcdb.database.queries import introspect_db
+from ifcdb.database.remove import EdgeFilter, EdgeRemove
 from ifcdb.database.select import EdgeSelect
 from ifcdb.database.utils import clean_name
 from ifcdb.entities import Entity
@@ -18,11 +18,30 @@ from ifcdb.utils import change_case
 @dataclass
 class DbContent:
     db_entity_model: DbEntityModel
+    client: edgedb.Client
 
-    def get_db_content_as_ifcopenshell_object(self, client: edgedb.Client) -> ifcopenshell.file:
+    def wipe_db(self, delete_in_sequence: bool, max_attempts: int):
+        selects = self._get_selects_for_all_instances(include_all_props=False)
+        class_types_map = {x.name: x.entity_top.name for x in selects}
+        query_str = "SELECT {" + "".join((s.to_edql_str(assign_to_variable=True, sep=",\n") for s in selects)) + "}"
+        class_instances = json.loads(self.client.query_single_json(query_str))
+        removes = dict()
+        for ref_name, instances in class_instances.items():
+            if len(instances) == 0:
+                continue
+            class_name = class_types_map[ref_name]
+            if class_name not in removes.keys():
+                removes[class_name] = []
+
+            for instance in instances:
+                removes[class_name].append(self._get_edgeremove_from_class_type(class_name, instance.get("id")))
+
+        print("do deletion here")
+
+    def get_db_content_as_ifcopenshell_object(self) -> ifcopenshell.file:
         insert_map = dict()
         f = ifcopenshell.file(schema=self.db_entity_model.config.ifc_schema_version)
-        for entity in self.perform_query_and_iterate_entities(client):
+        for entity in self.perform_query_and_iterate_entities():
             links = {}
             for key, value in entity.links.items():
                 if isinstance(value, (tuple, list)):
@@ -32,32 +51,31 @@ class DbContent:
                         links[key] = tuple([insert_map[x.uuid] for x in value])
                 else:
                     links[key] = insert_map[value.uuid]
+
             for key, value in entity.props.items():
                 if isinstance(value, (tuple, list)):
                     if len(value) == 0:
                         entity.props[key] = None
+
             wrapped_value = entity.props.get(entity.name)
-            try:
-                if wrapped_value is not None:
-                    insert_map[entity.uuid] = f.create_entity(entity.name, wrapped_value)
-                else:
-                    insert_map[entity.uuid] = f.create_entity(entity.name, **entity.props, **links)
-            except TypeError as e:
-                logging.error(entity)
-                raise e
+            if wrapped_value is not None:
+                insert_map[entity.uuid] = f.create_entity(entity.name, wrapped_value)
+            else:
+                insert_map[entity.uuid] = f.create_entity(entity.name, **entity.props, **links)
 
         return f
 
-    def perform_query_and_iterate_entities(self, client) -> Iterable[Entity]:
-        class_types = self.get_db_instance_types(client)
-        class_types_map = dict()
+    def perform_query_and_iterate_entities(self) -> Iterable[Entity]:
+        selects = self._get_selects_for_all_instances(include_all_props=True)
+
         query_str = "SELECT {\n"
-        for i, select in enumerate(map(self._get_select_from_class_type, class_types)):
+        for select in selects:
             query_str += select.to_edql_str(assign_to_variable=True, sep=",\n")
-            class_types_map[select.name] = class_types[i]
         query_str += "}"
 
-        resu = client.query_single(query_str)
+        resu = self.client.query_single(query_str)
+
+        class_types_map = {x.name: x.entity_top.name for x in selects}
         uuid_map = dict()
         for select_name, class_name in class_types_map.items():
             db_entity = self.db_entity_model.entities.get(class_name)
@@ -107,59 +125,39 @@ class DbContent:
         for uuid in toposort.toposort_flatten(dep_map):
             yield uuid_map[uuid]
 
-    def perform_query_json(self, client, query_str, class_types_map) -> dict[str, list[dict]]:
-        return {class_types_map[key]: value for key, value in json.loads(client.query_single_json(query_str)).items()}
-
-    def get_db_instance_types(self, client: edgedb.Client) -> list[str]:
-        def filter_objects(x):
-            if "|" in x:
-                return False
-            if x["abstract"] is True:
-                return False
-            return True
-
+    def get_db_instance_types(self) -> list[str]:
         class_types = []
-
-        for r in filter(filter_objects, self._perform_query(client)):
+        for r in filter(lambda x: x["abstract"] is False, self._query_all_class_types()):
             name = clean_name(r, self.db_entity_model.config.module_name)
             if name not in class_types:
                 class_types.append(name)
 
         return class_types
 
-    def _get_select_from_class_type(self, class_type: str) -> EdgeSelect:
+    def get_db_instances(self) -> dict[str, list[str]]:
+        instances = dict()
+
+        for r in self._query_all_class_types():
+            name = clean_name(r, self.db_entity_model.config.module_name)
+            if name not in instances.keys():
+                instances[name] = []
+            instances[name].append(r["id"])
+        return instances
+
+    def _get_selects_for_all_instances(self, include_all_props=False):
+        class_types = self.get_db_instance_types()
+        return [self._get_select_from_class_type(ct, include_all_props) for ct in class_types]
+
+    def _get_edgeremove_from_class_type(self, class_type: str, uuid: str):
+        return EdgeRemove(change_case(class_type), class_type, EdgeFilter("id", uuid, EdgeFilter.TYPES.UUID))
+
+    def _get_select_from_class_type(self, class_type: str, include_all_props=False) -> EdgeSelect:
         db_entity = self.db_entity_model.entities.get(class_type)
-        props = list(db_entity.get_all_props().keys()) + ["id", ""]
-        return EdgeSelect(change_case(class_type), Entity(class_type), entity_props=props)
+        props = ["id"]
+        if include_all_props:
+            props += list(db_entity.get_all_props().keys())
+        return EdgeSelect(change_case(class_type), Entity(class_type, db_entity=db_entity), entity_props=props)
 
-    def _perform_query(self, client: edgedb.Client) -> dict:
+    def _query_all_class_types(self) -> dict:
         query_str = introspect_db(self.db_entity_model.config.module_name)
-        return json.loads(client.query_json(query_str))
-
-
-def create_entities_in_insert_order(result: dict) -> Iterable[Entity]:
-    id_map = {}
-    for ifc_class, instances in result.items():
-        for instance in instances:
-            uuid = instance.pop("id")
-            props = dict()
-            links = dict()
-            for key, value in instance.items():
-                if isinstance(value, dict):
-                    links[key] = value.get("id")
-                else:
-                    props[key] = value
-
-            id_map[uuid] = Entity(ifc_class, props, links, uuid=uuid)
-
-    dep_map = {key: list(value.links.values()) for key, value in id_map.items()}
-
-    # Substitute uuid string in link dict with Entity
-    for entity in id_map.values():
-        updated_links = dict()
-        for key, uuid in entity.links.items():
-            updated_links[key] = id_map[uuid]
-        entity.links = updated_links
-
-    for uuid in toposort.toposort_flatten(dep_map):
-        yield id_map[uuid]
+        return json.loads(self.client.query_json(query_str))

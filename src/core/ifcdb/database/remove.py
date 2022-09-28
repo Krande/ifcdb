@@ -75,6 +75,7 @@ class EdgeRemove:
             del_str = f"{self.class_name} {fstr}"
         else:
             del_str = f"{self.select.name}"
+
         if assign_to_variable is False:
             return f"DELETE {del_str}"
         else:

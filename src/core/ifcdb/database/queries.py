@@ -1,4 +1,4 @@
-def introspect_db(module_name: str):
+def introspect_db(module_name: str) -> str:
     return f"""with module schema
 select ObjectType {{
     name,

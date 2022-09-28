@@ -13,8 +13,7 @@ from typing import Type
 import edgedb
 
 from ifcdb.config import IfcDbConfig
-from ifcdb.schema.model import IfcSchemaModel
-from ifcdb.schema.new_model import db_entity_model_from_schema_model
+from ifcdb.schema.new_model import db_entity_model_from_schema_version
 
 
 class MigrationCreateError(Exception):
@@ -71,10 +70,9 @@ class DbAdmin:
 @dataclass
 class DbMigration:
     database: str
-    db_config: IfcDbConfig
+    db_config: IfcDbConfig = IfcDbConfig("IFC4x1")
     dbschema_dir: pathlib.Path = "dbschema"
     debug_logs: bool = False
-    use_new_schema_gen: bool = False
 
     def __post_init__(self):
         self.dbschema_dir = pathlib.Path(self.dbschema_dir).resolve().absolute()
@@ -100,7 +98,6 @@ class DbMigration:
 
     def migrate_stepwise(
         self,
-        ifc_schema: str,
         specific_entities: list[str] = None,
         batch_size=100,
         module_name: str = "default",
@@ -108,18 +105,12 @@ class DbMigration:
         dry_run: bool = False,
         allow_unsafe=False,
     ):
-        schema_model = IfcSchemaModel(ifc_schema)
-        schema_model.modify_circular_deps = True
-
-        if specific_entities is None:
-            unique_entities = schema_model.get_all_entities()
-        else:
-            unique_entities = specific_entities
-
-        all_ents = schema_model.get_related_entities(unique_entities)
         unwrap_enums = self.db_config.unwrapped_enums
         unwrap_selects = self.db_config.unwrapped_selects
-        db_entities = db_entity_model_from_schema_model(schema_model, all_ents, unwrap_enums, unwrap_selects)
+
+        db_entities = db_entity_model_from_schema_version(
+            self.db_config.ifc_schema_version, specific_entities, unwrap_enums, unwrap_selects
+        )
         db_ents_names = [x.name for x in db_entities.get_entities_in_insert_order()]
         # Filter out all Enum's as they are not used in the EdgeDB representation
 
@@ -136,16 +127,11 @@ class DbMigration:
         curr_size = 0
 
         for i, chunk in enumerate(chunks, start=1):
-            for imc in schema_model.intermediate_classes.values():
-                imc.written_to_file = False
             current_schema_entities += chunk
             now = datetime.now().time().strftime("%H:%M:%S")
             curr_size += len(chunk)
             print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities ({curr_size}/{n_ents}) @ {now}")
-            if self.use_new_schema_gen:
-                db_entities.to_esdl_file(esdl_file_path, module_name)
-            else:
-                schema_model.to_esdl_file(esdl_file_path, current_schema_entities, module_name)
+            db_entities.to_esdl_file(esdl_file_path, module_name)
             if begin_step is not None:
                 if i < begin_step:
                     print(f"skipping step {i}")
