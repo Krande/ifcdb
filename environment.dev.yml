@@ -1,6 +1,6 @@
 name: ifcdb-dev
 channels:
-  - ifcopenshell
+#  - ifcopenshell
   - conda-forge
   - krande
 dependencies:
@@ -13,6 +13,7 @@ dependencies:
   - httpx
   - fastapi
   - uvicorn
+  - hpp-fcl
   - starlette
   - pip
   - pip:
@@ -26,3 +27,4 @@ dependencies:
       - anyio[trio]
       - python-multipart
       - frozendict
+      - deepdiff

@@ -5,12 +5,11 @@ import pathlib
 import time
 from dataclasses import dataclass
 from io import StringIO
-from typing import TYPE_CHECKING
 
 import edgedb
+import ifcopenshell
 from dotenv import load_dotenv
 
-import ifcopenshell
 from ifcdb.config import IfcDbConfig
 from ifcdb.database.admin import DbAdmin, DbMigration
 from ifcdb.database.getters.db_content import DbContent
@@ -115,10 +114,15 @@ class EdgeIO:
         self.db_entity_model.to_esdl_file(esdl_filepath, module_name, limit_to_entities=unique_entities)
 
     def insert_ifc(
-        self, ifc_file_path=None, ifc_file_str=None, method: INSERTS = INSERTS.SEQ, limit_ifc_ids: list[int] = None
+        self,
+        ifc_file_path=None,
+        ifc_file_str=None,
+        ifc_obj=None,
+        method: INSERTS = INSERTS.SEQ,
+        limit_ifc_ids: list[int] = None,
     ) -> IfcIO:
         """Upload all IFC elements to EdgeDB instance"""
-        ifc_io = IfcIO(ifc_file=ifc_file_path, ifc_str=ifc_file_str)
+        ifc_io = IfcIO(ifc_file=ifc_file_path, ifc_str=ifc_file_str, ifc_obj=ifc_obj)
         ifc_items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
         insert_ifc_file(ifc_items, self.client, method, self.ifc_schema, limit_ifc_ids=limit_ifc_ids)
         return ifc_io
