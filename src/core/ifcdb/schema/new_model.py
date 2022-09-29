@@ -41,7 +41,7 @@ class DbEntityModel:
     entities: dict[str, DbEntity]
     config: IfcDbConfig
 
-    def get_entities_in_insert_order(self) -> list[DbEntity]:
+    def get_entities_in_insert_order(self, break_cyclic_dep=False) -> list[DbEntity]:
         def unwrap_links(links: Iterable[DbLink]):
             all_linked_entity_names = []
             for link in links:
@@ -52,7 +52,9 @@ class DbEntityModel:
                     all_linked_entity_names.append(link.link_to.name)
             return all_linked_entity_names
 
-        dep_map = {key: unwrap_links(db_entity.links.values()) for key, db_entity in self.entities.items()}
+        dep_map = {key: unwrap_links(db_entity.get_all_props(skip_props=True).values()) for key, db_entity in self.entities.items()}
+        if break_cyclic_dep:
+            dep_map['IfcFillAreaStyle'] = []
         result = toposort.toposort_flatten(dep_map)
         return list(map(self.entities.get, result))
 
@@ -368,9 +370,9 @@ class IfcListTypes(Enum):
     BAG = "bag"
 
     @staticmethod
-    def from_str(lstype: str):
+    def from_str(list_type: str):
         emap = {e.value: e for e in IfcListTypes}
-        return emap.get(lstype)
+        return emap.get(list_type)
 
     @staticmethod
     def from_ifc_agg_type(agg_type: int):

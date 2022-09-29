@@ -35,7 +35,7 @@ class EdgeSelect:
     entity_index: int = None
     is_multi_link: bool = False
     filter: EdgeFilter = None
-    entity_props: Iterable[str] = None
+    entity_props: Iterable[str] | None = None
 
     referred_selects: list[EdgeSelect] = field(default_factory=list)
 

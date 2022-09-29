@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from dataclasses import dataclass
 from itertools import count
 
@@ -47,7 +49,10 @@ class EdgeInsert:
                         with_block_content = ""
                     refs = ""
                     for o in l_obj:
-                        with_block_content += o.to_edql_str(assign_to_variable=True) + "\n"
+                        if isinstance(o, Entity):
+                            logging.info('ds')
+                        else:
+                            with_block_content += o.to_edql_str(assign_to_variable=True) + "\n"
                         refs += o.name + prop_sep
                     links += f"{key} := {{ {refs} }}" + prop_sep
                 else:

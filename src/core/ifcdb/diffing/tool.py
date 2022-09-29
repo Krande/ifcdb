@@ -158,7 +158,7 @@ class IfcDiffTool:
         new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
         new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
 
-        res = DeepDiff(new_info1, new_info2)
+        res = DeepDiff(new_info1, new_info2, view="text")
         keys = list(res)
         if len(keys) > 0:
             entity = create_insert_entity_from_ifc_dict(info1)
@@ -242,6 +242,10 @@ class DiffResolver:
         elem = self.f2.by_guid(guid)
         for key, value in diff.items():
             safe_key = PropUpdateType.get_prop_type(key)
+            if safe_key == PropUpdateType.DICT_ITEM_ADDED:
+                for item in value:
+                    vc[item] = self.dict_value_to_add(item, elem)
+                continue
             for path, value_changes in value.items():
                 if safe_key == PropUpdateType.UPDATE:
                     vc[path] = self.path_to_value_change(path, elem, **value_changes)
@@ -253,6 +257,10 @@ class DiffResolver:
                     raise ValueError(f'Unrecognized key "{safe_key}"')
 
         return vc
+
+    def dict_value_to_add(self, path: str, elem: _ifc_ent) -> str:
+        print('test')
+        return path
 
     def path_to_value_change(self, path: str, root_elem: _ifc_ent, old_value, new_value) -> ValueChange:
         ifc_elem_path = get_elem_paths(root_elem, path)

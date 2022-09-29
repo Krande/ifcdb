@@ -13,18 +13,14 @@ _ifc_ent = ifcopenshell.entity_instance
 
 
 class PropUpdateType(Enum):
-    UPDATE = "update"
-    ADD_TO_ITERABLE = "add_to_iterable"
-    REMOVE_FROM_ITERABLE = "remove_from_iterable"
+    UPDATE = "values_changed"
+    ADD_TO_ITERABLE = "iterable_item_added"
+    REMOVE_FROM_ITERABLE = "iterable_item_removed"
+    DICT_ITEM_ADDED = 'dictionary_item_added'
 
     @staticmethod
     def get_prop_type(key: str) -> PropUpdateType:
-        keymap = dict(
-            iterable_item_added=PropUpdateType.ADD_TO_ITERABLE,
-            values_changed=PropUpdateType.UPDATE,
-            iterable_item_removed=PropUpdateType.REMOVE_FROM_ITERABLE,
-        )
-
+        keymap = {e.value: e for e in PropUpdateType}
         return keymap.get(key)
 
 

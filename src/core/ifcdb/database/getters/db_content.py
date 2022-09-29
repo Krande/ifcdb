@@ -4,6 +4,7 @@ from typing import Iterable
 
 import edgedb
 import ifcopenshell
+import logging
 import toposort
 
 from ifcdb.database.queries import introspect_db
@@ -21,22 +22,32 @@ class DbContent:
     client: edgedb.Client
 
     def wipe_db(self, delete_in_sequence: bool, max_attempts: int):
-        selects = self._get_selects_for_all_instances(include_all_props=False)
-        class_types_map = {x.name: x.entity_top.name for x in selects}
-        query_str = "SELECT {" + "".join((s.to_edql_str(assign_to_variable=True, sep=",\n") for s in selects)) + "}"
-        class_instances = json.loads(self.client.query_single_json(query_str))
-        removes = dict()
-        for ref_name, instances in class_instances.items():
-            if len(instances) == 0:
-                continue
-            class_name = class_types_map[ref_name]
-            if class_name not in removes.keys():
-                removes[class_name] = []
+        empty = False
+        attempt_no = 0
+        selects = self._get_selects_for_all_instances(include_props=False)
 
-            for instance in instances:
-                removes[class_name].append(self._get_edgeremove_from_class_type(class_name, instance.get("id")))
+        while empty is False:
+            results = self._query_all_selects(selects)
+            instantiated_classes = list(filter(lambda x: len(x) != 0, [getattr(results, s.name) for s in selects]))
+            if len(instantiated_classes) == 0:
+                print(f"Database is completely wiped")
+                return None
+            selects.reverse()
 
-        print("do deletion here")
+            for select in selects:
+                rem = EdgeRemove(select)
+                remove_str = rem.to_edql_str(embed_select=True, assign_to_variable=False)
+
+                try:
+                    self.client.execute(remove_str)
+                    print(remove_str)
+                except edgedb.ConstraintViolationError as e:
+                    logging.info(e)
+
+            attempt_no += 1
+            if attempt_no > max_attempts:
+                logging.error(f"Unable to wipe database in maximum number of attempts={max_attempts}")
+                break
 
     def get_db_content_as_ifcopenshell_object(self) -> ifcopenshell.file:
         insert_map = dict()
@@ -66,20 +77,14 @@ class DbContent:
         return f
 
     def perform_query_and_iterate_entities(self) -> Iterable[Entity]:
-        selects = self._get_selects_for_all_instances(include_all_props=True)
-
-        query_str = "SELECT {\n"
-        for select in selects:
-            query_str += select.to_edql_str(assign_to_variable=True, sep=",\n")
-        query_str += "}"
-
-        resu = self.client.query_single(query_str)
+        selects = self._get_selects_for_all_instances(include_props=True)
+        results = self._query_all_selects(selects)
 
         class_types_map = {x.name: x.entity_top.name for x in selects}
         uuid_map = dict()
         for select_name, class_name in class_types_map.items():
             db_entity = self.db_entity_model.entities.get(class_name)
-            result = getattr(resu, select_name)
+            result = getattr(results, select_name)
             if len(result) == 0:
                 continue
             for instance in result:
@@ -132,31 +137,28 @@ class DbContent:
             if name not in class_types:
                 class_types.append(name)
 
-        return class_types
+        db_entities = filter(lambda x: x.name in class_types, self.db_entity_model.get_entities_in_insert_order(True))
+        sorted_order = [x.name for x in db_entities]
 
-    def get_db_instances(self) -> dict[str, list[str]]:
-        instances = dict()
+        return sorted_order
 
-        for r in self._query_all_class_types():
-            name = clean_name(r, self.db_entity_model.config.module_name)
-            if name not in instances.keys():
-                instances[name] = []
-            instances[name].append(r["id"])
-        return instances
-
-    def _get_selects_for_all_instances(self, include_all_props=False):
+    def _get_selects_for_all_instances(self, include_props=False):
         class_types = self.get_db_instance_types()
-        return [self._get_select_from_class_type(ct, include_all_props) for ct in class_types]
-
-    def _get_edgeremove_from_class_type(self, class_type: str, uuid: str):
-        return EdgeRemove(change_case(class_type), class_type, EdgeFilter("id", uuid, EdgeFilter.TYPES.UUID))
+        return [self._get_select_from_class_type(ct, include_props) for ct in class_types]
 
     def _get_select_from_class_type(self, class_type: str, include_all_props=False) -> EdgeSelect:
         db_entity = self.db_entity_model.entities.get(class_type)
-        props = ["id"]
+        props = None
         if include_all_props:
-            props += list(db_entity.get_all_props().keys())
+            props = ["id"] + list(db_entity.get_all_props().keys())
         return EdgeSelect(change_case(class_type), Entity(class_type, db_entity=db_entity), entity_props=props)
+
+    def _query_all_selects(self, selects: list[EdgeSelect], return_only_non_empty=True) -> edgedb.Object:
+        query_str = "SELECT {\n"
+        for select in selects:
+            query_str += select.to_edql_str(assign_to_variable=True, sep=",\n")
+        query_str += "}"
+        return self.client.query_single(query_str)
 
     def _query_all_class_types(self) -> dict:
         query_str = introspect_db(self.db_entity_model.config.module_name)

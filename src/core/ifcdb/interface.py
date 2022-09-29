@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import edgedb
 from dotenv import load_dotenv
 
+import ifcopenshell
 from ifcdb.config import IfcDbConfig
 from ifcdb.database.admin import DbAdmin, DbMigration
 from ifcdb.database.getters.db_content import DbContent
@@ -18,9 +19,6 @@ from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
 from ifcdb.schema.new_model import db_entity_model_from_schema_version
-
-if TYPE_CHECKING:
-    import ifcopenshell
 
 
 @dataclass
@@ -79,11 +77,9 @@ class EdgeIO:
         db_migrate = self._create_migration_client()
         db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
 
-    def wipe_database(self, max_attempts=3, delete_in_sequence=False):
+    def wipe_database(self, max_attempts=5, delete_in_sequence=False):
         dbc = DbContent(self.db_entity_model, self.client)
         dbc.wipe_db(delete_in_sequence, max_attempts)
-        # bg = self.to_bulk_getter()
-        # wipe_db(bg, delete_in_sequence, max_attempts)
 
     def stepwise_migration(self, entities: list[str] = None, batch_size=100, dry_run=False):
         db_migrate = self._create_migration_client()
@@ -152,7 +148,14 @@ class EdgeIO:
 
     def update_db_from_ifc_delta(self, updated_ifc, original_ifc=None, save_diff_as=None, resolve_overlinking=False):
         def load_ifc_content(f: str | pathlib.Path | ifcopenshell.file) -> ifcopenshell.file:
-            new_ifc = f if isinstance(f, ifcopenshell.file) else ifcopenshell.open(f)
+            if isinstance(f, ifcopenshell.file):
+                new_ifc = f
+            elif isinstance(f, os.PathLike):
+                new_ifc = ifcopenshell.open(f)
+            elif isinstance(f, StringIO):
+                new_ifc = ifcopenshell.file.from_string(f.read())
+            else:
+                raise ValueError(f'Unrecognized ifc file type "{type(f)}"')
             return new_ifc
 
         if original_ifc is not None:
