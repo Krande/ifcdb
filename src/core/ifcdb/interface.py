@@ -76,9 +76,9 @@ class EdgeIO:
         db_migrate = self._create_migration_client()
         db_migrate.migrate_all_in_one(delete_existing_migrations=delete_existing_migrations)
 
-    def wipe_database(self, max_attempts=5, delete_in_sequence=False):
+    def wipe_database(self, max_attempts=5, silent=True):
         dbc = DbContent(self.db_entity_model, self.client)
-        dbc.wipe_db(delete_in_sequence, max_attempts)
+        dbc.wipe_db(max_attempts, silent=silent)
 
     def stepwise_migration(self, entities: list[str] = None, batch_size=100, dry_run=False):
         db_migrate = self._create_migration_client()
@@ -120,11 +120,12 @@ class EdgeIO:
         ifc_obj=None,
         method: INSERTS = INSERTS.SEQ,
         limit_ifc_ids: list[int] = None,
+        silent=False,
     ) -> IfcIO:
         """Upload all IFC elements to EdgeDB instance"""
         ifc_io = IfcIO(ifc_file=ifc_file_path, ifc_str=ifc_file_str, ifc_obj=ifc_obj)
         ifc_items = ifc_io.get_ifc_objects_by_sorted_insert_order_flat()
-        insert_ifc_file(ifc_items, self.client, method, self.ifc_schema, limit_ifc_ids=limit_ifc_ids)
+        insert_ifc_file(ifc_items, self.client, method, self.ifc_schema, limit_ifc_ids=limit_ifc_ids, silent=silent)
         return ifc_io
 
     def update_from_diff_tool(self, diff_tool: IfcDiffTool, resolve_overlinking: bool = False) -> None | str:

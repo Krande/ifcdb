@@ -1,8 +1,9 @@
-import edgedb
 import json
 import logging
 import time
 from typing import ClassVar
+
+import edgedb
 
 from .sequentially import InsertSeq
 
@@ -11,30 +12,37 @@ class INSERTS:
     SEQ: ClassVar[str] = "seq"
 
 
-def insert_ifc_file(ifc_items, client: edgedb.Client, method: INSERTS, schema: str, limit_ifc_ids: list[int] = None):
+def insert_ifc_file(
+    ifc_items, client: edgedb.Client, method: INSERTS, schema: str, limit_ifc_ids: list[int] = None, silent=False
+):
+
     sq = InsertSeq(schema, specific_ifc_ids=limit_ifc_ids)
     start = time.time()
     for tx in client.transaction():
         with tx:
             if method == INSERTS.SEQ:
-                insert_sequentially_using_new_insert_objects(sq, ifc_items, tx)
+                insert_sequentially_using_new_insert_objects(sq, ifc_items, tx, silent=silent)
             else:
                 raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
     end = time.time()
     print(f'Upload finished in "{end - start:.2f}" seconds')
 
 
-def safe_insert(insert_str: str, tx: edgedb.blocking_client.Iteration) -> str:
+def safe_insert(insert_str: str, tx: edgedb.blocking_client.Iteration, silent=False) -> str:
     try:
         single_json = tx.query_single_json(insert_str)
     except Exception as e:
         logging.exception(insert_str)
         raise e
-    print(insert_str, single_json)
+    if silent is False:
+        print(insert_str, single_json)
     return single_json
 
 
-def insert_sequentially_using_new_insert_objects(sq: InsertSeq, ifc_items, tx: edgedb.blocking_client.Iteration):
+def insert_sequentially_using_new_insert_objects(
+    sq: InsertSeq, ifc_items, tx: edgedb.blocking_client.Iteration, silent=False
+):
+    print(f'Beginning Sequential Insert of "{len(ifc_items)}" IFC elements')
     inserts = sq.create_bulk_entity_inserts(ifc_items=ifc_items)
     skipped_map = dict()
     for insert in inserts:
@@ -57,7 +65,7 @@ def insert_sequentially_using_new_insert_objects(sq: InsertSeq, ifc_items, tx: e
                 insert.entity.links[key] = skipped_map.get(value.temp_unique_identifier).entity
 
         insert_str = insert.to_edql_str(assign_to_variable=False)
-        query_res = json.loads(safe_insert(insert_str, tx))
+        query_res = json.loads(safe_insert(insert_str, tx, silent=silent))
         insert.entity.uuid = query_res["id"]
         # print(insert_str)
 

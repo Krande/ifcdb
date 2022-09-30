@@ -1,7 +1,8 @@
-import ifcopenshell
 import os
 import pathlib
 import time
+
+import ifcopenshell
 
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
@@ -52,7 +53,7 @@ def run_model_update(filename: str, extra_identifier: str = None, resolve_overli
 def wipe_db(in_sequence=True):
     with EdgeIO("MyCube", load_env=True) as io:
         start = time.time()
-        io.wipe_database(delete_in_sequence=in_sequence)
+        io.wipe_database()
         end = time.time()
 
         print(f"Wiped database in {end-start:.2f} seconds {in_sequence=}")

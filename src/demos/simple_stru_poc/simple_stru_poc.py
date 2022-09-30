@@ -1,17 +1,19 @@
 import logging
+import time
 
 import ada
 import numpy as np
+from ada.core.clash_check import pipe_penetration_check
 from ada.core.vector_utils import linear_2dtransform_rotate, vector_length_2d
 from ada.param_models.basic_module import SimpleStru
 
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
 
-IFC_FILE_1 = "temp/model_00.ifc"
-IFC_FILE_2 = "temp/model_01_w_cubes.ifc"
-IFC_FILE_3 = "temp/model_02_w_pipe.ifc"
-IFC_FILE_4 = "temp/model_02_w_pen_detail.ifc"
+IFC_FILE_0 = "temp/model_00.ifc"
+IFC_FILE_1 = "temp/model_01_w_cubes.ifc"
+IFC_FILE_2 = "temp/model_02_w_pipe.ifc"
+IFC_FILE_3 = "temp/model_03_w_pen_detail.ifc"
 
 # TODO: New models and modifications should be assigned to a separate modelling layer
 
@@ -30,16 +32,17 @@ def build_and_upload_first():
     a = ada.Assembly("PoC-Stru") / SimpleStru("A Simple Structure")
     with EdgeIO("ifc001", load_env=True) as io:
         io.wipe_database()
+        print(80 * "-")
         ifc_obj = a.to_ifc(return_file_obj=True)
-        io.insert_ifc(ifc_obj=ifc_obj)
+        print(80 * "-")
+        io.insert_ifc(ifc_obj=ifc_obj, silent=True)
+    print(80 * "-")
 
 
-def then_download_as(to_ifc_file):
+def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
     with EdgeIO("ifc001", load_env=True) as io:
-        io.to_ifc_file(to_ifc_file)
+        io.to_ifc_file(from_file)
 
-
-def add_two_equipments_as_cubes(from_file, to_file):
     a = ada.from_ifc(from_file)
 
     fl1 = a.get_by_name("floor1")
@@ -60,6 +63,7 @@ def add_two_equipments_as_cubes(from_file, to_file):
     # ifc_file = ifcopenshell.file.from_string(new_f_str)
     # with EdgeIO("ifc001", load_env=True) as io:
     #     io.update_db_from_ifc_delta(ifc_file)
+    print(80 * "-")
 
 
 def if_two_equipments_make_a_pipe(from_file, to_file):
@@ -114,43 +118,29 @@ def if_two_equipments_make_a_pipe(from_file, to_file):
     # ifc_file = ifcopenshell.file.from_string(new_f_str)
     # with EdgeIO("ifc001", load_env=True) as io:
     #     io.update_db_from_ifc_delta(ifc_file)
+    print(80 * "-")
 
 
 def check_for_penetrating_pipes(from_file, to_file):
     a = ada.from_ifc(from_file)
 
-    plates = a.get_all_physical_objects(by_type=ada.Plate)
-    pipe_segments = list(a.get_all_physical_objects(by_type=ada.PipeSegStraight))
-    penetrations = []
-    for seg in pipe_segments:
-        if isinstance(seg, ada.PipeSegStraight) is False:
-            continue
-        p1 = np.array(seg.p1)
-        p2 = np.array(seg.p2)
-        for p in plates:
-            origin = p.placement.origin
-            normal = p.placement.zdir
-
-            v1 = (p1 - origin) * normal
-            v2 = (p2 - origin) * normal
-            is_clashing = np.dot(v1, v2) < 0
-            if is_clashing:
-                print("adding penetration detail")
-                pipe = seg.parent
-                pen = p.parent.add_penetration(
-                    ada.PrimCyl(f"{p.name}_{pipe.name}_{seg.name}_pen", p1, p2, pipe.section.r + 0.1)
-                )
-                penetrations.append(pen)
+    pipe_penetration_check(a)
 
     new_f = a.to_ifc(return_file_obj=True)
 
     with open(to_file, "w") as f:
         f.write(new_f.wrapped_data.to_string())
 
+    print(80 * "-")
+
 
 if __name__ == "__main__":
-    # build_and_upload_first()
-    # then_download_as(IFC_FILE_1)
-    # add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2)
-    # if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3)
-    check_for_penetrating_pipes(IFC_FILE_3, IFC_FILE_4)
+    start = time.time()
+
+    build_and_upload_first()
+    then_download_and_add_two_equipments_as_cubes(IFC_FILE_0, IFC_FILE_1)
+    if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
+    check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
+
+    end = time.time()
+    print(f"Demo time -> {end-start:.2f} seconds")

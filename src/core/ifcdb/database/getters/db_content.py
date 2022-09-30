@@ -1,14 +1,15 @@
 import json
+import logging
+import time
 from dataclasses import dataclass
 from typing import Iterable
 
 import edgedb
 import ifcopenshell
-import logging
 import toposort
 
 from ifcdb.database.queries import introspect_db
-from ifcdb.database.remove import EdgeFilter, EdgeRemove
+from ifcdb.database.remove import EdgeRemove
 from ifcdb.database.select import EdgeSelect
 from ifcdb.database.utils import clean_name
 from ifcdb.entities import Entity
@@ -21,16 +22,28 @@ class DbContent:
     db_entity_model: DbEntityModel
     client: edgedb.Client
 
-    def wipe_db(self, delete_in_sequence: bool, max_attempts: int):
+    def wipe_db(self, max_attempts: int, silent=True):
+        print("Starting to wipe IFC DataBase")
+        start = time.time()
         empty = False
         attempt_no = 0
         selects = self._get_selects_for_all_instances(include_props=False)
 
+        first_time = True
+        results = self._query_all_selects(selects)
+        instantiated_classes = list(filter(lambda x: len(x) != 0, [getattr(results, s.name) for s in selects]))
+
+        print(f'Beginning wiping database of "{sum([len(x) for x in instantiated_classes])}" IFC elements')
+
         while empty is False:
-            results = self._query_all_selects(selects)
-            instantiated_classes = list(filter(lambda x: len(x) != 0, [getattr(results, s.name) for s in selects]))
+            if first_time is True:
+                results = self._query_all_selects(selects)
+                instantiated_classes = list(filter(lambda x: len(x) != 0, [getattr(results, s.name) for s in selects]))
+            else:
+                first_time = False
             if len(instantiated_classes) == 0:
-                print(f"Database is completely wiped")
+                end = time.time()
+                print(f"Database was completely wiped in {end-start:.2f} seconds")
                 return None
             selects.reverse()
 
@@ -40,7 +53,8 @@ class DbContent:
 
                 try:
                     self.client.execute(remove_str)
-                    print(remove_str)
+                    if silent is False:
+                        print(remove_str)
                 except edgedb.ConstraintViolationError as e:
                     logging.info(e)
 
