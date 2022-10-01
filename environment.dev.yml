@@ -4,9 +4,8 @@ channels:
   - conda-forge
   - krande
 dependencies:
-  - ifcopenshell
   - ada-py
-  - python==3.10.5
+  - python==3.10.6
   - pyparsing
   - pytest
   - toposort
