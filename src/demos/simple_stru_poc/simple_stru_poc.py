@@ -3,7 +3,7 @@ import time
 
 import ada
 import numpy as np
-from ada.core.clash_check import pipe_penetration_check
+from ada.core.clash_check import PipeClash
 from ada.core.vector_utils import linear_2dtransform_rotate, vector_length_2d
 from ada.param_models.basic_module import SimpleStru
 
@@ -59,10 +59,10 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
 
     with open(to_file, "w") as f:
         f.write(new_f_str)
-    #
-    # ifc_file = ifcopenshell.file.from_string(new_f_str)
-    # with EdgeIO("ifc001", load_env=True) as io:
-    #     io.update_db_from_ifc_delta(ifc_file)
+
+    with EdgeIO("ifc001", load_env=True) as io:
+        io.update_db_from_ifc_delta(new_f, save_diff_as='temp/diff_add_two_cube.json')
+
     print(80 * "-")
 
 
@@ -124,7 +124,9 @@ def if_two_equipments_make_a_pipe(from_file, to_file):
 def check_for_penetrating_pipes(from_file, to_file):
     a = ada.from_ifc(from_file)
 
-    pipe_penetration_check(a)
+    clashes = PipeClash.pipe_penetration_check(a)
+    for clash in clashes:
+        clash.reinforce_plate_pipe_pen()
 
     new_f = a.to_ifc(return_file_obj=True)
 
