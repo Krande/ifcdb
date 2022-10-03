@@ -54,6 +54,8 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
     shp1.ifc_options.export_props = True
     shp2.ifc_options.export_props = True
 
+    a.ifc_store.sync()
+
     new_f = a.to_ifc(return_file_obj=True)
     new_f_str = new_f.wrapped_data.to_string()
 
@@ -61,7 +63,7 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
         f.write(new_f_str)
 
     with EdgeIO("ifc001", load_env=True) as io:
-        io.update_db_from_ifc_delta(new_f, save_diff_as='temp/diff_add_two_cube.json')
+        io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
 
     print(80 * "-")
 
@@ -139,10 +141,10 @@ def check_for_penetrating_pipes(from_file, to_file):
 if __name__ == "__main__":
     start = time.time()
 
-    build_and_upload_first()
+    # build_and_upload_first()
     then_download_and_add_two_equipments_as_cubes(IFC_FILE_0, IFC_FILE_1)
-    if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
-    check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
+    # if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
+    # check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
 
     end = time.time()
     print(f"Demo time -> {end-start:.2f} seconds")
