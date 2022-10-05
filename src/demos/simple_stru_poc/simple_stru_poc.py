@@ -11,11 +11,11 @@ from ada.param_models.basic_module import SimpleStru
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
 
-IFC_FILE_0_no_db = "temp/model_00_before_db.ifc"
-IFC_FILE_0 = "temp/model_00.ifc"
-IFC_FILE_1 = "temp/model_01_w_cubes.ifc"
-IFC_FILE_2 = "temp/model_02_w_pipe.ifc"
-IFC_FILE_3 = "temp/model_03_w_pen_detail.ifc"
+IFC_FILE_0_no_db = "temp/model_00.ifc"
+IFC_FILE_0 = "temp/model_01_from_db.ifc"
+IFC_FILE_1 = "temp/model_02_w_cubes.ifc"
+IFC_FILE_2 = "temp/model_03_w_pipe.ifc"
+IFC_FILE_3 = "temp/model_04_w_pen_detail.ifc"
 
 # TODO: New models and modifications should be assigned to a separate modelling layer
 
