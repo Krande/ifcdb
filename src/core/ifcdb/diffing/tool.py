@@ -101,6 +101,7 @@ class IfcDiffTool:
         """Compare rooted elements in two ifc files and generate a list of element diffs"""
         f1 = self.f1
         f2 = self.f2
+
         if self.optimize_before_diffing:
             f1 = general_optimization(f1)
             f2 = general_optimization(f2)
@@ -212,7 +213,11 @@ def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:
                         grand_parent = parents[-2]
                         grand_parent_key = keys[-2]
                         list_copy = list(grand_parent[grand_parent_key])
-                        list_copy.pop(parent_key)
+                        try:
+                            list_copy.pop(parent_key)
+                        except IndexError as e:
+                            logging.error(e)
+                            raise IndexError(e)
                         grand_parent[grand_parent_key] = tuple(list_copy)
                     else:
                         parent.pop(parent_key)
@@ -253,13 +258,17 @@ class DiffResolver:
                     vc[path] = self.path_to_value_add_to_iterable(path, elem)
                 elif safe_key == PropUpdateType.REMOVE_FROM_ITERABLE:
                     vc[path] = self.path_to_value_remove_from_iterable(path, guid)
+                elif key == "type_changes":
+                    value_changes.pop("old_type")
+                    value_changes.pop("new_type")
+                    vc[path] = self.path_to_value_change(path, elem, **value_changes)
                 else:
                     raise ValueError(f'Unrecognized key "{safe_key}"')
 
         return vc
 
     def dict_value_to_add(self, path: str, elem: _ifc_ent) -> str:
-        print('test')
+        print("test")
         return path
 
     def path_to_value_change(self, path: str, root_elem: _ifc_ent, old_value, new_value) -> ValueChange:

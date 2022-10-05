@@ -7,8 +7,8 @@ from typing import Any, Iterable
 import ifcopenshell
 import toposort
 
+from ifcdb.schema.db_entity_model import DbEntity, DbEntityModel
 from ifcdb.schema.model import ArrayModel, EntityModel, IfcSchemaModel, TypeModel
-from ifcdb.schema.new_model import DbEntity, DbEntityModel
 from ifcdb.utils import change_case
 
 _IFC_ENTITY = ifcopenshell.entity_instance

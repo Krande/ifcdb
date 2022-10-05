@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 
 import ada
@@ -10,6 +11,7 @@ from ada.param_models.basic_module import SimpleStru
 from ifcdb import EdgeIO
 from ifcdb.utils import top_dir
 
+IFC_FILE_0_no_db = "temp/model_00_before_db.ifc"
 IFC_FILE_0 = "temp/model_00.ifc"
 IFC_FILE_1 = "temp/model_01_w_cubes.ifc"
 IFC_FILE_2 = "temp/model_02_w_pipe.ifc"
@@ -29,11 +31,12 @@ def create_schema_one_time():
 
 
 def build_and_upload_first():
+    os.makedirs("temp", exist_ok=True)
     a = ada.Assembly("PoC-Stru") / SimpleStru("A Simple Structure")
     with EdgeIO("ifc001", load_env=True) as io:
         io.wipe_database()
         print(80 * "-")
-        ifc_obj = a.to_ifc(return_file_obj=True)
+        ifc_obj = a.to_ifc(IFC_FILE_0_no_db)
         print(80 * "-")
         io.insert_ifc(ifc_obj=ifc_obj, silent=True)
     print(80 * "-")
@@ -49,21 +52,13 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
     fl2 = a.get_by_name("floor2")
 
     meta = dict(auto_pipe=True)
-    shp1 = fl1.add_shape(ada.PrimBox("Equip1", (1, 1, 0), (2, 2, 1), metadata=meta))
-    shp2 = fl2.add_shape(ada.PrimBox("Equip2", (3, 3, 3), (4, 4, 4), metadata=meta))
-    shp1.ifc_options.export_props = True
-    shp2.ifc_options.export_props = True
+    fl1.add_shape(ada.PrimBox("Equip1", (1, 1, 0), (2, 2, 1), metadata=meta))
+    fl2.add_shape(ada.PrimBox("Equip2", (3, 3, 3), (4, 4, 4), metadata=meta))
 
-    a.ifc_store.sync()
-
-    new_f = a.to_ifc(return_file_obj=True)
-    new_f_str = new_f.wrapped_data.to_string()
-
-    with open(to_file, "w") as f:
-        f.write(new_f_str)
-
-    with EdgeIO("ifc001", load_env=True) as io:
-        io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
+    _ = a.to_ifc(to_file)
+    #
+    # with EdgeIO("ifc001", load_env=True) as io:
+    #     io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
 
     print(80 * "-")
 
@@ -74,7 +69,7 @@ def if_two_equipments_make_a_pipe(from_file, to_file):
     section = ada.Section("Psec", ada.Section.TYPES.TUBULAR, r=0.07, wt=0.01)
 
     def filter_equip_for_auto_connecting(x):
-        return x.metadata.get("props", dict()).get("Properties", dict()).get("auto_pipe", None) is not None
+        return x.metadata.get("Properties", dict()).get("auto_pipe", None) is not None
 
     result: list[ada.Shape] = list(filter(filter_equip_for_auto_connecting, a.get_all_physical_objects()))
     points = [shp.bbox.volume_cog for shp in result]
@@ -111,10 +106,7 @@ def if_two_equipments_make_a_pipe(from_file, to_file):
         logging.error("Multiple points This is not yet accounted for")
         return
 
-    new_f = a.to_ifc(return_file_obj=True)
-
-    with open(to_file, "w") as f:
-        f.write(new_f.wrapped_data.to_string())
+    _ = a.to_ifc(to_file)
 
     # Update the Database Model
     # ifc_file = ifcopenshell.file.from_string(new_f_str)
@@ -130,7 +122,7 @@ def check_for_penetrating_pipes(from_file, to_file):
     for clash in clashes:
         clash.reinforce_plate_pipe_pen()
 
-    new_f = a.to_ifc(return_file_obj=True)
+    new_f = a.to_ifc(to_file)
 
     with open(to_file, "w") as f:
         f.write(new_f.wrapped_data.to_string())
@@ -141,10 +133,10 @@ def check_for_penetrating_pipes(from_file, to_file):
 if __name__ == "__main__":
     start = time.time()
 
-    # build_and_upload_first()
+    build_and_upload_first()
     then_download_and_add_two_equipments_as_cubes(IFC_FILE_0, IFC_FILE_1)
-    # if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
-    # check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
+    if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
+    check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
 
     end = time.time()
     print(f"Demo time -> {end-start:.2f} seconds")

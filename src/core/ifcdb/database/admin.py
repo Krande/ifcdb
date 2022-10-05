@@ -13,7 +13,7 @@ from typing import Type
 import edgedb
 
 from ifcdb.config import IfcDbConfig
-from ifcdb.schema.new_model import db_entity_model_from_schema_version
+from ifcdb.schema.db_entity_model import db_entity_model_from_schema_version
 
 
 class MigrationCreateError(Exception):

@@ -52,9 +52,12 @@ class DbEntityModel:
                     all_linked_entity_names.append(link.link_to.name)
             return all_linked_entity_names
 
-        dep_map = {key: unwrap_links(db_entity.get_all_props(skip_props=True).values()) for key, db_entity in self.entities.items()}
+        dep_map = {
+            key: unwrap_links(db_entity.get_all_props(skip_props=True).values())
+            for key, db_entity in self.entities.items()
+        }
         if break_cyclic_dep:
-            dep_map['IfcFillAreaStyle'] = []
+            dep_map["IfcFillAreaStyle"] = []
         result = toposort.toposort_flatten(dep_map)
         return list(map(self.entities.get, result))
 

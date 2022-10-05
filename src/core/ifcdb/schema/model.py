@@ -21,7 +21,7 @@ from .utils import (
 wrap = ifcopenshell.ifcopenshell_wrapper
 
 if TYPE_CHECKING:
-    from .new_model import DbEntityResolver
+    from .db_entity_model import DbEntityResolver
 
 
 @dataclass
@@ -689,7 +689,7 @@ class IfcSchemaModel:
             f.write(self.to_esdl_str(entities, module_name))
 
     def to_db_entity_resolver(self, entities: list[str] = None) -> DbEntityResolver:
-        from ifcdb.schema.new_model import DbEntityResolver
+        from ifcdb.schema.db_entity_model import DbEntityResolver
 
         if entities is not None:
             all_ent_str = self.get_related_entities(entities)

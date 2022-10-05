@@ -13,7 +13,7 @@ from ifcdb.database.remove import EdgeRemove
 from ifcdb.database.select import EdgeSelect
 from ifcdb.database.utils import clean_name
 from ifcdb.entities import Entity
-from ifcdb.schema.new_model import DbEntityModel
+from ifcdb.schema.db_entity_model import DbEntityModel, get_db_entity_children
 from ifcdb.utils import change_case
 
 
@@ -113,6 +113,15 @@ class DbContent:
                         links[lkey] = [str(set_obj.id) for set_obj in link_obj]
                     else:
                         links[lkey] = str(link_obj.id)
+
+                existing_entity = uuid_map.get(uuid)
+                if existing_entity is not None:
+                    exist_db_entity = self.db_entity_model.entities.get(existing_entity.name)
+                    children = get_db_entity_children(exist_db_entity)
+                    if db_entity not in children:
+                        # The new entity is a supertype of the existing type
+                        continue
+
                 uuid_map[uuid] = Entity(class_name, props=props, links=links, uuid=uuid)
 
         dep_map = dict()

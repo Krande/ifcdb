@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ifcdb.entities import Entity
-from ifcdb.schema.new_model import DbEntity, DbLink, DbProp
+from ifcdb.schema.db_entity_model import DbEntity, DbLink, DbProp
 
 
 def check_prop(prop: DbProp, ifc_entity_value: Any):

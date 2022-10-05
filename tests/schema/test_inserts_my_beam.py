@@ -4,7 +4,10 @@ import pytest
 
 from ifcdb.entities import Entity, EntityFromDbEntity
 from ifcdb.io.ifc.interface import IfcIO
-from ifcdb.schema.new_model import DbEntityResolver, db_entity_model_from_schema_version
+from ifcdb.schema.db_entity_model import (
+    DbEntityResolver,
+    db_entity_model_from_schema_version,
+)
 from ifcdb.schema.validate import is_valid
 from ifcdb.utils import top_dir
 

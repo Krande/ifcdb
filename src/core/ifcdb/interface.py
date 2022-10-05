@@ -17,7 +17,7 @@ from ifcdb.database.inserts.file_inserts import INSERTS, insert_ifc_file
 from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
 from ifcdb.io.ifc import IfcIO
-from ifcdb.schema.new_model import db_entity_model_from_schema_version
+from ifcdb.schema.db_entity_model import db_entity_model_from_schema_version
 
 
 @dataclass

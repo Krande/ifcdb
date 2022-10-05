@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from ifcdb.schema.new_model import DbEntityResolver, db_entity_model_from_schema_version
+from ifcdb.schema.db_entity_model import (
+    DbEntityResolver,
+    db_entity_model_from_schema_version,
+)
 
 
 @pytest.fixture
