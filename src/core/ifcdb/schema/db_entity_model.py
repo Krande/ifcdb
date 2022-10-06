@@ -42,16 +42,6 @@ class DbEntityModel:
     config: IfcDbConfig
 
     def get_entities_in_insert_order(self, break_cyclic_dep=False) -> list[DbEntity]:
-        def unwrap_links(links: Iterable[DbLink]):
-            all_linked_entity_names = []
-            for link in links:
-                if isinstance(link.link_to, list):
-                    for sub_link in link.link_to:
-                        all_linked_entity_names.append(sub_link.name)
-                else:
-                    all_linked_entity_names.append(link.link_to.name)
-            return all_linked_entity_names
-
         dep_map = {
             key: unwrap_links(db_entity.get_all_props(skip_props=True).values())
             for key, db_entity in self.entities.items()
@@ -61,8 +51,27 @@ class DbEntityModel:
         result = toposort.toposort_flatten(dep_map)
         return list(map(self.entities.get, result))
 
+    def get_entities_by_dependency_order(self, break_cyclic_dep=False):
+        dep_map = dict()
+        for key, db_entity in self.entities.items():
+            linked_elements = unwrap_links(db_entity.get_all_props(skip_props=True).values())
+            extended = []
+            if db_entity.extending is not None:
+                extended = [db_entity.extending.name]
+            dep_map[key] = linked_elements + extended
+
+        if break_cyclic_dep:
+            dep_map["IfcFillAreaStyle"] = []
+        result = toposort.toposort_flatten(dep_map)
+        return list(map(self.entities.get, result))
+
     def to_esdl_str(self, module_name: str, limit_to_entities: list[str]):
-        types_str = "\n".join([x.to_schema_str() for x in self.entities.values()])
+        if limit_to_entities:
+            entities = [self.entities[x] for x in filter(lambda x: x in limit_to_entities, self.entities.keys())]
+        else:
+            entities = self.entities.values()
+
+        types_str = "\n".join([x.to_schema_str() for x in entities])
         return f"module {module_name} {{\n\n{types_str}\n}}"
 
     def to_esdl_file(self, filepath: os.PathLike, module_name: str = "default", limit_to_entities: list[str] = None):
@@ -680,3 +689,14 @@ def get_db_entity_children(db_entity: DbEntity, entities: list[DbEntity] = None)
     for x in db_entity.extended_by:
         get_db_entity_children(x, entities)
     return entities
+
+
+def unwrap_links(links: Iterable[DbLink]):
+    all_linked_entity_names = []
+    for link in links:
+        if isinstance(link.link_to, list):
+            for sub_link in link.link_to:
+                all_linked_entity_names.append(sub_link.name)
+        else:
+            all_linked_entity_names.append(link.link_to.name)
+    return all_linked_entity_names

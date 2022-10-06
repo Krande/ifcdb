@@ -109,10 +109,12 @@ class DbMigration:
         unwrap_selects = self.db_config.unwrapped_selects
 
         db_entities = db_entity_model_from_schema_version(
-            self.db_config.ifc_schema_version, specific_entities, unwrap_enums, unwrap_selects
+            self.db_config.ifc_schema_version,
+            specific_entities,
+            unwrap_enums,
+            unwrap_selects,
         )
-        db_ents_names = [x.name for x in db_entities.get_entities_in_insert_order()]
-        # Filter out all Enum's as they are not used in the EdgeDB representation
+        db_ents_names = [x.name for x in db_entities.get_entities_by_dependency_order()]
 
         chunks = []
         n_ents = len(db_ents_names)
@@ -131,7 +133,7 @@ class DbMigration:
             now = datetime.now().time().strftime("%H:%M:%S")
             curr_size += len(chunk)
             print(f"Starting step {i} of {len(chunks)} adding {len(chunk)} entities ({curr_size}/{n_ents}) @ {now}")
-            db_entities.to_esdl_file(esdl_file_path, module_name)
+            db_entities.to_esdl_file(esdl_file_path, module_name, limit_to_entities=current_schema_entities)
             if begin_step is not None:
                 if i < begin_step:
                     print(f"skipping step {i}")
