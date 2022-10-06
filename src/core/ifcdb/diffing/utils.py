@@ -67,7 +67,6 @@ def get_elem_paths(elem: ifcopenshell.entity_instance, path: str, is_append_obj=
 
         if is_index:
             next_elem = curr_elem[path_]
-
         else:
             next_elem = getattr(curr_elem, path_)
 

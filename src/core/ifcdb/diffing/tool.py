@@ -152,12 +152,18 @@ class IfcDiffTool:
         return True
 
     def compare_rooted_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> EntityDiffChange | None:
-        info1 = el1.get_info(recursive=True, include_identifier=False)
-        info2 = el2.get_info(recursive=True, include_identifier=False)
+        # TODO: Split this into individual checks for Owner, Geometry or Placement.
+        info1 = get_dict_from_el(el1)
+        info2 = get_dict_from_el(el2)
 
-        # Walk hierarchy and pop linked elements that are already diffed
-        new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
-        new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
+        try:
+            new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
+        except IndexError as e:
+            raise IndexError(e)
+        try:
+            new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
+        except IndexError as e:
+            raise IndexError(e)
 
         res = DeepDiff(new_info1, new_info2, view="text")
         keys = list(res)
@@ -169,6 +175,23 @@ class IfcDiffTool:
             return EntityDiffChange(el1.GlobalId, el1.is_a(), diff, vcs, entity)
 
         return None
+
+    def is_owner_hist_changed(self, el1, el2):
+        owner_hist1_last_mod = el1.OwnerHistory.LastModifiedDate
+        owner_hist2_last_mod = el2.OwnerHistory.LastModifiedDate
+        if owner_hist1_last_mod == owner_hist2_last_mod:
+            return False
+        owner1 = get_dict_from_el(el1.OwnerHistory)
+        owner2 = get_dict_from_el(el2.OwnerHistory)
+
+        res = DeepDiff(owner1, owner2, view="text")
+        keys = list(res)
+        if len(keys) > 0:
+            entity = create_insert_entity_from_ifc_dict(owner1)
+            diff = {key: res[key] for key in keys}
+            dr = DiffResolver(self.f1, self.f2)
+            vcs = dr.diff_to_value_changes(el1.GlobalId, diff)
+            return EntityDiffChange(el1.GlobalId, el1.is_a(), diff, vcs, entity)
 
     def to_bulk_entity_handler(self) -> BulkEntityHandler:
         return to_bulk_entity_handler(self)
@@ -213,11 +236,7 @@ def ifc_info_walk_and_pop(source: dict, ids_to_skip: list[str]) -> dict:
                         grand_parent = parents[-2]
                         grand_parent_key = keys[-2]
                         list_copy = list(grand_parent[grand_parent_key])
-                        try:
-                            list_copy.pop(parent_key)
-                        except IndexError as e:
-                            logging.error(e)
-                            raise IndexError(e)
+                        list_copy.pop(parent_key)
                         grand_parent[grand_parent_key] = tuple(list_copy)
                     else:
                         parent.pop(parent_key)
@@ -301,3 +320,7 @@ class DiffResolver:
         parent_entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(ifc_elem_path.levels[0])
 
         return ValueRemovedFromIterable(path, entity_tool.entity, ifc_elem_path.indices[0], parent_entity_tool.entity)
+
+
+def get_dict_from_el(el: ifcopenshell.entity_instance) -> dict:
+    return el.get_info(recursive=True, include_identifier=False)

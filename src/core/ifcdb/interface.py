@@ -155,8 +155,8 @@ class EdgeIO:
         def load_ifc_content(f: str | pathlib.Path | ifcopenshell.file) -> ifcopenshell.file:
             if isinstance(f, ifcopenshell.file):
                 new_ifc = f
-            elif isinstance(f, os.PathLike):
-                new_ifc = ifcopenshell.open(f)
+            elif isinstance(f, (os.PathLike, str)):
+                new_ifc = ifcopenshell.open(str(f))
             elif isinstance(f, StringIO):
                 new_ifc = ifcopenshell.file.from_string(f.read())
             else:

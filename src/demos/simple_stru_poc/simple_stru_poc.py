@@ -55,10 +55,10 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
     fl1.add_shape(ada.PrimBox("Equip1", (1, 1, 0), (2, 2, 1), metadata=meta))
     fl2.add_shape(ada.PrimBox("Equip2", (3, 3, 3), (4, 4, 4), metadata=meta))
 
-    _ = a.to_ifc(to_file)
-    #
-    # with EdgeIO("ifc001", load_env=True) as io:
-    #     io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
+    new_f = a.to_ifc(to_file)
+
+    with EdgeIO("ifc001", load_env=True) as io:
+        io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
 
     print(80 * "-")
 
@@ -112,6 +112,7 @@ def if_two_equipments_make_a_pipe(from_file, to_file):
     # ifc_file = ifcopenshell.file.from_string(new_f_str)
     # with EdgeIO("ifc001", load_env=True) as io:
     #     io.update_db_from_ifc_delta(ifc_file)
+
     print(80 * "-")
 
 
@@ -122,7 +123,8 @@ def check_for_penetrating_pipes(from_file, to_file):
     for clash in clashes:
         clash.reinforce_plate_pipe_pen()
 
-    new_f = a.to_ifc(to_file)
+    new_f = a.to_ifc(to_file, validate=True)
+    a.to_vis_mesh(cpus=1).to_gltf("temp/model_w_pen_detail.glb")
 
     with open(to_file, "w") as f:
         f.write(new_f.wrapped_data.to_string())
@@ -133,7 +135,7 @@ def check_for_penetrating_pipes(from_file, to_file):
 if __name__ == "__main__":
     start = time.time()
 
-    build_and_upload_first()
+    # build_and_upload_first()
     then_download_and_add_two_equipments_as_cubes(IFC_FILE_0, IFC_FILE_1)
     if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
     check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
