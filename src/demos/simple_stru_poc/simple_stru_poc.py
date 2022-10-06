@@ -1,15 +1,15 @@
 import logging
+import numpy as np
 import os
 import time
 
 import ada
-import numpy as np
 from ada.core.clash_check import PipeClash
 from ada.core.vector_utils import linear_2dtransform_rotate, vector_length_2d
 from ada.param_models.basic_module import SimpleStru
-
 from ifcdb import EdgeIO
-from ifcdb.utils import top_dir
+
+DB_NAME = "ifc001"
 
 IFC_FILE_0_no_db = "temp/model_00.ifc"
 IFC_FILE_0 = "temp/model_01_from_db.ifc"
@@ -26,7 +26,7 @@ def create_schema_one_time():
 
     extra_entities = []
 
-    with EdgeIO("ifc001", load_env=True) as io:
+    with EdgeIO(DB_NAME, load_env=True) as io:
         if extra_entities is not None:
             entities += extra_entities
         io.create_database()
@@ -36,7 +36,7 @@ def create_schema_one_time():
 def build_and_upload_first():
     os.makedirs("temp", exist_ok=True)
     a = ada.Assembly("PoC-Stru") / SimpleStru("A Simple Structure")
-    with EdgeIO("ifc001", load_env=True) as io:
+    with EdgeIO(DB_NAME, load_env=True) as io:
         io.wipe_database()
         print(80 * "-")
         ifc_obj = a.to_ifc(IFC_FILE_0_no_db)
@@ -46,7 +46,7 @@ def build_and_upload_first():
 
 
 def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
-    with EdgeIO("ifc001", load_env=True) as io:
+    with EdgeIO(DB_NAME, load_env=True) as io:
         io.to_ifc_file(from_file)
 
     a = ada.from_ifc(from_file)
@@ -60,7 +60,7 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
 
     new_f = a.to_ifc(to_file)
 
-    # with EdgeIO("ifc001", load_env=True) as io:
+    # with EdgeIO(DB_NAME, load_env=True) as io:
     #     io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
 
     print(80 * "-")
@@ -113,7 +113,7 @@ def if_two_equipments_make_a_pipe(from_file, to_file):
 
     # Update the Database Model
     # ifc_file = ifcopenshell.file.from_string(new_f_str)
-    # with EdgeIO("ifc001", load_env=True) as io:
+    # with EdgeIO(DB_NAME, load_env=True) as io:
     #     io.update_db_from_ifc_delta(ifc_file)
 
     print(80 * "-")

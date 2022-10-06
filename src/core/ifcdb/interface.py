@@ -79,9 +79,9 @@ class EdgeIO:
         dbc = DbContent(self.db_entity_model, self.client)
         dbc.wipe_db(max_attempts, silent=silent)
 
-    def stepwise_migration(self, entities: list[str] = None, batch_size=100, dry_run=False):
+    def stepwise_migration(self, entities: list[str] = None, batch_size=100, dry_run=False, begin_step=None):
         db_migrate = self._create_migration_client()
-        db_migrate.migrate_stepwise(entities, batch_size, dry_run=dry_run)
+        db_migrate.migrate_stepwise(entities, batch_size, dry_run=dry_run,begin_step=begin_step)
 
     def get_entities_from_ifc_files(self, ifc_paths: list[str | pathlib.Path]) -> list[str]:
         return IfcIO.get_ifc_entities_from_multiple_ifcs(ifc_paths)
