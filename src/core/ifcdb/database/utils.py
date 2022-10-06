@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import edgedb
 import logging
 import os
 import subprocess
@@ -9,6 +10,17 @@ from toposort import toposort_flatten
 from ifcdb.schema.model import IfcSchemaModel
 
 ID_PARAMS = {"id", "_e_type"}
+
+
+def safe_insert(insert_str: str, tx: edgedb.blocking_client.Iteration, silent=False) -> str:
+    try:
+        single_json = tx.query_single_json(insert_str)
+    except Exception as e:
+        logging.exception(insert_str)
+        raise e
+    if silent is False:
+        print(insert_str, single_json)
+    return single_json
 
 
 def get_uuid_refs(data, path="", return_list: list[tuple] = None):

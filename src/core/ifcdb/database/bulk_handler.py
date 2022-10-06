@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from itertools import count
 from typing import TYPE_CHECKING
 
+from ifcdb.database.utils import safe_insert
 from ifcdb.diffing.types import (
     PropUpdateType,
     ValueAddedToIterable,
@@ -11,11 +12,11 @@ from ifcdb.diffing.types import (
     ValueRemovedFromIterable,
 )
 from ifcdb.entities import EntityTool
-
 from .inserts import EdgeInsert
 from .remove import EdgeRemove
 from .select import EdgeFilter, EdgeSelect, FilterType, PropSelectResolver
 from .updates import EdgeUpdate, EntityUpdateValue
+import json
 
 if TYPE_CHECKING:
     from ifcdb.diffing.tool import IfcDiffTool
@@ -27,6 +28,12 @@ class BulkEntityHandler:
     inserts: dict[str, EdgeInsert]
     changes: dict[str, EdgeUpdate]
     removes: list[EdgeRemove]
+
+    def insert_sequentially(self, tx, silent=True):
+        for key, insert in self.inserts.items():
+            insert_str = insert.to_edql_str(assign_to_variable=False, sep=",\n")
+            query_res = json.loads(safe_insert(insert_str, tx, silent=silent))
+            insert.entity.uuid = query_res["id"]
 
     def to_edql_str(self, indent=2 * " ") -> str | None:
         # INSERT statements

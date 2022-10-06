@@ -1,10 +1,10 @@
+import edgedb
 import json
 import logging
 import time
 from typing import ClassVar
 
-import edgedb
-
+from ifcdb.database.utils import safe_insert
 from .sequentially import InsertSeq
 
 
@@ -26,17 +26,6 @@ def insert_ifc_file(
                 raise NotImplementedError(f'Unrecognized IFC insert method "{method}". ')
     end = time.time()
     print(f'Upload finished in "{end - start:.2f}" seconds')
-
-
-def safe_insert(insert_str: str, tx: edgedb.blocking_client.Iteration, silent=False) -> str:
-    try:
-        single_json = tx.query_single_json(insert_str)
-    except Exception as e:
-        logging.exception(insert_str)
-        raise e
-    if silent is False:
-        print(insert_str, single_json)
-    return single_json
 
 
 def insert_sequentially_using_new_insert_objects(

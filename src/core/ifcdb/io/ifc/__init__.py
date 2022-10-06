@@ -1,3 +1,4 @@
-from .interface import IfcIO
+from .interface import IfcIO, load_ifc_content
 
-__all__ = ["IfcIO"]
+__all__ = ["IfcIO", "load_ifc_content"]
+

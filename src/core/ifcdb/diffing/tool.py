@@ -93,6 +93,8 @@ class IfcDiffTool:
     added: list[EntityDiffAdd] = field(default_factory=list)
     removed: list[EntityDiffRemove] = field(default_factory=list)
 
+    precision: float = 1e-4
+
     def __post_init__(self):
         if self.f2 is not None and self.auto_run is True:
             self._run()
@@ -152,7 +154,12 @@ class IfcDiffTool:
         return True
 
     def compare_rooted_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> EntityDiffChange | None:
-        # TODO: Split this into individual checks for Owner, Geometry or Placement.
+        owner_diff = self.diff_owner(el1, el2)
+        geometry_diff = self.diff_geometry(el1, el2)
+        placement_diff = self.diff_placement(el1, el2)
+        if geometry_diff is None and placement_diff is None:
+            return None
+
         info1 = get_dict_from_el(el1)
         info2 = get_dict_from_el(el2)
 
@@ -176,11 +183,7 @@ class IfcDiffTool:
 
         return None
 
-    def is_owner_hist_changed(self, el1, el2):
-        owner_hist1_last_mod = el1.OwnerHistory.LastModifiedDate
-        owner_hist2_last_mod = el2.OwnerHistory.LastModifiedDate
-        if owner_hist1_last_mod == owner_hist2_last_mod:
-            return False
+    def diff_owner(self, el1, el2):
         owner1 = get_dict_from_el(el1.OwnerHistory)
         owner2 = get_dict_from_el(el2.OwnerHistory)
 
@@ -189,9 +192,38 @@ class IfcDiffTool:
         if len(keys) > 0:
             entity = create_insert_entity_from_ifc_dict(owner1)
             diff = {key: res[key] for key in keys}
-            dr = DiffResolver(self.f1, self.f2)
-            vcs = dr.diff_to_value_changes(el1.GlobalId, diff)
-            return EntityDiffChange(el1.GlobalId, el1.is_a(), diff, vcs, entity)
+            return entity, diff
+
+    def diff_geometry(self, el1, el2):
+        if hasattr(el1, "Representation") is False:
+            return None
+
+        if el1.Representation is None or el2.Representation is None:
+            return None
+
+        geom1 = get_dict_from_el(el1.Representation)
+        geom2 = get_dict_from_el(el2.Representation)
+
+        res = DeepDiff(geom1, geom2, view="text", math_epsilon=self.precision)
+        keys = list(res)
+        if len(keys) > 0:
+            entity = create_insert_entity_from_ifc_dict(geom1)
+            diff = {key: res[key] for key in keys}
+            return entity, diff
+
+    def diff_placement(self, el1, el2):
+        if hasattr(el1, "ObjectPlacement") is False:
+            return None
+
+        place1 = get_dict_from_el(el1.ObjectPlacement)
+        place2 = get_dict_from_el(el2.ObjectPlacement)
+
+        res = DeepDiff(place1, place2, view="text", math_epsilon=self.precision)
+        keys = list(res)
+        if len(keys) > 0:
+            entity = create_insert_entity_from_ifc_dict(place1)
+            diff = {key: res[key] for key in keys}
+            return entity, diff
 
     def to_bulk_entity_handler(self) -> BulkEntityHandler:
         return to_bulk_entity_handler(self)

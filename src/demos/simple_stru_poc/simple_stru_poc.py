@@ -21,9 +21,12 @@ IFC_FILE_3 = "temp/model_04_w_pen_detail.ifc"
 
 
 def create_schema_one_time():
-    extra_entities = ["IfcPump", "IfcCompressor", "IfcPipe", "IfcRevolvedAreaSolid"]
+    with open("all_classes.txt", "r") as f:
+        entities = [x.strip() for x in f.readlines()]
+
+    extra_entities = []
+
     with EdgeIO("ifc001", load_env=True) as io:
-        entities = io.get_entities_from_ifc_files([top_dir() / "files/SimpleStru.ifc"])
         if extra_entities is not None:
             entities += extra_entities
         io.create_database()
@@ -57,8 +60,8 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
 
     new_f = a.to_ifc(to_file)
 
-    with EdgeIO("ifc001", load_env=True) as io:
-        io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
+    # with EdgeIO("ifc001", load_env=True) as io:
+    #     io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
 
     print(80 * "-")
 
@@ -135,10 +138,12 @@ def check_for_penetrating_pipes(from_file, to_file):
 if __name__ == "__main__":
     start = time.time()
 
+    create_schema_one_time()
+
     # build_and_upload_first()
-    then_download_and_add_two_equipments_as_cubes(IFC_FILE_0, IFC_FILE_1)
-    if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
-    check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
+    # then_download_and_add_two_equipments_as_cubes(IFC_FILE_0, IFC_FILE_1)
+    # if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
+    # check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
 
     end = time.time()
     print(f"Demo time -> {end-start:.2f} seconds")

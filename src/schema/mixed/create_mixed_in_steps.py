@@ -10,7 +10,7 @@ def main(database: str, ifc_schema: str, batch_size: int, ifc_files: list[str], 
         entities = io.get_entities_from_ifc_files(ifc_paths)
         entities += extra_entities
         io.create_database()
-        io.stepwise_migration(entities=entities, batch_size=batch_size, unwrap_enums=True)
+        io.stepwise_migration(entities=entities, batch_size=batch_size)
 
 
 if __name__ == "__main__":

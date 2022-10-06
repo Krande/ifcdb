@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import ifcopenshell
 import logging
+import os
 import pathlib
 from dataclasses import dataclass, field
-
-import ifcopenshell
+from io import StringIO
 from toposort import toposort, toposort_flatten
 
 from ifcdb.database.utils import resolve_order_of_result_entities
@@ -244,3 +245,14 @@ def get_props(ifc_class: str, db_props: dict, id_map: dict, em: IfcSchemaModel) 
             props[key] = value
 
     return props
+
+def load_ifc_content(f: str | pathlib.Path | ifcopenshell.file) -> ifcopenshell.file:
+    if isinstance(f, ifcopenshell.file):
+        new_ifc = f
+    elif isinstance(f, (os.PathLike, str)):
+        new_ifc = ifcopenshell.open(str(f))
+    elif isinstance(f, StringIO):
+        new_ifc = ifcopenshell.file.from_string(f.read())
+    else:
+        raise ValueError(f'Unrecognized ifc file type "{type(f)}"')
+    return new_ifc

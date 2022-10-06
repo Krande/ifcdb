@@ -1,5 +1,13 @@
+from __future__ import annotations
+
+import ifcopenshell
 import os
 import pathlib
+from typing import TYPE_CHECKING
+from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from ifcdb import EdgeIO
 
 
 def top_dir() -> pathlib.Path:
@@ -34,3 +42,29 @@ def change_case(camelcase_str):
             res.append(c)
 
     return "".join(res)
+
+
+@dataclass
+class DbIfcClassesDiff:
+    db_class_types: set
+    ifc_classes: set
+
+    def get_missing_ifc_classes(self) -> list[str]:
+        missing = self.ifc_classes - self.db_class_types
+        return list(missing)
+
+    def get_all_classes(self) -> list[str]:
+        return list(set(list(self.ifc_classes) + list(self.db_class_types)))
+
+
+def db_ifc_diff_getter(db_name: str, ifc_path: os.PathLike | str) -> DbIfcClassesDiff:
+    from ifcdb.database.getters.db_content import DbContent
+    from ifcdb import EdgeIO
+
+    with EdgeIO(db_name, load_env=True) as io:
+        dbc = DbContent(io.db_entity_model, io.client)
+        db_class_types = set(dbc.get_db_instance_types())
+
+    f = ifcopenshell.open(ifc_path)
+    ifc_classes = set([x.is_a() for x in f])
+    return DbIfcClassesDiff(db_class_types, ifc_classes)

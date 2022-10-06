@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+import edgedb
+import ifcopenshell
 import os
 import pathlib
 import time
 from dataclasses import dataclass
-from io import StringIO
-
-import edgedb
-import ifcopenshell
 from dotenv import load_dotenv
+from io import StringIO
 
 from ifcdb.config import IfcDbConfig
 from ifcdb.database.admin import DbAdmin, DbMigration
@@ -16,7 +15,7 @@ from ifcdb.database.getters.db_content import DbContent
 from ifcdb.database.inserts.file_inserts import INSERTS, insert_ifc_file
 from ifcdb.diffing.overlinking.tool import OverlinkResolver
 from ifcdb.diffing.tool import IfcDiffTool
-from ifcdb.io.ifc import IfcIO
+from ifcdb.io.ifc import IfcIO, load_ifc_content
 from ifcdb.schema.db_entity_model import db_entity_model_from_schema_version
 
 
@@ -128,7 +127,9 @@ class EdgeIO:
         insert_ifc_file(ifc_items, self.client, method, self.ifc_schema, limit_ifc_ids=limit_ifc_ids, silent=silent)
         return ifc_io
 
-    def update_from_diff_tool(self, diff_tool: IfcDiffTool, resolve_overlinking: bool = False) -> None | str:
+    def update_from_diff_tool(
+        self, diff_tool: IfcDiffTool, resolve_overlinking: bool = False, silent=True
+    ) -> None | str:
         if diff_tool.contains_changes is False:
             print("No Changes to model detected")
             return None
@@ -137,32 +138,24 @@ class EdgeIO:
             olr = OverlinkResolver(diff_tool)
             diff_tool = olr.resolve()
 
-        bulk_entity_handler = diff_tool.to_bulk_entity_handler()
+        beh = diff_tool.to_bulk_entity_handler()
 
         start = time.time()
         for tx in self.client.transaction():
             with tx:
-                query_str = bulk_entity_handler.to_edql_str()
-                if query_str is None:
-                    return
-                print(query_str)
-                return tx.query_single_json(query_str)
+                if len(beh.changes) == 0 and len(beh.selects) == 0 and len(beh.removes) == 0:
+                    beh.insert_sequentially(tx, silent=silent)
+                else:
+                    query_str = beh.to_edql_str()
+                    if query_str is None:
+                        return
+                    print(query_str)
+                    return tx.query_single_json(query_str)
         end = time.time()
 
         print(f'Upload finished in "{end-start:.2f}" seconds')
 
     def update_db_from_ifc_delta(self, updated_ifc, original_ifc=None, save_diff_as=None, resolve_overlinking=False):
-        def load_ifc_content(f: str | pathlib.Path | ifcopenshell.file) -> ifcopenshell.file:
-            if isinstance(f, ifcopenshell.file):
-                new_ifc = f
-            elif isinstance(f, (os.PathLike, str)):
-                new_ifc = ifcopenshell.open(str(f))
-            elif isinstance(f, StringIO):
-                new_ifc = ifcopenshell.file.from_string(f.read())
-            else:
-                raise ValueError(f'Unrecognized ifc file type "{type(f)}"')
-            return new_ifc
-
         if original_ifc is not None:
             old_file = load_ifc_content(original_ifc)
         else:
