@@ -11,11 +11,11 @@ from ifcdb import EdgeIO
 
 DB_NAME = "ifc001"
 
-IFC_FILE_0_no_db = "temp/model_00.ifc"
-IFC_FILE_0 = "temp/model_01_from_db.ifc"
-IFC_FILE_1 = "temp/model_02_w_cubes.ifc"
-IFC_FILE_2 = "temp/model_03_w_pipe.ifc"
-IFC_FILE_3 = "temp/model_04_w_pen_detail.ifc"
+IFC_FILE_0 = "temp/model_00.ifc"
+IFC_FILE_1 = "temp/model_01_from_db.ifc"
+IFC_FILE_2 = "temp/model_02_w_cubes.ifc"
+IFC_FILE_3 = "temp/model_03_w_pipe.ifc"
+IFC_FILE_4 = "temp/model_04_w_pen_detail.ifc"
 
 # TODO: New models and modifications should be assigned to a separate modelling layer
 
@@ -39,15 +39,24 @@ def build_and_upload_first():
     with EdgeIO(DB_NAME, load_env=True) as io:
         io.wipe_database()
         print(80 * "-")
-        ifc_obj = a.to_ifc(IFC_FILE_0_no_db)
+        ifc_obj = a.to_ifc(IFC_FILE_0)
         print(80 * "-")
         io.insert_ifc(ifc_obj=ifc_obj, silent=True)
     print(80 * "-")
 
 
-def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
+def download(filepath):
     with EdgeIO(DB_NAME, load_env=True) as io:
-        io.to_ifc_file(from_file)
+        io.to_ifc_file(filepath)
+
+
+def upload_delta(filepath, diff_name: str):
+    with EdgeIO(DB_NAME, load_env=True) as io:
+        io.update_db_from_ifc_delta(filepath, save_diff_as=f"temp/{diff_name}.json")
+
+
+def then_download_and_add_two_equipments_as_cubes(from_file, to_file, use_db=True):
+    download(from_file)
 
     a = ada.from_ifc(from_file)
 
@@ -58,15 +67,17 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file):
     fl1.add_shape(ada.PrimBox("Equip1", (1, 1, 0), (2, 2, 1), metadata=meta))
     fl2.add_shape(ada.PrimBox("Equip2", (3, 3, 3), (4, 4, 4), metadata=meta))
 
-    new_f = a.to_ifc(to_file)
+    _ = a.to_ifc(to_file)
 
-    with EdgeIO(DB_NAME, load_env=True) as io:
-        io.update_db_from_ifc_delta(new_f, save_diff_as="temp/diff_add_two_cube.json")
+    if use_db:
+        upload_delta(to_file, "diff_add_two_cube")
 
     print(80 * "-")
 
 
-def if_two_equipments_make_a_pipe(from_file, to_file):
+def if_two_equipments_make_a_pipe(from_file, to_file, use_db=True):
+    if use_db:
+        download(from_file)
 
     a = ada.from_ifc(from_file)
     section = ada.Section("Psec", ada.Section.TYPES.TUBULAR, r=0.07, wt=0.01)
@@ -109,41 +120,45 @@ def if_two_equipments_make_a_pipe(from_file, to_file):
         logging.error("Multiple points This is not yet accounted for")
         return
 
-    _ = a.to_ifc(to_file)
+    a.to_ifc(to_file)
 
     # Update the Database Model
-    # ifc_file = ifcopenshell.file.from_string(new_f_str)
-    # with EdgeIO(DB_NAME, load_env=True) as io:
-    #     io.update_db_from_ifc_delta(ifc_file)
+    if use_db:
+        upload_delta(to_file, "diff_add_pipe")
 
     print(80 * "-")
 
 
-def check_for_penetrating_pipes(from_file, to_file):
+def check_for_penetrating_pipes(from_file, to_file, use_db=True):
+    if use_db:
+        download(from_file)
+
     a = ada.from_ifc(from_file)
 
     clashes = PipeClash.pipe_penetration_check(a)
     for clash in clashes:
         clash.reinforce_plate_pipe_pen()
 
-    new_f = a.to_ifc(to_file, validate=True)
+    a.to_ifc(to_file, validate=True)
     a.to_vis_mesh(cpus=1).to_gltf("temp/model_w_pen_detail.glb")
 
-    with open(to_file, "w") as f:
-        f.write(new_f.wrapped_data.to_string())
+    if use_db:
+        upload_delta(to_file, "add_pen_detail")
 
     print(80 * "-")
 
 
 if __name__ == "__main__":
-    start = time.time()
 
+    start = time.time()
     # create_schema_one_time()
 
     build_and_upload_first()
-    then_download_and_add_two_equipments_as_cubes(IFC_FILE_0, IFC_FILE_1)
-    if_two_equipments_make_a_pipe(IFC_FILE_1, IFC_FILE_2)
-    check_for_penetrating_pipes(IFC_FILE_2, IFC_FILE_3)
+
+    using_db = False
+    then_download_and_add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2, use_db=using_db)
+    if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3, use_db=using_db)
+    check_for_penetrating_pipes(IFC_FILE_3, IFC_FILE_4, use_db=using_db)
 
     end = time.time()
     print(f"Demo time -> {end-start:.2f} seconds")

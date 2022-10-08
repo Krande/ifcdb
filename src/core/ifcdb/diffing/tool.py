@@ -124,34 +124,51 @@ class IfcDiffTool:
             entity_tool = EntityResolver.create_entity_tool_from_ifcopenshell_entity(el)
             self.added.append(EntityDiffAdd(guid, el.is_a(), entity_tool))
 
-        for el in f1.by_type("IfcRoot"):
+        self.diff_changes2(removed, added)
+
+    def diff_changes(self, removed, added):
+        for el in self.f1.by_type("IfcRoot"):
             guid = getattr(el, _guid)
             if guid in removed or guid in added:
                 continue
 
-            result = self.compare_rooted_elements(el, f2.by_guid(guid))
+            result = self.compare_rooted_elements(el, self.f2.by_guid(guid))
             if result is None:
                 continue
 
             self.changed.append(result)
 
-    def compare_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> dict:
-        info1 = el1.get_info(recursive=True, include_identifier=False)
-        info2 = el2.get_info(recursive=True, include_identifier=False)
+    def diff_changes2(self, removed, added):
+        changes = dict()
+        added_objects = [self.f2.by_guid(x) for x in added]
+        for el in self.f1.by_type("IfcRoot"):
+            guid = getattr(el, _guid)
+            if guid in removed or guid in added:
+                continue
 
-        # Walk hierarchy and pop linked rooted elements that are already diffed
-        new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
-        new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
+            el2 = self.f2.by_guid(guid)
+            result = self.compare_rooted_elements2(el, el2)
+            if result is None:
+                continue
+            changes[el] = result
 
-        return DeepDiff(new_info1, new_info2)
+        if len(changes) > 0:
+            for el1, diff in changes.items():
+                er = EntityResolver.create_entity_tool_from_ifcopenshell_entity(el1)
+                dr = DiffResolver(self.f1, self.f2)
+                vcs = dr.diff_to_value_changes(el1.GlobalId, diff)
+                edf = EntityDiffChange(el1.GlobalId, el1.is_a(), diff, vcs, er.entity)
+                self.changed.append(edf)
 
-    def are_elements_equal(self, el1: _ifc_ent, el2: _ifc_ent) -> bool:
-        res = self.compare_elements(el1, el2)
+    def compare_rooted_elements2(self, el1: _ifc_ent, el2: _ifc_ent) -> dict:
+        info1 = get_neutral_dict(el1, include_identifier=False)
+        info2 = get_neutral_dict(el2, include_identifier=False)
+
+        if info1 == info2:
+            return None
+        res = DeepDiff(info1, info2, math_epsilon=self.precision)
         keys = list(res)
-        if len(keys) > 0:
-            return False
-
-        return True
+        return {key: res[key] for key in keys}
 
     def compare_rooted_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> EntityDiffChange | None:
         owner_diff = self.diff_owner(el1, el2)
@@ -176,12 +193,30 @@ class IfcDiffTool:
         keys = list(res)
         if len(keys) > 0:
             entity = create_insert_entity_from_ifc_dict(info1)
-            diff = {key: res[key] for key in keys}
+            diff = {key: res[key] for key in res}
             dr = DiffResolver(self.f1, self.f2)
             vcs = dr.diff_to_value_changes(el1.GlobalId, diff)
             return EntityDiffChange(el1.GlobalId, el1.is_a(), diff, vcs, entity)
 
         return None
+
+    def compare_elements(self, el1: _ifc_ent, el2: _ifc_ent) -> dict:
+        info1 = el1.get_info(recursive=True, include_identifier=False)
+        info2 = el2.get_info(recursive=True, include_identifier=False)
+
+        # Walk hierarchy and pop linked rooted elements that are already diffed
+        new_info1 = ifc_info_walk_and_pop(info1, [x.guid for x in self.changed])
+        new_info2 = ifc_info_walk_and_pop(info2, [x.guid for x in self.changed])
+
+        return DeepDiff(new_info1, new_info2)
+
+    def are_elements_equal(self, el1: _ifc_ent, el2: _ifc_ent) -> bool:
+        res = self.compare_elements(el1, el2)
+        keys = list(res)
+        if len(keys) > 0:
+            return False
+
+        return True
 
     def diff_owner(self, el1, el2):
         owner1 = get_dict_from_el(el1.OwnerHistory)
@@ -354,5 +389,28 @@ class DiffResolver:
         return ValueRemovedFromIterable(path, entity_tool.entity, ifc_elem_path.indices[0], parent_entity_tool.entity)
 
 
-def get_dict_from_el(el: ifcopenshell.entity_instance) -> dict:
-    return el.get_info(recursive=True, include_identifier=False)
+def get_dict_from_el(el: ifcopenshell.entity_instance, recursive=True, include_identifier=False) -> dict:
+    return el.get_info(recursive=recursive, include_identifier=include_identifier)
+
+
+def get_neutral_dict(el: ifcopenshell.entity_instance, include_identifier=True):
+    data = el.get_info(recursive=False, include_identifier=include_identifier)
+    for key, value in data.items():
+        data[key] = get_neutral_element_id(value, include_identifier=include_identifier)
+
+    return data
+
+
+def get_neutral_element_id(value, include_identifier=True):
+    if isinstance(value, ifcopenshell.entity_instance):
+        if include_identifier:
+            return value.id()
+        else:
+            if hasattr(value, "GlobalId"):
+                return getattr(value, "GlobalId")
+            else:
+                return value.id()
+                # raise NotImplementedError()
+    elif isinstance(value, tuple):
+        return tuple([get_neutral_element_id(x) for x in value])
+    return value

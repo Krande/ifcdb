@@ -32,6 +32,7 @@ class BulkEntityHandler:
     def insert_sequentially(self, tx, silent=True):
         for key, insert in self.inserts.items():
             insert_str = insert.to_edql_str(assign_to_variable=False, sep=",\n")
+            # print(insert_str)
             query_res = json.loads(safe_insert(insert_str, tx, silent=silent))
             insert.entity.uuid = query_res["id"]
 

@@ -50,7 +50,7 @@ class EdgeInsert:
                     refs = ""
                     for o in l_obj:
                         if isinstance(o, Entity):
-                            logging.info('ds')
+                            logging.info("ds")
                         else:
                             with_block_content += o.to_edql_str(assign_to_variable=True) + "\n"
                         refs += o.name + prop_sep
@@ -85,7 +85,15 @@ class EdgeInsert:
 
 
 def to_props_str(entity: Entity, sep=",") -> str:
-    return f"{sep}".join([f"{key}:= {value_writer(value)}" for key, value in entity.props.items() if value is not None])
+    props = []
+    for key, value in entity.props.items():
+        if value is None:
+            continue
+        if key == "wrappedValue":
+            key = f"`{entity.name}`"
+        props.append(f"{key}:= {value_writer(value)}")
+
+    return f"{sep}".join(props)
 
 
 def get_link_entity_object(value: Entity):
