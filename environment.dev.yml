@@ -1,11 +1,11 @@
 name: ifcdb-dev
 channels:
-#  - ifcopenshell
-  - krande
+  - ifcopenshell
   - conda-forge
-
+  - krande
 dependencies:
   - ada-py
+  - occt==7.6.2
   - python==3.10.6
   - pyparsing
   - pytest
