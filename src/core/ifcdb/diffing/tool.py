@@ -403,7 +403,7 @@ def get_neutral_dict(el: ifcopenshell.entity_instance, include_identifier=True):
 
 def get_neutral_element_id(value, include_identifier=True):
     if isinstance(value, ifcopenshell.entity_instance):
-        if include_identifier:
+        if include_identifier is True:
             return value.id()
         else:
             if hasattr(value, "GlobalId"):
