@@ -1,21 +1,25 @@
 import logging
-import numpy as np
 import os
+import pathlib
 import time
 
 import ada
+import numpy as np
 from ada.core.clash_check import PipeClash
 from ada.core.vector_utils import linear_2dtransform_rotate, vector_length_2d
 from ada.param_models.basic_module import SimpleStru
+
 from ifcdb import EdgeIO
 
 DB_NAME = "ifc001"
 
+SCRATCH_DIR = "temp/scratch"
 IFC_FILE_0 = "temp/model_00.ifc"
 IFC_FILE_1 = "temp/model_01_from_db.ifc"
 IFC_FILE_2 = "temp/model_02_w_cubes.ifc"
 IFC_FILE_3 = "temp/model_03_w_pipe.ifc"
 IFC_FILE_4 = "temp/model_04_w_pen_detail.ifc"
+IFC_FILE_5 = "temp/model_05_cleaned_file.ifc"
 
 # TODO: New models and modifications should be assigned to a separate modelling layer
 
@@ -33,16 +37,16 @@ def create_schema_one_time():
         io.stepwise_migration(entities=entities, batch_size=50, dry_run=False)
 
 
-def build_and_upload_first():
+def build_and_upload_first(to_file, use_db=True):
     os.makedirs("temp", exist_ok=True)
     a = ada.Assembly("PoC-Stru") / SimpleStru("A Simple Structure")
-    with EdgeIO(DB_NAME, load_env=True) as io:
-        io.wipe_database()
-        print(80 * "-")
-        ifc_obj = a.to_ifc(IFC_FILE_0)
-        print(80 * "-")
-        io.insert_ifc(ifc_obj=ifc_obj, silent=True)
+    ifc_obj = a.to_ifc(to_file)
     print(80 * "-")
+    if use_db:
+        with EdgeIO(DB_NAME, load_env=True) as io:
+            io.wipe_database()
+            io.insert_ifc(ifc_obj=ifc_obj, silent=True)
+        print(80 * "-")
 
 
 def download(filepath):
@@ -83,13 +87,14 @@ def if_two_equipments_make_a_pipe(from_file, to_file, use_db=True):
     section = ada.Section("Psec", ada.Section.TYPES.TUBULAR, r=0.07, wt=0.01)
 
     def filter_equip_for_auto_connecting(x):
-        return x.metadata.get("Properties", dict()).get("auto_pipe", None) is not None
+        return x.metadata.get("Properties", dict()).get("auto_pipe", False) is True
 
     result: list[ada.Shape] = list(filter(filter_equip_for_auto_connecting, a.get_all_physical_objects()))
     points = [shp.bbox.volume_cog for shp in result]
 
     if len(points) < 2:
         logging.error('only a single equipment is set to "auto_pipe"')
+        a.to_ifc(to_file)
         return None
 
     if len(points) == 2:
@@ -115,7 +120,7 @@ def if_two_equipments_make_a_pipe(from_file, to_file, use_db=True):
         p3 = [*closest_point_2d, p3[2]]
         piping_points = [start, p1, p2, p3, end]
         p = ada.Part("Piping") / ada.Pipe("Pipe1", piping_points, section)
-        a.add_part(p)
+        a.add_part(p, add_to_layer="PipeBot")
     else:
         logging.error("Multiple points This is not yet accounted for")
         return
@@ -137,7 +142,7 @@ def check_for_penetrating_pipes(from_file, to_file, use_db=True):
 
     clashes = PipeClash.pipe_penetration_check(a)
     for clash in clashes:
-        clash.reinforce_plate_pipe_pen()
+        clash.reinforce_plate_pipe_pen(add_to_layer="ReinforcementBot")
 
     a.to_ifc(to_file, validate=True)
     a.to_vis_mesh(cpus=1).to_gltf("temp/model_w_pen_detail.glb")
@@ -148,17 +153,66 @@ def check_for_penetrating_pipes(from_file, to_file, use_db=True):
     print(80 * "-")
 
 
+def do_structural_analysis(from_file, use_db=True):
+    if use_db:
+        download(from_file)
+
+    a = ada.from_ifc(from_file)
+
+    fem = a.to_fem_obj(0.1, interactive=False, use_quads=True)
+    fem.add_step(ada.fem.StepEigen("EigEn", 20))
+
+    # step = fem.add_step(ada.fem.steps.StepImplicit("Static"))
+    # step.add_load(ada.fem.LoadGravity("Gravity", -2000))
+
+    fs = fem.add_set(
+        ada.fem.FemSet("Bcs", None, set_type=ada.fem.FemSet.TYPES.NSET),
+        p=(-0.1, -0.1, -0.6),
+        vol_box=(5.1, 5.1, -0.45),
+    )
+    fem.add_bc(ada.fem.Bc("Bc", fs, dofs=[1, 2, 3, 4, 5, 6]))
+
+    a.fem = fem
+    # a.to_fem("stru_model_calculix", "calculix", scratch_dir=SCRATCH_DIR, execute=True, overwrite=True)
+    a.to_fem("stru_model_code_aster", "code_aster", scratch_dir=SCRATCH_DIR, execute=True, overwrite=True)
+
+
+def postprocess_structural_analysis():
+    rmed = pathlib.Path(SCRATCH_DIR) / "stru_model_code_aster/stru_model_code_aster.rmed"
+    res = ada.from_fem_res(rmed, "code_aster", import_mesh=True)
+    pdata = res.result_mesh.point_data
+    data = pdata[1]
+    _ = res.result_mesh.colorize_data(data)
+    vm = res.to_vis_mesh(data)
+    vm.to_gltf("temp/output.glb")
+    vm.to_stl("temp/output.stl")
+
+
+def remove_auto_layers(from_file, to_file, use_db=False):
+    if use_db:
+        download(from_file)
+
+    a = ada.from_ifc(from_file)
+    layers = [x for x in a.presentation_layers.layers]
+    for layer in layers:
+        a.presentation_layers.remove_layer_and_delete_objects(layer)
+
+    a.to_ifc(to_file)
+
+
 if __name__ == "__main__":
 
-    start = time.time()
+    t_start = time.time()
     # create_schema_one_time()
 
-    build_and_upload_first()
-
     using_db = False
-    then_download_and_add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2, use_db=using_db)
-    if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3, use_db=using_db)
-    check_for_penetrating_pipes(IFC_FILE_3, IFC_FILE_4, use_db=using_db)
+    # build_and_upload_first(IFC_FILE_0, use_db=using_db)
+    # do_structural_analysis(IFC_FILE_0, use_db=using_db)
+    postprocess_structural_analysis()
+    # then_download_and_add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2, use_db=using_db)
+    # if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3, use_db=using_db)
+    # check_for_penetrating_pipes(IFC_FILE_3, IFC_FILE_4, use_db=using_db)
+    # remove_auto_layers(IFC_FILE_4, IFC_FILE_5, use_db=using_db)
 
-    end = time.time()
-    print(f"Demo time -> {end-start:.2f} seconds")
+    t_end = time.time()
+    print(f"Demo time -> {t_end-t_start:.2f} seconds")

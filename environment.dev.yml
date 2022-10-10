@@ -15,6 +15,7 @@ dependencies:
   - uvicorn
   - hpp-fcl
   - starlette
+  - vtk==9.2.2
   - pip
   - pip:
       - edgedb
@@ -28,3 +29,5 @@ dependencies:
       - python-multipart
       - frozendict
       - deepdiff
+      - trame
+      - pandas

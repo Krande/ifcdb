@@ -2,7 +2,6 @@ import ifcopenshell
 import pytest
 
 from ifcdb.diffing.tool import IfcDiffTool
-import ifcopenshell
 
 
 @pytest.fixture
@@ -52,7 +51,7 @@ def test_model_add_pipe(model_2_w_cubes, model_3_w_pipes):
     diff_tool = IfcDiffTool(model_2_w_cubes, model_3_w_pipes)
 
     assert len(diff_tool.changed) == 2
-    assert len(diff_tool.added) == 8
+    assert len(diff_tool.added) == 19
     assert len(diff_tool.removed) == 0
 
     print("sd")
@@ -61,8 +60,8 @@ def test_model_add_pipe(model_2_w_cubes, model_3_w_pipes):
 def test_model_add_pen(model_3_w_pipes, model_4_w_pen_detail):
     diff_tool = IfcDiffTool(model_3_w_pipes, model_4_w_pen_detail)
 
-    assert len(diff_tool.changed) == 2
-    assert len(diff_tool.added) == 37
+    assert len(diff_tool.changed) == 3
+    assert len(diff_tool.added) == 36
     assert len(diff_tool.removed) == 0
 
     print("sd")
