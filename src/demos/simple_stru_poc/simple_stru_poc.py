@@ -156,8 +156,8 @@ def check_for_penetrating_pipes(from_file, to_file, use_db=True):
     print(80 * "-")
 
 
-def do_structural_analysis(from_file, use_db=True):
-    if use_db:
+def do_structural_analysis(from_file, db_download=True):
+    if db_download:
         download(from_file)
 
     a = ada.from_ifc(from_file)
@@ -185,7 +185,7 @@ def postprocess_structural_analysis():
     res = ada.from_fem_res(rmed, "code_aster", import_mesh=True)
 
     vm = res.to_vis_mesh()
-    vm.to_binary_and_json('temp/stru_model_code_aster', export_dir='temp/vertex_coloring')
+    # vm.to_binary_and_json('temp/stru_model_code_aster', export_dir='temp/vertex_coloring')
     vm.to_gltf(f"temp/stru_model_code_aster.glb")
 
 
@@ -208,7 +208,7 @@ if __name__ == "__main__":
 
     using_db = False
     # build_and_upload_first(IFC_FILE_0, db_upload=True)
-    # do_structural_analysis(IFC_FILE_0, use_db=using_db)
+    # do_structural_analysis(IFC_FILE_0, db_download=using_db)
     postprocess_structural_analysis()
     # then_download_and_add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2, db_download=True)
     # if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3, db_download=False, db_upload=True)
