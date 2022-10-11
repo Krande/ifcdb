@@ -6,17 +6,22 @@ import logging
 import os
 import subprocess
 from toposort import toposort_flatten
+from typing import TYPE_CHECKING
 
 from ifcdb.schema.model import IfcSchemaModel
+
+if TYPE_CHECKING:
+    from ifcdb.database.inserts.base import EdgeInsert
 
 ID_PARAMS = {"id", "_e_type"}
 
 
-def safe_insert(insert_str: str, tx: edgedb.blocking_client.Iteration, silent=False) -> str:
+def safe_insert(insert: EdgeInsert, tx: edgedb.blocking_client.Iteration, silent=False) -> str:
+    insert_str = insert.to_edql_str(assign_to_variable=False)
     try:
         single_json = tx.query_single_json(insert_str)
     except Exception as e:
-        logging.exception(insert_str)
+        logging.exception((insert, insert_str))
         raise e
     if silent is False:
         print(insert_str, single_json)

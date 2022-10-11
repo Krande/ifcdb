@@ -53,8 +53,8 @@ def insert_sequentially_using_new_insert_objects(
             for key, value in wrapped.items():
                 insert.entity.links[key] = skipped_map.get(value.temp_unique_identifier).entity
 
-        insert_str = insert.to_edql_str(assign_to_variable=False)
-        query_res = json.loads(safe_insert(insert_str, tx, silent=silent))
+
+        query_res = json.loads(safe_insert(insert, tx, silent=silent))
         insert.entity.uuid = query_res["id"]
         # print(insert_str)
 

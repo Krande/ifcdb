@@ -300,11 +300,6 @@ class BulkGetter:
         client = self.client if client is None else client
         return json.loads(client.query_json(select_str))
 
-    def get_all_in_ordered_sequence(self):
-        res = self.get_all()
-        obj_set = {key: value for key, value in res[0].items() if len(value) != 0}
-        return resolve_order_of_result_entities(obj_set, self._sm)
-
     def update_entity_dict_w_intermediate_classes(self, ent_dict: dict):
         to_be_added = dict()
         for key, value in ent_dict.items():

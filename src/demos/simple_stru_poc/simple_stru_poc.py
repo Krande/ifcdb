@@ -37,12 +37,12 @@ def create_schema_one_time():
         io.stepwise_migration(entities=entities, batch_size=50, dry_run=False)
 
 
-def build_and_upload_first(to_file, use_db=True):
+def build_and_upload_first(to_file, db_upload=True):
     os.makedirs("temp", exist_ok=True)
     a = ada.Assembly("PoC-Stru") / SimpleStru("A Simple Structure")
     ifc_obj = a.to_ifc(to_file)
     print(80 * "-")
-    if use_db:
+    if db_upload:
         with EdgeIO(DB_NAME, load_env=True) as io:
             io.wipe_database()
             io.insert_ifc(ifc_obj=ifc_obj, silent=True)
@@ -56,11 +56,14 @@ def download(filepath):
 
 def upload_delta(filepath, diff_name: str):
     with EdgeIO(DB_NAME, load_env=True) as io:
-        io.update_db_from_ifc_delta(filepath, save_diff_as=f"temp/{diff_name}.json")
+        io.wipe_database()
+        io.insert_ifc(ifc_file_path=filepath, silent=True)
+        # io.update_db_from_ifc_delta(filepath, save_diff_as=f"temp/{diff_name}.json")
 
 
-def then_download_and_add_two_equipments_as_cubes(from_file, to_file, use_db=True):
-    download(from_file)
+def then_download_and_add_two_equipments_as_cubes(from_file, to_file, db_download=True, db_upload=True):
+    if db_download:
+        download(from_file)
 
     a = ada.from_ifc(from_file)
 
@@ -73,14 +76,14 @@ def then_download_and_add_two_equipments_as_cubes(from_file, to_file, use_db=Tru
 
     _ = a.to_ifc(to_file)
 
-    if use_db:
+    if db_upload:
         upload_delta(to_file, "diff_add_two_cube")
 
     print(80 * "-")
 
 
-def if_two_equipments_make_a_pipe(from_file, to_file, use_db=True):
-    if use_db:
+def if_two_equipments_make_a_pipe(from_file, to_file, db_download=True, db_upload=True):
+    if db_download:
         download(from_file)
 
     a = ada.from_ifc(from_file)
@@ -128,7 +131,7 @@ def if_two_equipments_make_a_pipe(from_file, to_file, use_db=True):
     a.to_ifc(to_file)
 
     # Update the Database Model
-    if use_db:
+    if db_upload:
         upload_delta(to_file, "diff_add_pipe")
 
     print(80 * "-")
@@ -180,12 +183,10 @@ def do_structural_analysis(from_file, use_db=True):
 def postprocess_structural_analysis():
     rmed = pathlib.Path(SCRATCH_DIR) / "stru_model_code_aster/stru_model_code_aster.rmed"
     res = ada.from_fem_res(rmed, "code_aster", import_mesh=True)
-    pdata = res.result_mesh.point_data
-    data = pdata[1]
-    _ = res.result_mesh.colorize_data(data)
-    vm = res.to_vis_mesh(data)
-    vm.to_gltf("temp/output.glb")
-    vm.to_stl("temp/output.stl")
+
+    vm = res.to_vis_mesh()
+    vm.to_binary_and_json('temp/stru_model_code_aster', export_dir='temp/vertex_coloring')
+    vm.to_gltf(f"temp/stru_model_code_aster.glb")
 
 
 def remove_auto_layers(from_file, to_file, use_db=False):
@@ -206,11 +207,11 @@ if __name__ == "__main__":
     # create_schema_one_time()
 
     using_db = False
-    # build_and_upload_first(IFC_FILE_0, use_db=using_db)
+    # build_and_upload_first(IFC_FILE_0, db_upload=True)
     # do_structural_analysis(IFC_FILE_0, use_db=using_db)
     postprocess_structural_analysis()
-    # then_download_and_add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2, use_db=using_db)
-    # if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3, use_db=using_db)
+    # then_download_and_add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2, db_download=True)
+    # if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3, db_download=False, db_upload=True)
     # check_for_penetrating_pipes(IFC_FILE_3, IFC_FILE_4, use_db=using_db)
     # remove_auto_layers(IFC_FILE_4, IFC_FILE_5, use_db=using_db)
 
