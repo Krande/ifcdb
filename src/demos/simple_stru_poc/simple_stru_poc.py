@@ -156,7 +156,7 @@ def check_for_penetrating_pipes(from_file, to_file, use_db=True):
     print(80 * "-")
 
 
-def do_structural_analysis(from_file, db_download=True):
+def do_structural_eigenvalue_analysis(from_file, db_download=True):
     if db_download:
         download(from_file)
 
@@ -183,10 +183,15 @@ def do_structural_analysis(from_file, db_download=True):
 def postprocess_structural_analysis():
     rmed = pathlib.Path(SCRATCH_DIR) / "stru_model_code_aster/stru_model_code_aster.rmed"
     res = ada.from_fem_res(rmed, "code_aster", import_mesh=True)
-
     vm = res.to_vis_mesh()
-    # vm.to_binary_and_json('temp/stru_model_code_aster', export_dir='temp/vertex_coloring')
     vm.to_gltf(f"temp/stru_model_code_aster.glb")
+    for pd in res.result_mesh.point_data:
+        vm = res.to_vis_mesh(data_type=pd)
+        if vm is None:
+            continue
+        name = pd.replace('__DEPL', '')
+        # vm.to_binary_and_json('temp/stru_model_code_aster', export_dir='temp/vertex_coloring')
+        vm.to_gltf(f"temp/stru_model_code_aster_{name}.glb")
 
 
 def remove_auto_layers(from_file, to_file, use_db=False):
@@ -208,7 +213,7 @@ if __name__ == "__main__":
 
     using_db = False
     # build_and_upload_first(IFC_FILE_0, db_upload=True)
-    # do_structural_analysis(IFC_FILE_0, db_download=using_db)
+    # do_structural_eigenvalue_analysis(IFC_FILE_0, db_download=using_db)
     postprocess_structural_analysis()
     # then_download_and_add_two_equipments_as_cubes(IFC_FILE_1, IFC_FILE_2, db_download=True)
     # if_two_equipments_make_a_pipe(IFC_FILE_2, IFC_FILE_3, db_download=False, db_upload=True)
