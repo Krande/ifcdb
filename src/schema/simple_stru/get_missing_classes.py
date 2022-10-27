@@ -18,4 +18,4 @@ def main(ifc_file):
 
 
 if __name__ == "__main__":
-    main(ifc_file=top_dir() / "src/demos/simple_stru_poc/temp/model_04_w_pen_detail.ifc")
+    main(ifc_file=top_dir() / "src/demos/simple_stru_poc/temp/model_00.ifc")

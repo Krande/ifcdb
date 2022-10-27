@@ -310,6 +310,15 @@ module default {
     abstract type IfcGeometricRepresentationItem extending IfcRepresentationItem {
     }
 
+    type IfcGeometricRepresentationSubContext extending IfcGeometricRepresentationContext {
+        property TargetScale -> float64;
+        property UserDefinedTargetView -> str;
+        required property TargetView -> str {
+            constraint one_of ('ELEVATION_VIEW','GRAPH_VIEW','MODEL_VIEW','NOTDEFINED','PLAN_VIEW','REFLECTED_PLAN_VIEW','SECTION_VIEW','SKETCH_VIEW','USERDEFINED');
+        };
+        required link ParentContext -> IfcGeometricRepresentationContext;
+    }
+
     type IfcGroup extending IfcObject {
     }
 
@@ -677,6 +686,13 @@ module default {
 
     type IfcPowerMeasure {
         required property `IfcPowerMeasure` -> float64;
+    }
+
+    type IfcPresentationLayerAssignment {
+        required property Name -> str;
+        property Description -> str;
+        property Identifier -> str;
+        required multi link AssignedItems -> IfcRepresentation | IfcRepresentationItem;
     }
 
     type IfcPressureMeasure {

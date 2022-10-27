@@ -1,3 +1,5 @@
+IfcPresentationLayerAssignment
+IfcGeometricRepresentationSubContext
 IfcOwnerHistory
 IfcDescriptiveMeasure
 IfcProductDefinitionShape
