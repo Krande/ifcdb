@@ -1,5 +1,5 @@
-env:
-	conda env update --file environment.dev.yml --prune
+dev:
+	mamba env update --file environment.dev.yml --prune
 
 up:
 	cd src/server/admin/infrastructure/local && docker-compose up -d

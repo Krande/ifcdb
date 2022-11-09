@@ -1,12 +1,12 @@
 name: ifcdb-dev
 channels:
-#  - ifcopenshell
-  - krande
+  - ifcopenshell
   - conda-forge
+  - krande/label/dev
 dependencies:
   - ada-py
-  - occt==7.6.2
-  - python==3.10.6
+  - occt
+  - python
   - pyparsing
   - pytest
   - toposort
@@ -15,7 +15,6 @@ dependencies:
   - uvicorn
   - hpp-fcl
   - starlette
-  - vtk==9.2.2
   - pip
   - pip:
       - edgedb
@@ -29,5 +28,4 @@ dependencies:
       - python-multipart
       - frozendict
       - deepdiff
-      - trame
       - pandas
